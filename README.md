@@ -41,9 +41,9 @@ context = map
 ``` 
 The `context` function uses higher order `map` function  (`map :: (a -> b) -> [a] -> [b]`) to apply the strategies to lists of numbers:
 ```haskell
-> context strategyId [1..10]
+ghci> context strategyId [1..10]
 [1,2,3,4,5,6,7,8,9,10]
-> context strategyDouble [1..10]
+ghci> context strategyDouble [1..10]
 [2,4,6,8,10,12,14,16,18,20]
 ```
 Instead of map we could use just any other function that accepts a function of type `Num a => a -> a` and applies it in a given context.
@@ -121,7 +121,7 @@ If we now bind `env` to a value as in the following snippet it is used as an imu
 main = do
   let exp = Mul (Add (Val 3) (Val 1)) 
                 (Mul (Val 2) (Var "pi"))
-  let env = [("pi", pi)]
+      env = [("pi", pi)]
   print $ eval exp env
 ```
 Experienced Haskellers will notice the ["eta-reduction smell"](https://wiki.haskell.org/Eta_conversion) in `eval (Var x) env = fetch x env` which hints at the possibilty to remove `env` as an explicit parameter. We can not do this right away as the other equations for `eval` do not allow eta-reduction. In order to do so we have to apply the combinators of the `Applicative Functor`:
