@@ -277,18 +277,29 @@ There are several predefined Monads available in the Haskell curated libraries a
 The idea of the Visitor pattern is to allow traversal of graphs while applying arbitrary logic to the nodes of the graph.
 In functional languages - and Haskell in particular - we have a whole armada of tools serving this purpose:
 * higher order functions like map, fold, filter and all their variants allow to "visit" lists
-* The Haskell typeclasses `Functor`, `Foldable`, `Traversable`, etc. provide a generic framework to allow visiting any algebraic datatype by just deriving some of these typeclasses.
+* The Haskell typeclasses `Functor`, `Foldable`, `Traversable`, etc. provide a generic framework to allow visiting any algebraic datatype by just deriving one of these typeclasses.
 ```haskell
-{-# LANGUAGE DeriveFoldable #-}
-data BinaryTree a = Leaf
-                  | Node (BinaryTree a) a (BinaryTree a)
-                  deriving Foldable
+-- we are re-using the Exp data type from the Singleton example 
+-- and transform it into a Foldable type:
+instance Foldable Exp where
+    foldMap f (Val x)   = f x
+    foldMap f (Add x y) = foldMap f x `mappend` foldMap f y
+    foldMap f (Mul x y) = foldMap f x `mappend` foldMap f y
 
--- BinaryTree instances can now be used as third parameter to foldr:
-foldr :: Foldable t => (a -> b -> b) -> b -> t a -> b
+filterF :: Foldable f => (a -> Bool) -> f a -> [a]
+filterF p = foldMap (\a -> if p a then [a] else [])     
+
+visitorDemo = do
+    let exp = Mul (Add (Val 3) (Val 2)) 
+                  (Mul (Val 4) (Val 6))
+    putStr "size of exp: "
+    print $ length exp
+    putStrLn "filter even numbers from tree"
+    print $ filterF even exp
 ```
-With this declaration BinaryTree becomes a Foldable instance an thus can be used with functions like foldr
+By virtue of the instance declaration Exp becomes a Foldable instance an can be used with arbitrary functions defined on Foldable like `length` in the example.
 
+`foldMap` can for example be used to write a filtering function `filterF`that collects all elements matching a predicate into a list. 
 
 # Beyond Typeclass patterns
 
