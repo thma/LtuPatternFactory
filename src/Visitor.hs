@@ -1,27 +1,17 @@
-{-# LANGUAGE DeriveFoldable #-}
 module Visitor where
-import Data.Monoid
+import Singleton (Exp (..))
+import Data.Monoid (Sum (..), getSum)
 
-data Exp a = 
-    Val a
-  | Add (Exp a) (Exp a)
-  | Mul (Exp a) (Exp a)
-    deriving (Show, Foldable)
-
-{-
+-- we are re-using the Exp data type from the Singleton example 
+-- and transform it into a Foldable type:
 instance Foldable Exp where
     foldMap f (Val x)   = f x
-    foldMap f (Add x y) = foldMap f x ++ foldMap f y
-        where (++) = mappend
-    foldMap f (Mul x y) = foldMap f x ++ foldMap f y
-        where (++) = mappend
--}
+    foldMap f (Add x y) = foldMap f x `mappend` foldMap f y
+    foldMap f (Mul x y) = foldMap f x `mappend` foldMap f y
 
+-- instead of size we could just use the predefined Foldable.length
 size :: Foldable f => f a -> Int
 size = getSum . foldMap (Sum . const 1)
-
-exp = Mul (Add (Val 3) (Val 1)) 
-          (Mul (Val 4) (Val pi))
 
 visitorDemo = do
     putStrLn "Visitor vs. Foldable, Traversable"

@@ -1,15 +1,10 @@
-{-# LANGUAGE DatatypeContexts #-}
-module Singleton 
-    (
-        singletonDemo
-    )
-where
+module Singleton where
 
-data (Num a) => Exp a = 
+data Exp a = 
       Var String
     | Val a
     | Add (Exp a) (Exp a)
-    | Mul (Exp a) (Exp a)
+    | Mul (Exp a) (Exp a) deriving (Show)
 
 type Env a = [(String, a)]
 
