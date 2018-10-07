@@ -1,19 +1,23 @@
 # Lambda the Ultimate Pattern Factory
 
-In the Early Nineties my first programming languages were Lisp, Scheme, and ML. When I later started to work in OO languages like C++ and Java I noticed that idioms that were standard vocabulary in functional programming (fp) were not so easy to achieve and required sophisticated structures. Books like [Design Patterns: Elements of Reusable Object-Oriented Software](https://en.wikipedia.org/wiki/Design_Patterns) were a great starting point to reason about those structures. One of my earliest findings was that several GoF-Patterns had a stark resemblance of structures that are built into in functional languages: for instance the strategy pattern corresponds to higher order functions in fp languages (more details see [below](#strategy)).
+My first programming languages were Lisp, Scheme, and ML. When I later started to work in OO languages like C++ and Java I noticed that idioms that are standard vocabulary in functional programming (fp) were not so easy to achieve and required sophisticated structures. Books like [Design Patterns: Elements of Reusable Object-Oriented Software](https://en.wikipedia.org/wiki/Design_Patterns) were a great starting point to reason about those structures. One of my earliest findings was that several of the GoF-Patterns had a stark resemblance of structures that are built into in functional languages: for instance the strategy pattern corresponds to higher order functions in fp (more details see [below](#strategy)).
 
-In recent years my interest in functional languages (and particularly [Haskell](https://www.haskell.org/)) was reignited when I sensed a more widespread acceptance of fp concepts and languages in the software industry. 
+Recently, while re-reading through the [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia) I thought it would be a good exercise to map the structure of software [design-patterns](https://en.wikipedia.org/wiki/Software_design_pattern#Classification_and_list) to the concepts found in the Haskell typeclass library an in functional programming in general.
 
-While re-reading through the [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia) (or the original article: https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) I had the impression that the Haskell typeclass library is a rich source of powerful and elegant concepts, tools and patterns. I thought it would be a good exercise to study the structure of software design-patterns (https://en.wikipedia.org/wiki/Software_design_pattern#Classification_and_list) and to find out how they map to concepts in functional programming and Haskell and its typeclass library in particular.
-
-By searching the web I found some blog entries studying specific patterns, but I did not come across any text covering larger sets of patterns. So as it seems that nobody did this kind of comparative study yet I found it worthy to spend some time on it and write down all my findings on the subject.
-
+By searching the web I found some blog entries studying specific patterns, but I did not come across any comprehensive study. As it seemed that nobody did this kind of work yet I found it worthy to spend some time on it and write down all my findings on the subject.
 
 # The Patternopedia
-A walk through the Typeclassopedia from a design pattern perspective.
-(There is even a [Scala Typeclassopedia](https://github.com/tel/scala-typeclassopedia) available).
+The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) is a now classic paper that introduces the Haskell type classes by clarifying their algebraic and category-theoretic background. In particular it explains the relationships among those type classes.
 
-## Strategy
+In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
+For each of the Typeclassopedia type classes (at least up to Traversable) I try to explain how it corresponds to structures applied in design patterns.
+I believe this kind of exposition could be helpful if you are either:
+* a programmer with an OO background who wants to get a better grip on how to implement complexer design in functional programming
+* a functional programmer who wants to get a deeper intuition for type classes
+ 
+
+
+## Strategy -> Functor
 > "The strategy pattern [...] is a behavioral software design pattern that enables selecting an algorithm at runtime. Instead of implementing a single algorithm directly, code receives run-time instructions as to which in a family of algorithms to use"
 
 ![strategy pattern](https://upload.wikimedia.org/wikipedia/commons/4/45/W3sDesign_Strategy_Design_Pattern_UML.jpg)
@@ -61,7 +65,7 @@ Although it would be fair to say that the typeclass `Functor` captures the essen
 
 
 
-## Singleton
+## Singleton -> Pointed -> Applicative
 > "The singleton pattern is a software design pattern that restricts the instantiation of a class to one object. This is useful when exactly one object is needed to coordinate actions across the system." 
 > (quoted from https://en.wikipedia.org/wiki/Singleton_pattern)
 
@@ -145,7 +149,7 @@ eval (Mul p q) = pure (*) <*> eval p  <*> eval q
 Any explicit handling of the variable `env` is now removed.
 (I took this example from the classic paper [Applicative programming with effects](http://www.soi.city.ac.uk/~ross/papers/Applicative.pdf) which details how `pure` and `<*>` correspond to the combinatory logic combinators `K` and `S`.)
 
-## Pipeline (Pipes and Filters)
+## Pipeline -> Monad
 > In software engineering, a pipeline consists of a chain of processing elements (processes, threads, coroutines, functions, etc.), arranged so that the output of each element is the input of the next; the name is by analogy to a physical pipeline.
 > (Quoted from: https://en.wikipedia.org/wiki/Pipeline_(software))
 
@@ -273,7 +277,7 @@ There are several predefined Monads available in the Haskell curated libraries a
 
 - 
 
-## Visitor
+## Visitor -> Foldable -> Traversable
 
 > [...] the visitor design pattern is a way of separating an algorithm from an object structure on which it operates. A practical result of this separation is the ability to add new operations to existent object structures without modifying the structures. It is one way to follow the open/closed principle.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Visitor_pattern))
@@ -320,7 +324,7 @@ tbd.: Traversable Demo
 
 - Currying / Partial application
 
-## Dependency Injection
+## Dependency Injection -> Parameter Binding
 > [...] Dependency injection is a technique whereby one object (or static method) supplies the dependencies of another object. A dependency is an object that can be used (a service). An injection is the passing of a dependency to a dependent object (a client) that would use it. The service is made part of the client's state. Passing the service to the client, rather than allowing a client to build or find the service, is the fundamental requirement of the pattern.
 >
 > This fundamental requirement means that using values (services) produced within the class from new or static methods is prohibited. The client should accept values passed in from outside. This allows the client to make acquiring dependencies someone else's problem. 
@@ -346,7 +350,7 @@ closure :: String -> Html
 
 
 
-## Adapter
+## Adapter -> Function Composition
 > "The adapter pattern is a software design pattern (also known as wrapper, an alternative naming shared with the decorator pattern) that allows the interface of an existing class to be used as another interface. It is often used to make existing classes work with others without modifying their source code." 
 > (Quoted from https://en.wikipedia.org/wiki/Adapter_pattern)
 
@@ -474,3 +478,5 @@ https://www.ibm.com/developerworks/library/j-ft10/index.html
 http://blog.ezyang.com/2010/05/design-patterns-in-haskel/
 
 https://staticallytyped.wordpress.com/2013/03/09/gang-of-four-patterns-with-type-classes-and-implicits-in-scala/
+
+[Scala Typeclassopedia](https://github.com/tel/scala-typeclassopedia)
