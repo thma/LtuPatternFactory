@@ -274,10 +274,15 @@ There are several predefined Monads available in the Haskell curated libraries a
 - 
 
 ## Visitor
-The idea of the Visitor pattern is to allow traversal of graphs while applying arbitrary logic to the nodes of the graph.
+
+> [...] the visitor design pattern is a way of separating an algorithm from an object structure on which it operates. A practical result of this separation is the ability to add new operations to existent object structures without modifying the structures. It is one way to follow the open/closed principle.
+> (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Visitor_pattern))
+
+
 In functional languages - and Haskell in particular - we have a whole armada of tools serving this purpose:
 * higher order functions like map, fold, filter and all their variants allow to "visit" lists
 * The Haskell typeclasses `Functor`, `Foldable`, `Traversable`, etc. provide a generic framework to allow visiting any algebraic datatype by just deriving one of these typeclasses.
+### Using Foldable
 ```haskell
 -- we are re-using the Exp data type from the Singleton example 
 -- and transform it into a Foldable type:
@@ -300,6 +305,10 @@ visitorDemo = do
 By virtue of the instance declaration Exp becomes a Foldable instance an can be used with arbitrary functions defined on Foldable like `length` in the example.
 
 `foldMap` can for example be used to write a filtering function `filterF`that collects all elements matching a predicate into a list. 
+
+### Using Traversable
+
+tbd.: Traversable Demo
 
 # Beyond Typeclass patterns
 

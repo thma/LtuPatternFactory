@@ -3,6 +3,7 @@ import Strategy
 import Singleton
 import Pipeline
 import Visitor
+import Adapter
 
 main :: IO ()
 main = do
@@ -11,4 +12,5 @@ main = do
   singletonDemo
   pipelineDemo
   visitorDemo
+  adapterDemo
 
