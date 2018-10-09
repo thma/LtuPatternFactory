@@ -1,6 +1,6 @@
 name:                LtuPatternFactory
 version:             0.1.0.0
--- synopsis:
+synopsis:            Comparing OO Design Paterns with Functional Programming concepts 
 -- description:
 homepage:            https://github.com/thma/LtuPatternFactory#readme
 license:             Apache-2.0
@@ -8,13 +8,19 @@ license-file:        LICENSE
 author:              Thomas Mahler
 maintainer:          thma@apache.org
 copyright:           2018 Thomas Mahler
-category:            Web
+category:            Programming
 build-type:          Simple
 cabal-version:       >=1.10
 extra-source-files:  README.md
 
 executable LtuPatternFactory
   hs-source-dirs:      src
+  other-modules:       Adapter
+                     , Builder
+                     , Pipeline
+                     , Singleton
+                     , Strategy
+                     , Visitor
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5

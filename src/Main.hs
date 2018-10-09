@@ -4,6 +4,7 @@ import Singleton
 import Pipeline
 import Visitor
 import Adapter
+import Builder
 
 main :: IO ()
 main = do
@@ -13,4 +14,5 @@ main = do
   pipelineDemo
   visitorDemo
   adapterDemo
+  builderDemo
 

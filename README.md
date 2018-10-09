@@ -273,6 +273,8 @@ So in a sense Monads could been called [programmable semicolons](http://book.rea
 
 There are several predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`.
 
+### Blockchain as Monad
+
 ## Monoid -- find Pattern
 
 - 
@@ -428,6 +430,10 @@ adapterDemo = do
     putStrLn ""
 ```
 
+## NullObject -> Maybe Monad
+- also explain how to avoid "staircase of death" with Maybe
+
+## Blockchain -> State Monad
 
 # Table of patterns
 |Name|Description|GOF|Functional Pendant|
