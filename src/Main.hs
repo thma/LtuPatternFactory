@@ -2,6 +2,7 @@ module Main where
 import Strategy  
 import Singleton
 import Pipeline
+import Composite
 import Visitor
 import Adapter
 import Builder
@@ -12,6 +13,7 @@ main = do
   strategyDemo
   singletonDemo
   pipelineDemo
+  compositeDemo
   visitorDemo
   adapterDemo
   builderDemo

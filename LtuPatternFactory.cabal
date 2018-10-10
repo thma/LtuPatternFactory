@@ -17,6 +17,7 @@ executable LtuPatternFactory
   hs-source-dirs:      src
   other-modules:       Adapter
                      , Builder
+                     , Composite
                      , Pipeline
                      , Singleton
                      , Strategy
