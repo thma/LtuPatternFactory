@@ -11,7 +11,7 @@ instance Semigroup TestComponent where
     (<>) = addTest
 
 instance Monoid TestComponent where
-    mempty = undefined
+    mempty = Empty
 
 performAllTests :: TestComponent -> [String]
 performAllTests Empty = []
