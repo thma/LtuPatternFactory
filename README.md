@@ -275,82 +275,159 @@ There are several predefined Monads available in the Haskell curated libraries a
 
 ### Blockchain as Monad
 
-## Monoid -> Composite
+## Composite -> SemiGroup -> Monoid
 
 >In software engineering, the composite pattern is a partitioning design pattern. The composite pattern describes a group of objects that is treated the same way as a single instance of the same type of object. The intent of a composite is to "compose" objects into tree structures to represent part-whole hierarchies. Implementing the composite pattern lets clients treat individual objects and compositions uniformly.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Composite_pattern))
 
-A typical example for the composite pattern is the hierarchical grouping of test cases to TestSuites in a testing framework. In Haskell we could model this with an abstract data type:
+A typical example for the composite pattern is the hierarchical grouping of test cases to TestSuites in a testing framework. Take for instance the following class diagram from the [JUnit cooks tour](http://junit.sourceforge.net/doc/cookstour/cookstour.htm) which shows how JUnit applies the Composite pattern to group `TestCases` to `TestSuites` while both of them implement the `Test` interface:
+
+![Composite Pattern used in Junit](http://junit.sourceforge.net/doc/cookstour/Image5.gif)
+
+
+In Haskell we could model this kind of hierachy with an algebraic data type (ADT):
 
 ```haskell
--- most simple version of a test case: just a string
-type TestCase = String
+-- the composite data structure: a Test can be either a single TestCase
+-- or a TestSuite holding a list of Tests
+data Test = TestCase TestCase
+          | TestSuite [Test]
 
--- the composite data structure: a TestComponent can be either a single TestCase
--- or a TestSuite holding a list of TestComponents
-data TestComponent = Test TestCase
-                   | TestSuite [TestComponent] deriving (Show, Eq)
+-- a test case produces a boolean when executed
+type TestCase = () -> Bool
 ```
-The function `runTest` as defined below can either execute a single TestCase or a composite TestSuite:
+The function `run` as defined below can either execute a single TestCase or a composite TestSuite:
 ```haskell
--- simulate execution of a TestComponent
-runTest :: TestComponent -> IO ()
-runTest (Test t)      = putStrLn $ "  " ++ t ++ " ... operational"
-runTest (TestSuite l) = do 
-    putStrLn $ "TestSuite"
-    mapM_ runTest l
+-- execution of a Test. 
+run :: Test -> Bool
+run (TestCase t)  = t () -- evaluating the TestCase by applying t to ()
+run (TestSuite l) = all (True ==) (map run l) -- running all tests in l and return True if all tests pass
+
+-- a few most simple test cases    
+t1 :: Test    
+t1 = TestCase (\() -> True)
+t2 :: Test 
+t2 = TestCase (\() -> True)
+t3 :: Test 
+t3 = TestCase (\() -> False)
+-- collecting all test cases in a TestSuite
+ts = TestSuite [t1,t2,t3]
 ```
-Let's use it in GHCI:
+As run is of type `run :: Test -> Bool` we can use it to execute single `TestCases` or complete `TestSuites`. 
+Let's try it in GHCI:
 ```
-ghci> t1 = Test "Flux capacitator"
-ghci> t2 = Test "Warp drive"
-ghci> t3 = Test "Tractor beam"
-ghci> ts = TestSuite [t2,t3]
-ghci> runTest t1
-  Flux capacitator ... operational
-ghci> runTest ts
-TestSuite
-  Warp drive ... operational
-  Tractor beam ... operational
+ghci> run t1
+True
+ghci> run ts
+False
 ```
 
-In order to aggregate TestComponents we define a function `add`. Adding two atomar Tests will result in a TestSuite holding a list with the two Tests. If a Test is added to a TestSuite, the test is added to the list of tests of the suite. Adding TestSuite will merge them, and adding an empty test to a TestComponent will just return the TestComponent:
+In order to aggregate TestComponents we follow the design of JUnit and define a function `addTest`. Adding two atomic Tests will result in a TestSuite holding a list with the two Tests. If a Test is added to a TestSuite, the test is added to the list of tests of the suite. Adding TestSuites will merge them.
+```haskell
+-- adding Tests
+addTest :: Test -> Test -> Test
+addTest t1@(TestCase _) t2@(TestCase _)   = TestSuite [t1,t2]
+addTest t1@(TestCase _) (TestSuite list)  = TestSuite ([t1] ++ list)
+addTest (TestSuite list) t2@(TestCase _)  = TestSuite (list ++ [t2])
+addTest (TestSuite l1) (TestSuite l2)     = TestSuite (l1 ++ l2)
+```
+
+If we take a closer look at `addTest` we will see that it is a associative binary operation on the set of `Test`s. 
+
+In mathemathics a set with an associative binary operation is a [Semigroup](https://en.wikipedia.org/wiki/Semigroup).
+
+We can thus make our type `Test` an instance of the typeclass `Semigroup` with the following declaration:
 
 ```haskell
-add :: TestComponent -> TestComponent -> TestComponent
-add (Test "") t                   = t
-add t (Test "")                   = t
-add t1@(Test _) t2@(Test _)       = TestSuite [t1,t2]
-add t1@(Test _) (TestSuite list)  = TestSuite ([t1] ++ list)
-add (TestSuite list) t2@(Test _)  = TestSuite (list ++ [t2])
-add (TestSuite l1) (TestSuite l2) = TestSuite (l1 ++ l2)
+instance Semigroup Test where
+    (<>)   = addTest
 ```
-As this operation has a neutral (or identity) element (`Test ""`) and is associative (`add (add a b) c == (add a (add b c))` TestComponent is a Monoid under `add`.
-We can thus make it an instance of the `Monoid` typeclass by defining:
+What's not visible from the JUnit class diagram is how typical object oriented implementations will have to deal with null-references. That is the implementations would have to make sure that the methods `run` and `addTest` will handle empty references correctly. 
+With Haskells algebraic data types we would rather make this explicit with a dedicated `Empty` element.
+Here are the changes we have to add to our code:
 ```haskell
-instance Semigroup TestComponent where
-    (<>)   = add
-instance Monoid TestComponent where
-    mempty = Test ""
+-- the composite data structure: a Test can be Empty, a single TestCase
+-- or a TestSuite holding a list of Tests
+data Test = Empty
+          | TestCase TestCase
+          | TestSuite [Test]
+
+-- execution of a Test. 
+run :: Test -> Bool
+run Empty         = True -- empty tests will pass
+run (TestCase t)  = t () -- evaluating the TestCase by applying t to ()
+--run (TestSuite l) = foldr ((&&) . run) True l
+run (TestSuite l) = all (True ==) (map run l) -- running all tests in l and return True if all tests pass
+
+-- addTesting Tests
+addTest :: Test -> Test -> Test
+addTest Empty t                           = t
+addTest t Empty                           = t
+addTest t1@(TestCase _) t2@(TestCase _)   = TestSuite [t1,t2]
+addTest t1@(TestCase _) (TestSuite list)  = TestSuite ([t1] ++ list)
+addTest (TestSuite list) t2@(TestCase _)  = TestSuite (list ++ [t2])
+addTest (TestSuite l1) (TestSuite l2)     = TestSuite (l1 ++ l2)
 ```
-We can now use all functions provided by the `Monoid` typeclass to work with our `TestComponent`:
+From our additions it's obvious that `Empty` is the identity element of the `addTest` function. In Algebra a Semigroup with an identity element is called *Monoid*:
+
+> In abstract algebra, [...] a monoid is an algebraic structure with a single associative binary operation and an identity element. 
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Monoid)
+
+
+With haskell we can declare `Test` as an instance of the `Monoid` typeclass by defining:
+```haskell
+instance Monoid Test where
+    mempty = Empty
+```
+We can now use all functions provided by the `Monoid` typeclass to work with our `Test`:
 
 ```haskell
 compositeDemo = do
-    let t1 = Test "Flux capacitator"
-    let t2 = Test "Warp drive"
-    let t3 = Test "Tractor beam"
-    let t4 = Test "Tricorder"
-    let ts1 = TestSuite [t1,t2]
-    let ts2 = TestSuite [t3,t4]
+    print $ run $ t1 <> t2
+    print $ run $ t1 <> t2 <> t3
+```
+We can also use the function `mconcat :: Monoid a => [a] -> a` on a list of `Tests`: mconcat composes a list of Tests into a single Test. That's exactly the mechanism of forming a TestSuite from atomic TestCases.
+```haskell
+compositeDemo = do
+    print $ run $ mconcat [t1,t2]
+    print $ run $ mconcat [t1,t2,t3]
+```
+This particular feature of `mconcat :: Monoid a => [a] -> a` to condense a list of Monoids to a single Monoid can be used to drastically simplify the design of our test framework.
 
-    runTest $ t1 <> t2 <> t3
-    runTest $ mconcat [t1,t2,t3,t4]
-    runTest $ mconcat [ts1,ts2]
+We need just one more hint from our mathematician friend:
+
+> functions are monoids if they return monoids
+> [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/05/17/composite-as-a-monoid-a-business-rules-example/)
+
+Currently our `TestCases` are defined as functions yielding boolean values:
+```haskell
+type TestCase = () -> Bool
+```
+If `Bool` was a `Monoid` we could use `mconcat` to form test suite aggregates. Unfortunately it isn't. But boolean values under `(&&)` form a `Monoid` (in Haskell it's called `All`).
+Actually this is exactly what we are looking for: running a TestSuite yields `True` if all TestCases in the suite pass.
+
+Thus our improved definition of TestCases is as follows:
+```haskell
+type SmartTestCase = () -> All
+```
+That is our test cases do not directly return a boolean value but an `All` wrapper, which allows automatic concatenation of test results to a single value. 
+Here are our redefined TestCases:
+```haskell
+tc1 :: SmartTestCase
+tc1 () = All True
+tc2 :: SmartTestCase
+tc2 () = All True
+tc3 :: SmartTestCase
+tc3 () = All False
 ```
 
-
-
+Now we can use `mconcat` to allow the handling of test suites without all the overhead of an abstract data type `Test`:
+```haskell
+compositeDemo = do
+    print $ getAll $ mconcat [tc1,tc2] ()
+    print $ getAll $ mconcat [tc1,tc2,tc3] ()
+```
+For more details on Composite as a Monoid please refer to the following blog:
 http://blog.ploeh.dk/2018/03/12/composite-as-a-monoid/
 
 - 

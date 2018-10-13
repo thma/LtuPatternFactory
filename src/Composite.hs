@@ -1,61 +1,71 @@
 module Composite where
+import Data.Semigroup (All(..))
 
--- most simple version of a test case: just a string
-type TestCase = String
+-- the composite data structure: a Test can be Empty, a single TestCase
+-- or a TestSuite holding a list of Tests
+data Test = Empty
+          | TestCase TestCase
+          | TestSuite [Test]
 
--- the composite data structure: a TestComponent can be Empty, a single TestCase
--- or a TestSuite holding a list of TestComponents
-data TestComponent = Test TestCase
-                   | TestSuite [TestComponent] deriving (Show, Eq)
+-- a test case produces a boolean when executed
+type TestCase = () -> Bool
 
--- in order to make TestComponent an instance of Monoid, we have to provide
+
+-- execution of a Test. 
+run :: Test -> Bool
+run Empty         = True
+run (TestCase t)  = t () -- evaluating the TestCase by applying t to ()
+--run (TestSuite l) = foldr ((&&) . run) True l
+run (TestSuite l) = all (True ==) (map run l) -- running all tests in l and return True if all tests pass
+
+
+-- addTesting Tests
+addTest :: Test -> Test -> Test
+addTest Empty t                           = t
+addTest t Empty                           = t
+addTest t1@(TestCase _) t2@(TestCase _)   = TestSuite [t1,t2]
+addTest t1@(TestCase _) (TestSuite list)  = TestSuite ([t1] ++ list)
+addTest (TestSuite list) t2@(TestCase _)  = TestSuite (list ++ [t2])
+addTest (TestSuite l1) (TestSuite l2)     = TestSuite (l1 ++ l2)
+
+
+-- in order to make Test an instance of Monoid, we have to provide
 -- an operator <> which is required to be associative
 -- and a neutral element mempty
-instance Semigroup TestComponent where
-    (<>) = add
-instance Monoid TestComponent where
-    mempty = Test ""
+instance Semigroup Test where
+    (<>) = addTest
+instance Monoid Test where
+    mempty = Empty
 
--- simulate execution of a TestComponent
-runTest :: TestComponent -> IO ()
-runTest (Test t)      = putStrLn $ "  " ++ t ++ " ... operational"
-runTest (TestSuite l) = do 
-    putStrLn $ "TestSuite"
-    mapM_ runTest l
+-- a few most simple test cases    
+t1 :: Test    
+t1 = TestCase (\() -> True)
+t2 :: Test 
+t2 = TestCase (\() -> True)
+t3 :: Test 
+t3 = TestCase (\() -> False)
+-- collecting all test cases in a TestSuite
+ts = TestSuite [t1,t2,t3]
 
--- adding TestComponents
-add :: TestComponent -> TestComponent -> TestComponent
-add (Test "") t                   = t
-add t (Test "")                   = t
-add t1@(Test _) t2@(Test _)       = TestSuite [t1,t2]
-add t1@(Test _) (TestSuite list)  = TestSuite ([t1] ++ list)
-add (TestSuite list) t2@(Test _)  = TestSuite (list ++ [t2])
-add (TestSuite l1) (TestSuite l2) = TestSuite (l1 ++ l2)
+
+type SmartTestCase = () -> All
+
+tc1 :: SmartTestCase
+tc1 () = All True
+tc2 :: SmartTestCase
+tc2 () = All True
+tc3 :: SmartTestCase
+tc3 () = All False
+
 
 compositeDemo = do
-    putStrLn "Composite -> Monoid"
-    let t1 = Test "Flux capacitator"
-    let t2 = Test "Warp drive"
-    let t3 = Test "Tractor beam"
-    let t4 = Test "Tricorder"
-    let ts1 = TestSuite [t1,t2]
-    let ts2 = TestSuite [t3,t4]
+    putStrLn "Composite -> SemiGroup -> Monoid"
 
-    runTest $ t1 <> t2 <> t3
-    putStrLn $ if (t1 <> t2) <> t3 == t1 <> (t2 <> t3)
-                then "adding tests is associative"
-                else "error in adding tests"
-    
-    runTest $ mconcat [t1,t2,t3,t4]
-    runTest $ mconcat [ts1,ts2]
+    print $ run $ t1 <> t2
+    print $ run $ t1 <> t2 <> t3
 
-    runTest $ t1 <> (t2 <> ts2)
-    runTest $ (t1 <> t2) <> ts2
+    print $ run $ mconcat [t1,t2]
+    print $ run $ mconcat [t1,t2,t3]
 
-    runTest $ ts1 <> (t3 <> t4)
-    runTest $ (ts1 <> t3) <> t4
-
-    let empty = Test ""
-    putStrLn $ if (t1 <> empty == empty <> t1) && (t1 == empty <> t1)
-                then "(Test \"\") is neutral element"
-                else "error: Empty is not the neutral element"
+    print $ getAll $ mconcat [tc1,tc2] ()
+    print $ getAll $ mconcat [tc1,tc2,tc3] ()

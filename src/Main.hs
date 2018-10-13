@@ -1,4 +1,5 @@
 module Main where
+import Data.Semigroup  
 import Strategy  
 import Singleton
 import Pipeline
@@ -13,7 +14,7 @@ main = do
   strategyDemo
   singletonDemo
   pipelineDemo
-  compositeDemo
+  --compositeDemo
   visitorDemo
   adapterDemo
   builderDemo
