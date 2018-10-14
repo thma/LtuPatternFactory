@@ -57,6 +57,8 @@ tc2 () = All True
 tc3 :: SmartTestCase
 tc3 () = All False
 
+run' :: SmartTestCase -> Bool
+run' tc = getAll $ tc ()
 
 compositeDemo = do
     putStrLn "Composite -> SemiGroup -> Monoid"
@@ -67,5 +69,6 @@ compositeDemo = do
     print $ run $ mconcat [t1,t2]
     print $ run $ mconcat [t1,t2,t3]
 
-    print $ getAll $ mconcat [tc1,tc2] ()
-    print $ getAll $ mconcat [tc1,tc2,tc3] ()
+    print $ run' tc1
+    print $ run' $ mconcat [tc1,tc2]
+    print $ run' $ mconcat [tc1,tc2,tc3]

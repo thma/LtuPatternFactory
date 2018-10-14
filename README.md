@@ -394,7 +394,7 @@ compositeDemo = do
 ```
 This particular feature of `mconcat :: Monoid a => [a] -> a` to condense a list of Monoids to a single Monoid can be used to drastically simplify the design of our test framework.
 
-We need just one more hint from our mathematician friend:
+We need just one more hint from our mathematician friends:
 
 > functions are monoids if they return monoids
 > [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/05/17/composite-as-a-monoid-a-business-rules-example/)
@@ -403,11 +403,13 @@ Currently our `TestCases` are defined as functions yielding boolean values:
 ```haskell
 type TestCase = () -> Bool
 ```
-If `Bool` was a `Monoid` we could use `mconcat` to form test suite aggregates. Unfortunately it isn't. But boolean values under `(&&)` form a `Monoid` (in Haskell it's called `All`).
-Actually this is exactly what we are looking for: running a TestSuite yields `True` if all TestCases in the suite pass.
+If `Bool` was a `Monoid` we could use `mconcat` to form test suite aggregates. Unfortunately it isn't. But boolean values under conjunction `(&&)` form a `Monoid`. In Haskell this Monoid is called `All`).
+Actually this is exactly what we are looking for: running a TestSuite yields `True` if all enclosed TestCases succeed.
 
 Thus our improved definition of TestCases is as follows:
 ```haskell
+import Data.Semigroup (All(..))
+
 type SmartTestCase = () -> All
 ```
 That is our test cases do not directly return a boolean value but an `All` wrapper, which allows automatic concatenation of test results to a single value. 
@@ -421,11 +423,21 @@ tc3 :: SmartTestCase
 tc3 () = All False
 ```
 
-Now we can use `mconcat` to allow the handling of test suites without all the overhead of an abstract data type `Test`:
+```haskell
+run' :: SmartTestCase -> Bool
+run' tc = getAll $ tc ()
+```
+
+Now we can evaluate single test cases or complex TestSuite with `run'`.
+We use `mconcat` to allow the handling of test suites without all the overhead of an abstract data type `Test`:
 ```haskell
 compositeDemo = do
-    print $ getAll $ mconcat [tc1,tc2] ()
-    print $ getAll $ mconcat [tc1,tc2,tc3] ()
+    -- execute a single test case
+    print $ run' tc1
+
+    --- execute a complex test suite
+    print $ run' $ mconcat [tc1,tc2]
+    print $ run' $ mconcat [tc1,tc2,tc3]
 ```
 For more details on Composite as a Monoid please refer to the following blog:
 http://blog.ploeh.dk/2018/03/12/composite-as-a-monoid/
