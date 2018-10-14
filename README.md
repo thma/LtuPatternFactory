@@ -396,23 +396,39 @@ This particular feature of `mconcat :: Monoid a => [a] -> a` to condense a list 
 
 We need just one more hint from our mathematician friends:
 
-> functions are monoids if they return monoids
+> Functions are monoids if they return monoids
 > [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/05/17/composite-as-a-monoid-a-business-rules-example/)
 
 Currently our `TestCases` are defined as functions yielding boolean values:
 ```haskell
 type TestCase = () -> Bool
 ```
-If `Bool` was a `Monoid` we could use `mconcat` to form test suite aggregates. Unfortunately it isn't. But boolean values under conjunction `(&&)` form a `Monoid`. In Haskell this Monoid is called `All`).
-Actually this is exactly what we are looking for: running a TestSuite yields `True` if all enclosed TestCases succeed.
+If `Bool` was a `Monoid` we could use `mconcat` to form test suite aggregates. `Bool` in itself is not a Monoid; but together with a binary associative operation like `(&&)` or `(||)` it will form a Monoid. 
 
-Thus our improved definition of TestCases is as follows:
+The intuitive semantics of a TestSuite is that a whole Suite is "green" only when all enclosed TestCases succeed. That is the conjunction of all TestCases must return `True`.
+
+ So we are looking for the Monoid of boolean values under conjunction `(&&)`. In Haskell this Monoid is called `All`):
+
 ```haskell
-import Data.Semigroup (All(..))
+-- | Boolean monoid under conjunction ('&&').
+-- >>> getAll (All True <> mempty <> All False)
+-- False
+-- >>> getAll (mconcat (map (\x -> All (even x)) [2,4,6,7,8]))
+-- False
+newtype All = All { getAll :: Bool }
 
+instance Semigroup All where
+        (<>) = coerce (&&)
+
+instance Monoid All where
+        mempty = All True
+```
+
+Making use of `All` our improved definition of TestCases is as follows:
+```haskell
 type SmartTestCase = () -> All
 ```
-That is our test cases do not directly return a boolean value but an `All` wrapper, which allows automatic concatenation of test results to a single value. 
+Now our test cases do not directly return a boolean value but an `All` wrapper, which allows automatic conjunction of test results to a single value. 
 Here are our redefined TestCases:
 ```haskell
 tc1 :: SmartTestCase
@@ -422,13 +438,14 @@ tc2 () = All True
 tc3 :: SmartTestCase
 tc3 () = All False
 ```
+We now implement a new evaluation function `run'` which evaluates a `SmartTestCase` (which may be either an atomic TestCase or a TestSuite assembled by `mconcat`) to a single boolean result.
 
 ```haskell
 run' :: SmartTestCase -> Bool
-run' tc = getAll $ tc ()
+run' tc = getAll $ tc ()  
 ```
 
-Now we can evaluate single test cases or complex TestSuite with `run'`.
+Now we can evaluate single TestCases or complex TestSuites with `run'`.
 We use `mconcat` to allow the handling of test suites without all the overhead of an abstract data type `Test`:
 ```haskell
 compositeDemo = do
