@@ -273,7 +273,9 @@ So in a sense Monads could been called [programmable semicolons](http://book.rea
 
 There are several predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`.
 
+TBD:
 ### Blockchain as Monad
+### Evaluator with State-Monad
 
 ## Composite -> SemiGroup -> Monoid
 
@@ -445,8 +447,9 @@ run' :: SmartTestCase -> Bool
 run' tc = getAll $ tc ()  
 ```
 
-Now we can evaluate single TestCases or complex TestSuites with `run'`.
-We use `mconcat` to allow the handling of test suites without all the overhead of an abstract data type `Test`:
+This version of `run` is much simpler than the original and we can completely avoid the rather laborious `addTest` function. We also don't need any composite type `Test`.
+By just sticking to the Haskell built-in typeclasses we achieve cleanly designed functionality with just a few lines of code.
+
 ```haskell
 compositeDemo = do
     -- execute a single test case
@@ -496,10 +499,11 @@ By virtue of the instance declaration Exp becomes a Foldable instance an can be 
 
 ### Using Traversable
 
-tbd.: Traversable Demo
+TBD: Traversable Demo
 
 # Beyond Typeclass patterns
 
+TBD:
 - Chain of Responsibility: ADT + fumction pattern matching the ADT (at least the distpatch variant)
 
 - Composite: ADT
@@ -617,48 +621,8 @@ adapterDemo = do
 
 ## Blockchain -> State Monad
 
-# Table of patterns
-|Name|Description|GOF|Functional Pendant|
-|---|---|---|---|
-|Abstract factory|Provide an interface for creating families of related or dependent objects without specifying their concrete classes.|Yes|x|
-|Builder|Separate the construction of a complex object from its representation, allowing the same construction process to create various representations.|Yes|x|
-|Dependency Injection|A class accepts the objects it requires from an injector instead of creating the objects directly.|No|x|
-|Factory method|Define an interface for creating a single object, but let subclasses decide which class to instantiate. Factory Method lets a class defer instantiation to subclasses.|Yes|x|
-|Lazy initialization|"Tactic of delaying the creation of an object, the calculation of a value, or some other expensive process until the first time it is needed. This pattern appears in the GoF catalog as ""virtual proxy"", an implementation strategy for the Proxy pattern."|Yes|x|
-|Multiton|Ensure a class has only named instances, and provide a global point of access to them.|No|x|
-|Object pool|Avoid expensive acquisition and release of resources by recycling objects that are no longer in use. Can be considered a generalisation of connection pool and thread pool patterns.|No|x|
-|Prototype|Specify the kinds of objects to create using a prototypical instance, and create new objects from the 'skeleton' of an existing object, thus boosting performance and keeping memory footprints to a minimum.|Yes|x|
-|Resource acquisition is initialization (RAII)|Ensure that resources are properly released by tying them to the lifespan of suitable objects.|No|x|
-|Singleton|Ensure a class has only one instance, and provide a global point of access to it.|Yes|x|
-|Adapter, Wrapper, or Translator|Convert the interface of a class into another interface clients expect. An adapter lets classes work together that could not otherwise because of incompatible interfaces. The enterprise integration pattern equivalent is the translator.|Yes|x|
-|Bridge|Decouple an abstraction from its implementation allowing the two to vary independently.|Yes|x|
-|Composite|Compose objects into tree structures to represent part-whole hierarchies. Composite lets clients treat individual objects and compositions of objects uniformly.|Yes|x|
-|Decorator|Attach additional responsibilities to an object dynamically keeping the same interface. Decorators provide a flexible alternative to subclassing for extending functionality.|Yes|x|
-|Extension object|Adding functionality to a hierarchy without changing the hierarchy.|No|x|
-|Facade|Provide a unified interface to a set of interfaces in a subsystem. Facade defines a higher-level interface that makes the subsystem easier to use.|Yes|x|
-|Flyweight|Use sharing to support large numbers of similar objects efficiently.|Yes|x|
-|Front controller|The pattern relates to the design of Web applications. It provides a centralized entry point for handling requests.|No|x|
-|Marker|Empty interface to associate metadata with a class.|No|x|
-|Module|Group several related elements, such as classes, singletons, methods, globally used, into a single conceptual entity.|No|x|
-|Proxy|Provide a surrogate or placeholder for another object to control access to it.|Yes|x|
-|Twin [19]|Twin allows modeling of multiple inheritance in programming languages that do not support this feature.|No|x|
-|Blackboard|Artificial intelligence pattern for combining disparate sources of data (see blackboard system)|No|x|
-|Chain of responsibility|Avoid coupling the sender of a request to its receiver by giving more than one object a chance to handle the request. Chain the receiving objects and pass the request along the chain until an object handles it.|Yes|x|
-|Command|Encapsulate a request as an object, thereby allowing for the parameterization of clients with different requests, and the queuing or logging of requests. It also allows for the support of undoable operations.|Yes|x|
-|Interpreter|Given a language, define a representation for its grammar along with an interpreter that uses the representation to interpret sentences in the language.|Yes|x|
-|Iterator|Provide a way to access the elements of an aggregate object sequentially without exposing its underlying representation.|Yes|x|
-|Mediator|Define an object that encapsulates how a set of objects interact. Mediator promotes loose coupling by keeping objects from referring to each other explicitly, and it allows their interaction to vary independently.|Yes|x|
-|Memento|Without violating encapsulation, capture and externalize an object's internal state allowing the object to be restored to this state later.|Yes|x|
-|Null object|Avoid null references by providing a default object.|No|x|
-|Observer or Publish/subscribe|Define a one-to-many dependency between objects where a state change in one object results in all its dependents being notified and updated automatically.|Yes|x|
-|Servant|Define common functionality for a group of classes. The servant pattern is also frequently called helper class or utility class implementation for a given set of classes. The helper classes generally have no objects hence they have all static methods that act upon different kinds of class objects.|No|x|
-|Specification|Recombinable business logic in a Boolean fashion.|No|x|
-|State|Allow an object to alter its behavior when its internal state changes. The object will appear to change its class.|Yes|x|
-|Strategy|Define a family of algorithms, encapsulate each one, and make them interchangeable. Strategy lets the algorithm vary independently from clients that use it.|Yes|x|
-|Template method|Define the skeleton of an algorithm in an operation, deferring some steps to subclasses. Template method lets subclasses redefine certain steps of an algorithm without changing the algorithm's structure.|Yes|x|
-|Visitor|Represent an operation to be performed on the elements of an object structure. Visitor lets a new operation be defined without changing the classes of the elements on which it operates.|Yes|x|
-
-
+## A Table of Patterns
+TBD: a comprehensive list of patterns with their functional counterpart
 
 # some interesting links
 https://www.ibm.com/developerworks/library/j-ft10/index.html
