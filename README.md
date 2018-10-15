@@ -2,7 +2,7 @@
 
 My first programming languages were Lisp, Scheme, and ML. When I later started to work in OO languages like C++ and Java I noticed that idioms that are standard vocabulary in functional programming (fp) were not so easy to achieve and required sophisticated structures. Books like [Design Patterns: Elements of Reusable Object-Oriented Software](https://en.wikipedia.org/wiki/Design_Patterns) were a great starting point to reason about those structures. One of my earliest findings was that several of the GoF-Patterns had a stark resemblance of structures that are built into in functional languages: for instance the strategy pattern corresponds to higher order functions in fp (more details see [below](#strategy)).
 
-Recently, while re-reading through the [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia) I thought it would be a good exercise to map the structure of software [design-patterns](https://en.wikipedia.org/wiki/Software_design_pattern#Classification_and_list) to the concepts found in the Haskell typeclass library an in functional programming in general.
+Recently, while re-reading through the [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia) I thought it would be a good exercise to map the structure of software [design-patterns](https://en.wikipedia.org/wiki/Software_design_pattern#Classification_and_list) to the concepts found in the Haskell typeclass library and in functional programming in general.
 
 By searching the web I found some blog entries studying specific patterns, but I did not come across any comprehensive study. As it seemed that nobody did this kind of work yet I found it worthy to spend some time on it and write down all my findings on the subject.
 
@@ -12,7 +12,7 @@ The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) 
 In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
 For each of the Typeclassopedia type classes (at least up to Traversable) I try to explain how it corresponds to structures applied in design patterns.
 I believe this kind of exposition could be helpful if you are either:
-* a programmer with an OO background who wants to get a better grip on how to implement complexer design in functional programming
+* a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
 * a functional programmer who wants to get a deeper intuition for type classes
  
 
@@ -274,8 +274,7 @@ So in a sense Monads could been called [programmable semicolons](http://book.rea
 There are several predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`.
 
 TBD:
-### Blockchain as Monad
-### Evaluator with State-Monad
+### Reimplementing the Evaluator with Writer-Monad
 
 ## Composite -> SemiGroup -> Monoid
 
@@ -501,14 +500,15 @@ By virtue of the instance declaration Exp becomes a Foldable instance an can be 
 
 TBD: Traversable Demo
 
+### Alternative approaches
+http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
+
 # Beyond Typeclass patterns
 
 TBD:
 - Chain of Responsibility: ADT + fumction pattern matching the ADT (at least the distpatch variant)
 
-- Composite: ADT
-
-- Template Method, type class
+- Template Method, like strategy, type class with default implemenations
 
 - Currying / Partial application
 
@@ -616,13 +616,23 @@ adapterDemo = do
     putStrLn ""
 ```
 
-## NullObject -> Maybe Monad
+## NullObject -> Maybe Monoid
 - also explain how to avoid "staircase of death" with Maybe
+http://blog.ploeh.dk/2018/04/23/null-object-as-identity/
 
 ## Blockchain -> State Monad
 
 ## A Table of Patterns
 TBD: a comprehensive list of patterns with their functional counterpart
+
+## Conclusion
+TBD:
+> While we (me included) have been on an a thirty-odd year long detour around object-orientation, I don't think all is lost. 
+> [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/)
+
+http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/
+http://blog.ploeh.dk/2017/10/04/from-design-patterns-to-category-theory/
+
 
 # some interesting links
 https://www.ibm.com/developerworks/library/j-ft10/index.html

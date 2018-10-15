@@ -14,7 +14,7 @@ main = do
   strategyDemo
   singletonDemo
   pipelineDemo
-  --compositeDemo
+  compositeDemo
   visitorDemo
   adapterDemo
   builderDemo
