@@ -1,6 +1,6 @@
 name:                LtuPatternFactory
 version:             0.1.0.0
-synopsis:            Comparing OO Design Paterns with Functional Programming concepts 
+synopsis:            Comparing OO Design Patterns with Functional Programming concepts
 -- description:
 homepage:            https://github.com/thma/LtuPatternFactory#readme
 license:             Apache-2.0

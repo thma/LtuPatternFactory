@@ -54,7 +54,7 @@ fetch x ((y,v):ys)
 
 singletonDemo :: IO ()
 singletonDemo = do
-    putStrLn "Singleton vs. Applicative Functor, Pointed (and let in general)"
+    putStrLn "Singleton -> Applicative Functor, Pointed (and let in general)"
     let exp = Mul (Add (Val 3) (Val 1)) 
                   (Mul (Val 2) (Var "pi"))
         env = [("pi", pi)]

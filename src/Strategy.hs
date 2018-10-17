@@ -12,7 +12,7 @@ context :: Num a => (a -> a) -> [a] -> [a]
 context = fmap
 
 strategyDemo = do
-    putStrLn "Strategy Pattern vs. Functor (and Higher Order Functions in general)"
+    putStrLn "Strategy Pattern -> Functor (and Higher Order Functions in general)"
     print $ context strategyId [1..10]
     print $ context strategyDouble [1..10]
     putStrLn ""

@@ -15,6 +15,7 @@ builder acc name = withName (acc, name)
 withName = undefined
 
 builderDemo = do
+    putStrLn "Builder -> ???"
     let acc1 = BankAccount {
                   accountNo = 1234
                 , name = "Marjin"

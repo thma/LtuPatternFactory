@@ -503,12 +503,14 @@ TBD: Traversable Demo
 ### Alternative approaches
 http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 
+## Template Method -> Typeclass default functions
+
+like strategy, type class with default implemenations
+
 # Beyond Typeclass patterns
 
 TBD:
 - Chain of Responsibility: ADT + fumction pattern matching the ADT (at least the distpatch variant)
-
-- Template Method, like strategy, type class with default implemenations
 
 - Currying / Partial application
 

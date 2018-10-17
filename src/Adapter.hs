@@ -44,6 +44,6 @@ addMinutesAdapter :: Int -> Minute -> Minute
 addMinutesAdapter x = unmarshalWM . addMinutesToWallTime x . marshalMW
 
 adapterDemo = do 
-    putStrLn "Adapter vs. function composition"
+    putStrLn "Adapter -> function composition"
     print $ addMinutesAdapter 100 $ Minute 400
     putStrLn ""

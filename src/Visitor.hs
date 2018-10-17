@@ -13,7 +13,7 @@ filterF :: Foldable f => (a -> Bool) -> f a -> [a]
 filterF p = foldMap (\a -> if p a then [a] else [])     
 
 visitorDemo = do
-    putStrLn "Visitor vs. Foldable, Traversable"
+    putStrLn "Visitor -> Foldable -> Traversable"
     let exp = Mul (Add (Val 3) (Val 2)) 
                   (Mul (Val 4) (Val 6))
     print exp

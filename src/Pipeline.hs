@@ -45,7 +45,7 @@ countingPipeline str =
   return str >>= return . length . words >>= return . (3 *)
 
 pipelineDemo = do 
-    putStrLn "Pipeline vs. Monad"
+    putStrLn "Pipeline -> Monad"
     print $ pipeline "hello world"
     print $ countingPipeline "hello counting world"
     putStrLn ""
