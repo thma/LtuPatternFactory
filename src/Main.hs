@@ -7,6 +7,7 @@ import Composite
 import Visitor
 import Adapter
 import Builder
+import TemplateMethod
 
 main :: IO ()
 main = do
@@ -18,4 +19,5 @@ main = do
   visitorDemo
   adapterDemo
   builderDemo
+  templateMethodDemo
 

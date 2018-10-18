@@ -17,12 +17,14 @@ newtype WallTime = WallTime (Int, Int) deriving (Show)
 
 -- this is our backend. It can add minutes to a WallTime representation
 addMinutesToWallTime :: Int -> WallTime -> WallTime
-addMinutesToWallTime x (WallTime (h, m)) = 
+addMinutesToWallTime x (WallTime (h, m)) =
     let (hAdd, mAdd) = x `quotRem` 60
         hNew = h + hAdd
-        mNew = m + mAdd        
-    in if mNew >= 60 
-        then WallTime ((hNew + 1) `rem` 24, mNew-60) 
+        mNew = m + mAdd
+    in if mNew >= 60
+        then
+            let (dnew, hnew') = (hNew + 1) `quotRem` 24
+            in  WallTime (24*dnew + hnew', mNew-60)
         else WallTime (hNew, mNew)
 
 -- this is our time representation in Minutes that we want to use in the frontend
