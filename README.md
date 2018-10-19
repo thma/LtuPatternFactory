@@ -505,7 +505,84 @@ http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 
 ## Template Method -> Typeclass default functions
 
-like strategy, type class with default implemenations
+> In software engineering, the template method pattern is a behavioral design pattern that defines the program skeleton of an algorithm in an operation, deferring some steps to subclasses. 
+> It lets one redefine certain steps of an algorithm without changing the algorithm's structure.
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Template_method_pattern)
+
+The TemplateMethod pattern is quite similar to the [StrategyPattern](#strategy---functor). The main difference is the level of granularity. 
+In Strategy a complete block of functionality - the Strategy - can be replaced. 
+In TemplateMethod the overall layout of an algorithm is predefined and only specific parts of it may be replaced.
+
+In functional programming the answer to this kind of problem is again the usage of higher order functions.
+
+In the following example we come back to the example for the [Adapter](#adapter---function-composition).
+The function `addMinutesAdapter` lays out a structure for interfacing to some kind of backend:
+1. marshalling the arguments into the backend format
+2. apply the backend logic to the marshalled arguments
+3. unmarshal the backend result data into the frontend format
+
+```haskell
+addMinutesAdapter :: Int -> Minute -> Minute
+addMinutesAdapter x = unmarshalWM . addMinutesToWallTime x . marshalMW
+```
+
+In this code the backend functionality - `addMinutesToWallTime` - is a hardcoded part of the overall structure.
+
+Let's assume we want to use different kind of backend implementations - for instance a mock replacement. 
+In this case we would like to keep the overall structure - the template - and would just make a specific part of it flexible.
+This sounds like an ideal candidate for the TemplateMethod pattern:
+```haskell
+addMinutesTemplate :: (Int -> WallTime -> WallTime) -> Int -> Minute -> Minute
+addMinutesTemplate f x =
+    unmarshalWM .
+    f x .
+    marshalMW
+```
+`addMinutesTemplate` has an additional parameter f of type `(Int -> WallTime -> WallTime)`. This parameter may be bound to `addMinutesToWallTime` or alternative implementations:
+```haskell
+-- implements linear addition (the normal case) even for values > 1440
+linearTimeAdd :: Int -> Minute -> Minute
+linearTimeAdd = addMinutesTemplate addMinutesToWallTime
+
+-- implements cyclic addition, respecting a 24 hour (1440 Min) cycle
+cyclicTimeAdd :: Int -> Minute -> Minute
+cyclicTimeAdd = addMinutesTemplate addMinutesToWallTime'
+```
+
+where `addMinutesToWallTime'` implements a silly 24 hour cyclic addition:
+
+```haskell
+-- a 24 hour (1440 min) cyclic version of addition: 1400 + 100 = 60
+addMinutesToWallTime' :: Int -> WallTime -> WallTime
+addMinutesToWallTime' x (WallTime (h, m)) =
+    let (hAdd, mAdd) = x `quotRem` 60
+        hNew = h + hAdd
+        mNew = m + mAdd
+    in if mNew >= 60
+        then WallTime ((hNew + 1) `rem` 24, mNew-60)
+        else WallTime (hNew, mNew)
+```
+
+And here is how we use it to do actual computations:
+```haskell
+templateMethodDemo = do
+    putStrLn $ "linear time: " ++ (show $ linearTimeAdd 100 (Minute 1400))
+    putStrLn $ "cyclic time: " ++ (show $ cyclicTimeAdd 100 (Minute 1400))
+```
+
+### Typeclass minimal implementations as template method
+
+> The template method is used in frameworks, where each implements the invariant parts of a domain's architecture, 
+> leaving "placeholders" for customization options. This is an example of inversion of control. 
+> The template method is used for the following reasons:
+>  
+> - Let subclasses implement varying behavior (through method overriding).
+> - Avoid duplication in the code: the general workflow structure is implemented once in the abstract class's algorithm, 
+>   and necessary variations are implemented in the subclasses.
+> - Control at what point(s) subclassing is allowed. As opposed to a simple polymorphic override, where the base method 
+>   would be entirely rewritten allowing radical change to the workflow, only the specific details of the workflow are 
+>   allowed to change.
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Template_method_pattern)
 
 # Beyond Typeclass patterns
 

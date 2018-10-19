@@ -21,6 +21,7 @@ executable LtuPatternFactory
                      , Pipeline
                      , Singleton
                      , Strategy
+                     , TemplateMethod
                      , Visitor
   main-is:             Main.hs
   default-language:    Haskell2010
