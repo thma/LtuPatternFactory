@@ -749,6 +749,8 @@ http://blog.ploeh.dk/2018/04/23/null-object-as-identity/
 
 ## Blockchain -> State Monad
 
+## Factory -> Function Currying
+
 ## A Table of Patterns
 TBD: a comprehensive list of patterns with their functional counterpart
 
@@ -756,6 +758,13 @@ TBD: a comprehensive list of patterns with their functional counterpart
 TBD:
 > While we (me included) have been on an a thirty-odd year long detour around object-orientation, I don't think all is lost. 
 > [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/)
+
+>  In the functional-programming world, traditional design patterns generally manifest in one of three ways:
+> - The pattern is absorbed by the language.
+> - The pattern solution still exists in the functional paradigm, but the implementation details differ.
+> - The solution is implemented using capabilities other languages or paradigms lack. (For example, many solutions that use metaprogramming are clean and elegant — and they're not possible in Java.)
+>
+> [Quoted from IBM developerworks](https://www.ibm.com/developerworks/library/j-ft10/index.html)
 
 http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/
 http://blog.ploeh.dk/2017/10/04/from-design-patterns-to-category-theory/
@@ -767,5 +776,7 @@ https://www.ibm.com/developerworks/library/j-ft10/index.html
 http://blog.ezyang.com/2010/05/design-patterns-in-haskel/
 
 https://staticallytyped.wordpress.com/2013/03/09/gang-of-four-patterns-with-type-classes-and-implicits-in-scala/
+
+http://norvig.com/design-patterns/design-patterns.pdf
 
 [Scala Typeclassopedia](https://github.com/tel/scala-typeclassopedia)
