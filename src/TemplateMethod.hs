@@ -42,5 +42,6 @@ templateMethodDemo = do
     putStrLn $ "cyclic time: " ++ (show $ cyclicTimeAdd 100 (Minute 1400))
     putStrLn ""
     let a = WallTime (3,20)
+    print $ mappend a a
     print $ mconcat [a,a,a,a,a,a,a,a,a]
     putStrLn ""
