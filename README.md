@@ -268,13 +268,13 @@ pipeline str =
 ghci> pipeline "hello world"
 Stream (6,2)
 ```
-What's noteworthy here is that Monads allow to make the mechanism of chaining functions explicit. We can define what `andThen` should mean in our pipeline by choosing a different Monad implementation.
-So in a sense Monads could been called [programmable semicolons](http://book.realworldhaskell.org/read/monads.html#id642960)
+What's noteworthy here is that Monads allow to make the mechanism of chaining functions *explicit*. We can define what `andThen` should mean in our pipeline by choosing a different Monad implementation.
+So in a sense Monads could be called [programmable semicolons](http://book.realworldhaskell.org/read/monads.html#id642960)
 
 There are several predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`.
 
-TBD:
-### Reimplementing the Evaluator with Writer-Monad
+TBD: 
+#### Reimplementing the Evaluator with Writer-Monad
 
 ## Composite -> SemiGroup -> Monoid
 
@@ -463,7 +463,7 @@ http://blog.ploeh.dk/2018/03/12/composite-as-a-monoid/
 
 - 
 
-## Visitor -> Foldable -> Traversable
+## Visitor -> Foldable
 
 > [...] the visitor design pattern is a way of separating an algorithm from an object structure on which it operates. A practical result of this separation is the ability to add new operations to existent object structures without modifying the structures. It is one way to follow the open/closed principle.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Visitor_pattern))
@@ -496,13 +496,21 @@ By virtue of the instance declaration Exp becomes a Foldable instance an can be 
 
 `foldMap` can for example be used to write a filtering function `filterF`that collects all elements matching a predicate into a list. 
 
-### Using Traversable
+#### Alternative approaches
+http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
+
+## Iterator -> Traversable
+
+> [...] the iterator pattern is a design pattern in which an iterator is used to traverse a container and access the container's elements. The iterator pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled. 
+> [Quoted from Wikipedia] (https://en.wikipedia.org/wiki/Iterator_pattern)
 
 TBD: Traversable Demo
 
-### Alternative approaches
-http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 
+## Typeclasses Category, Arrow & Co.
+Theses typeclasses aim at generalizing elements of Monads or Functors.
+
+If you have ideas how these typeclasses map to specific design patterns please let me know!
 
 # Beyond Typeclass patterns
 
