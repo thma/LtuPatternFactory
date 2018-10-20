@@ -21,4 +21,4 @@ main = do
   adapterDemo
   builderDemo
   templateMethodDemo
-
+  nullObjectDemo
