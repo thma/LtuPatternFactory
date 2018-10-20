@@ -61,7 +61,7 @@ Actually `map` is the fmap implementation for the List Functor instance:
 instance Functor [] where
     fmap = map
 ```
-Although it would be fair to say that the typeclass `Functor` captures the essential idea of the strategy pattern - namely the lifting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose. Other typeclasses like `Foldable` or `Traversable` can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context. 
+Although it would be fair to say that the typeclass `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose. Other typeclasses like `Foldable` or `Traversable` can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context. 
 
 
 
@@ -168,13 +168,13 @@ But with this design we missed an important feature of the chain of shell comman
 ```bash
 $ echo "hello world" | wc -w
 ```
-So we might say that `echo` *lifts* the String `"hello world"` into the stream context.
+So we might say that `echo` *injects* the String `"hello world"` into the stream context.
 We can capture this behaviour in a functional program like this:
 ```haskell
 -- The Stream type is a wrapper around an arbitrary payload type 'a'
 newtype Stream a = Stream a deriving (Show)
 
--- echo lifts an item of type 'a' into the Stream context
+-- echo injects an item of type 'a' into the Stream context
 echo :: a -> Stream a
 echo = Stream
 
@@ -193,7 +193,7 @@ ghci> pipeline "hello world"
 Stream 6  
 ```
 
-The `echo` function lifts any input into the `Stream` context:
+The `echo` function injects any input into the `Stream` context:
 ```haskell
 ghci> echo "hello world"
 Stream "hello world"
@@ -743,7 +743,24 @@ So the Monoid typeclass definition forms a *template* where the default implemen
 
 
 
-## NullObject -> Maybe Monoid
+## NullObject -> Maybe
+
+>[...] a null object is an object with no referenced value or with defined neutral ("null") behavior. The null object design pattern describes the uses of such objects and their behavior (or lack thereof).
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Null_object_pattern)
+
+In functional programming the null object pattern is typically formalized with option types:
+> [...] an option type or maybe type is a polymorphic type that represents encapsulation of an optional value; e.g., it is used as the return type of functions which may or may not return a meaningful value when they are applied. It consists of a constructor which either is empty (named None or `Nothing`), or which encapsulates the original data type `A` (written `Just A` or Some A).
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Option_type)
+
+In Haskell the most simple option type is `Maybe`. Let's directly dive into an instructive example:
+
+```haskell
+
+```
+
+
+
+
 - also explain how to avoid "staircase of death" with Maybe
 http://blog.ploeh.dk/2018/04/23/null-object-as-identity/
 

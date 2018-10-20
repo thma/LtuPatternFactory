@@ -8,6 +8,7 @@ import Visitor
 import Adapter
 import Builder
 import TemplateMethod
+import NullObject
 
 main :: IO ()
 main = do

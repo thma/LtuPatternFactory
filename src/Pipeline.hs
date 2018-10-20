@@ -5,7 +5,7 @@ module Pipeline where
 -- The Stream type is a wrapper around an arbitrary payload type 'a'
 newtype Stream a = Stream a deriving (Show)
 
--- echo lifts an item of type 'a' into the Stream context
+-- echo injects an item of type 'a' into the Stream context
 echo :: a -> Stream a
 echo = Stream
 

@@ -18,6 +18,7 @@ executable LtuPatternFactory
   other-modules:       Adapter
                      , Builder
                      , Composite
+                     , NullObject
                      , Pipeline
                      , Singleton
                      , Strategy
@@ -26,3 +27,4 @@ executable LtuPatternFactory
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
+                     , containers
