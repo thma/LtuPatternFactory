@@ -64,7 +64,7 @@ instance Functor [] where
 ```
 Although it would be fair to say that the typeclass `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose. Other typeclasses like `Foldable` or `Traversable` can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context. 
 
-
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
 
 ## Singleton -> Pointed -> Applicative
 > "The singleton pattern is a software design pattern that restricts the instantiation of a class to one object. This is useful when exactly one object is needed to coordinate actions across the system." 
@@ -94,6 +94,7 @@ Typeclasses provide several tools to make this kind of threading more convenient
 class Functor f => Pointed f where
     pure :: a -> f a
 ```
+
 
 
 ### Using Applicative Functor for threading of singletons
@@ -149,6 +150,8 @@ eval (Mul p q) = pure (*) <*> eval p  <*> eval q
 ```
 Any explicit handling of the variable `env` is now removed.
 (I took this example from the classic paper [Applicative programming with effects](http://www.soi.city.ac.uk/~ross/papers/Applicative.pdf) which details how `pure` and `<*>` correspond to the combinatory logic combinators `K` and `S`.)
+
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Singleton.hs)
 
 ## Pipeline -> Monad
 > In software engineering, a pipeline consists of a chain of processing elements (processes, threads, coroutines, functions, etc.), arranged so that the output of each element is the input of the next; the name is by analogy to a physical pipeline.
@@ -272,7 +275,9 @@ Stream (6,2)
 What's noteworthy here is that Monads allow to make the mechanism of chaining functions *explicit*. We can define what `andThen` should mean in our pipeline by choosing a different Monad implementation.
 So in a sense Monads could be called [programmable semicolons](http://book.realworldhaskell.org/read/monads.html#id642960)
 
-There are several predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`.
+To make this statement a bit clearer we will have a closer look at the internal workings of the `Maybe` Monad in the next section.
+
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Pipeline.hs)
 
 ### NullObject -> Maybe Monad
 
@@ -420,6 +425,9 @@ instance  Monad Maybe  where
 
 This elegant feature of `(>>=)` in the `Maybe` Monad allows us to avoid ugly and repetetive coding.  
 
+There are several predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`. But that's a different story...
+
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/NullObject.hs)
  
 #### TBD: Reimplementing the Evaluator with Writer-Monad
 
@@ -608,7 +616,7 @@ compositeDemo = do
 For more details on Composite as a Monoid please refer to the following blog:
 http://blog.ploeh.dk/2018/03/12/composite-as-a-monoid/
 
-- 
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Composite.hs)
 
 ## Visitor -> Foldable
 
@@ -645,6 +653,8 @@ By virtue of the instance declaration Exp becomes a Foldable instance an can be 
 
 #### Alternative approaches
 http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
+
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Visitor.hs)
 
 ## Iterator -> Traversable
 
@@ -772,6 +782,8 @@ adapterDemo = do
     putStrLn ""
 ```
 
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Adapter.hs)
+
 ## Template Method -> Typeclass default functions
 
 > In software engineering, the template method pattern is a behavioral design pattern that defines the program skeleton of an algorithm in an operation, deferring some steps to subclasses. 
@@ -888,6 +900,7 @@ So the Monoid typeclass definition forms a *template* where the default implemen
 
 (please note that it's generally possible to override the default implementations)
 
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/TemplateMethod.hs)
 
 ## TBD: Factory -> Function Currying
 
