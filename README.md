@@ -6,15 +6,16 @@ Recently, while re-reading through the [Typeclassopedia](https://wiki.haskell.or
 
 By searching the web I found some blog entries studying specific patterns, but I did not come across any comprehensive study. As it seemed that nobody did this kind of work yet I found it worthy to spend some time on it and write down all my findings on the subject.
 
+I think this kind of exposition could be helpful if you are either:
+* a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
+* a functional programmer who wants to get a deeper intuition for type classes.
+
+
 # The Patternopedia
 The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) is a now classic paper that introduces the Haskell type classes by clarifying their algebraic and category-theoretic background. In particular it explains the relationships among those type classes.
 
 In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
 For each of the Typeclassopedia type classes (at least up to Traversable) I try to explain how it corresponds to structures applied in design patterns.
-I believe this kind of exposition could be helpful if you are either:
-* a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
-* a functional programmer who wants to get a deeper intuition for type classes
- 
 
 
 ## Strategy -> Functor
@@ -273,8 +274,154 @@ So in a sense Monads could be called [programmable semicolons](http://book.realw
 
 There are several predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`.
 
-TBD: 
-#### Reimplementing the Evaluator with Writer-Monad
+### NullObject -> Maybe Monad
+
+>[...] a null object is an object with no referenced value or with defined neutral ("null") behavior. The null object design pattern describes the uses of such objects and their behavior (or lack thereof).
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Null_object_pattern)
+
+In functional programming the null object pattern is typically formalized with option types:
+> [...] an option type or maybe type is a polymorphic type that represents encapsulation of an optional value; e.g., it is used as the return type of functions which may or may not return a meaningful value when they are applied. It consists of a constructor which either is empty (named None or `Nothing`), or which encapsulates the original data type `A` (written `Just A` or Some A).
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Option_type)
+
+(See also: [Null Object as Identity](http://blog.ploeh.dk/2018/04/23/null-object-as-identity/))
+
+In Haskell the most simple option type is `Maybe`. Let's directly dive into an example. We define a reverse index, mapping songs to album titles.
+If we now lookup up a song title we may either be lucky and find the respective album or not so lucky when there is no album matching our song:
+
+```haskell
+import           Data.Map (Map, fromList) 
+import qualified Data.Map as Map (lookup) -- avoid clash with Prelude.lookup
+
+-- type aliases for Songs and Albums
+type Song   = String
+type Album  = String
+
+-- the simplified reverse song index
+songMap :: Map Song Album
+songMap = fromList
+    [("Baby Satellite","Microgravity")
+    ,("An Ending", "Apollo: Atmospheres and Soundtracks")]
+
+```
+We can lookup this map by using the function `Map.lookup :: Ord k => k -> Map k a -> Maybe a`.
+
+If no match is found it will return `Nothing` if a match is found it will return `Just match`:
+
+```haskell
+ghci> Map.lookup "Baby Satellite" songMap
+Just "Microgravity"
+ghci> Map.lookup "The Fairy Tale" songMap
+Nothing
+```
+Actually the `Maybe` type is defined as:
+```haskell
+data  Maybe a  =  Nothing | Just a 
+    deriving (Eq, Ord)
+```
+All code using the `Map.lookup` function will never be confronted with any kind of Exceptions, null pointers or other nasty things. Even in case of errors a lookup will always return a properly typed `Maybe` instance. By pattern matching for `Nothing` or `Just a` client code can react on failing matches or positive results:
+
+```haskell
+    case Map.lookup "Ancient Campfire" songMap of
+        Nothing -> print "sorry, could not find your song"
+        Just a  -> print a
+```
+Let's try to apply this to an extension of our simple song lookup.
+Let's assume that our music database has much more information available. Apart from a reverse index from songs to albums, there might also be an index mapping album titles to artists.
+And we might also have an index mapping artist names to their websites:
+```haskell
+type Song   = String
+type Album  = String
+type Artist = String
+type URL    = String
+
+songMap :: Map Song Album
+songMap = fromList
+    [("Baby Satellite","Microgravity")
+    ,("An Ending", "Apollo: Atmospheres and Soundtracks")]
+
+albumMap :: Map Album Artist
+albumMap = fromList
+    [("Microgravity","Biosphere")
+    ,("Apollo: Atmospheres and Soundtracks", "Brian Eno")]    
+
+artistMap :: Map Artist URL
+artistMap = fromList
+    [("Biosphere","http://www.biosphere.no//")
+    ,("Brian Eno", "http://www.brian-eno.net")]    
+
+loookup' :: Ord a => Map a b -> a -> Maybe b
+loookup' = flip Map.lookup    
+
+findAlbum :: Song -> Maybe Album
+findAlbum = loookup' songMap 
+
+findArtist :: Album -> Maybe Artist
+findArtist = loookup' albumMap
+
+findWebSite :: Artist -> Maybe URL
+findWebSite = loookup' artistMap
+```
+
+With all this information at hand we want to write a function that has an input parameter of type `Song` and returns a `Maybe URL` by going from song to album to artist to website url:
+```haskell
+findUrlFromSong :: Song -> Maybe URL
+findUrlFromSong song = 
+    case findAlbum song of
+        Nothing    -> Nothing
+        Just album -> 
+            case findArtist album of
+                Nothing     -> Nothing
+                Just artist ->
+                    case findWebSite artist of
+                        Nothing  -> Nothing
+                        Just url -> Just url
+```
+This code makes use of the pattern matching logic described before. It's worth to note that there is some nice circuit breaking happening in case of a `Nothing`. In this case `Nothing` is directly returned as result of the function and the rest of the case-ladder is not executed.
+What's not so nice is:
+
+>the dreaded ladder of code marching off the right of the screen
+> [Quoted from Real World Haskell](http://book.realworldhaskell.org/)
+
+For each find function we have to repeat the same ceremony of pattern matching on the result and either return `Nothing` or proceed with the next nested level. 
+
+The good news is that it is possible to avoid this ladder.
+We can rewrite our search by applying the `andThen` operator `>>=` as `Maybe` is an instance of `Monad`:
+```haskell
+findUrlFromSong' :: Song -> Maybe URL
+findUrlFromSong' song =
+    findAlbum song   >>= \album ->
+    findArtist album >>= \artist ->
+    findWebSite artist  
+```
+or even shorter as we can eliminate the lambda expressions by applying [eta-conversion](https://wiki.haskell.org/Eta_conversion):
+```haskell
+findUrlFromSong'' :: Song -> Maybe URL
+findUrlFromSong'' song =
+    findAlbum song >>= findArtist >>= findWebSite 
+```
+Using it in GHCi:
+```haskell
+ghci> findUrlFromSong'' "All you need is love"
+Nothing
+ghci> findUrlFromSong'' "An Ending"
+Just "http://www.brian-eno.net"
+```
+
+The expression `findAlbum song >>= findArtist >>= findWebSite` and the sequencing of actions in the [pipeline](#pipeline---monad) example `return str >>= return . length . words >>= return . (3 *)` have a similar structure.
+
+But the behaviour of both chains is quite different: In the Maybe Monad `a >>= b` does not evaluate b if `a == Nothing` but stops the whole chain of actions by simply returning `Nothing`. 
+
+The pattern matching and 'short-circuiting' is directly coded into the definition of `(>>=)` in the Monad implementation of `Maybe`:
+```haskell
+instance  Monad Maybe  where
+    (Just x) >>= k      = k x
+    Nothing  >>= _      = Nothing
+```
+
+This elegant feature of `(>>=)` in the `Maybe` Monad allows us to avoid ugly and repetetive coding.  
+
+ 
+#### TBD: Reimplementing the Evaluator with Writer-Monad
 
 ## Composite -> SemiGroup -> Monoid
 
@@ -740,152 +887,6 @@ But for `mappend` and `mconcat` default implementations are provided.
 So the Monoid typeclass definition forms a *template* where the default implementations define the 'invariant parts' of the typeclass and the part specified by us form the 'customization options'. 
 
 (please note that it's generally possible to override the default implementations)
-
-
-
-## NullObject -> Maybe
-
->[...] a null object is an object with no referenced value or with defined neutral ("null") behavior. The null object design pattern describes the uses of such objects and their behavior (or lack thereof).
-> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Null_object_pattern)
-
-In functional programming the null object pattern is typically formalized with option types:
-> [...] an option type or maybe type is a polymorphic type that represents encapsulation of an optional value; e.g., it is used as the return type of functions which may or may not return a meaningful value when they are applied. It consists of a constructor which either is empty (named None or `Nothing`), or which encapsulates the original data type `A` (written `Just A` or Some A).
-> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Option_type)
-
-(See also: [Null Object as Identity](http://blog.ploeh.dk/2018/04/23/null-object-as-identity/))
-
-In Haskell the most simple option type is `Maybe`. Let's directly dive into an example. We define a reverse index, mapping songs to album titles.
-If we now lookup up a song title we may either be lucky and find the respective album or not so lucky when there is no album matching our song:
-
-```haskell
-import           Data.Map (Map, fromList) 
-import qualified Data.Map as Map (lookup) -- avoid clash with Prelude.lookup
-
--- type aliases for Songs and Albums
-type Song   = String
-type Album  = String
-
--- the simplified reverse song index
-songMap :: Map Song Album
-songMap = fromList
-    [("Baby Satellite","Microgravity")
-    ,("An Ending", "Apollo: Atmospheres and Soundtracks")]
-
-```
-We can lookup this map by using the function `Map.lookup :: Ord k => k -> Map k a -> Maybe a`.
-
-If no match is found it will return `Nothing` if a match is found it will return `Just match`:
-
-```haskell
-ghci> Map.lookup "Baby Satellite" songMap
-Just "Microgravity"
-ghci> Map.lookup "The Fairy Tale" songMap
-Nothing
-```
-Actually the `Maybe`type is simply defined as:
-```haskell
-data  Maybe a  =  Nothing | Just a 
-    deriving (Eq, Ord)
-```
-All code using the `Map.lookup` function will never be confronted with any kind of Exceptions, null pointers or other nasty things. Even in case of errors lookup will always return a properly typed `Maybe` instance. By pattern matching for `Nothing` or `Just a` client code can react on failing matches or positive results:
-
-```haskell
-    case Map.lookup "Ancient Campfire" songMap of
-        Nothing -> print "sorry, could not find your song"
-        Just a  -> print a
-```
-Let's try to apply this to an extension of our simple song lookup.
-Let's assume that our music database has much more information available. Apart from a reverse index from songs to albums, there might also be an index mapping album titles to artists.
-And we might also have an index mapping artist names to their websites:
-```haskell
-type Song   = String
-type Album  = String
-type Artist = String
-type URL    = String
-
-songMap :: Map Song Album
-songMap = fromList
-    [("Baby Satellite","Microgravity")
-    ,("An Ending", "Apollo: Atmospheres and Soundtracks")]
-
-albumMap :: Map Album Artist
-albumMap = fromList
-    [("Microgravity","Biosphere")
-    ,("Apollo: Atmospheres and Soundtracks", "Brian Eno")]    
-
-artistMap :: Map Artist URL
-artistMap = fromList
-    [("Biosphere","http://www.biosphere.no//")
-    ,("Brian Eno", "http://www.brian-eno.net")]    
-
-loookup' :: Ord a => Map a b -> a -> Maybe b
-loookup' = flip Map.lookup    
-
-findAlbum :: Song -> Maybe Album
-findAlbum = loookup' songMap 
-
-findArtist :: Album -> Maybe Artist
-findArtist = loookup' albumMap
-
-findWebSite :: Artist -> Maybe URL
-findWebSite = loookup' artistMap
-```
-
-With all this information at hand we want to write a function that has an input parameter of type `Song` and returns a `Maybe URL` by going from song to album to artist to website url:
-```haskell
-findUrlFromSong :: Song -> Maybe URL
-findUrlFromSong song = 
-    case findAlbum song of
-        Nothing    -> Nothing
-        Just album -> 
-            case findArtist album of
-                Nothing     -> Nothing
-                Just artist ->
-                    case findWebSite artist of
-                        Nothing  -> Nothing
-                        Just url -> Just url
-```
-This code makes use of the pattern matching logic described before. It's worth to note that there is some nice circuit breaking happening in case of a `Nothing`. In this case `Nothing` is directly returned as a result and the rest of the case-ladder is not executed.
-What's not so nice is:
-
->the dreaded ladder of code marching off the right of the screen
-> [Quoted from Real World Haskell](http://book.realworldhaskell.org/)
-
-The good news is that it is possible to avoid this ladder.
-We can rewrite our search by applying the `andThen` operator `>>=` as `Maybe` is an instance of `Monad`:
-```haskell
-findUrlFromSong' :: Song -> Maybe URL
-findUrlFromSong' song =
-    findAlbum song   >>= \album ->
-    findArtist album >>= \artist ->
-    findWebSite artist  
-```
-or even shorter as we can eliminate the lambda expressions by applying [eta-conversion](https://wiki.haskell.org/Eta_conversion):
-```haskell
-findUrlFromSong'' :: Song -> Maybe URL
-findUrlFromSong'' song =
-    findAlbum song >>= findArtist >>= findWebSite 
-```
-Using it in GHCi:
-```haskell
-ghci> findUrlFromSong'' "All you need is love"
-Nothing
-ghci> findUrlFromSong'' "An Ending"
-Just "http://www.brian-eno.net"
-```
-
-The expression `findAlbum song >>= findArtist >>= findWebSite` and the sequencing of actions in the [pipeline](#pipeline---monad) example `return str >>= return . length . words >>= return . (3 *)` have a similar structure.
-
-But the behaviour of both chains is quite different: In the Maybe Monad `a >>= b` does not evaluate b if `a == Nothing` but stops the whole chain of actions by simply returning `Nothing`. 
-
-This 'short-circuiting' is directly coded into the definition of `>>=` in the Monad implementation of `Maybe`:
-```haskell
-instance  Monad Maybe  where
-    (Just x) >>= k      = k x
-    Nothing  >>= _      = Nothing
-```
-
-
 
 
 ## TBD: Factory -> Function Currying
