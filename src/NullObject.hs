@@ -50,7 +50,7 @@ findUrlFromSongDo :: Song -> Maybe URL
 findUrlFromSongDo song = do
     album   <- findAlbum song
     artist  <- findArtist album
-    return findWebSite artist
+    findWebSite artist
 
 findUrlFromSong' :: Song -> Maybe URL
 findUrlFromSong' song =

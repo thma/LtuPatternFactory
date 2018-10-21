@@ -752,6 +752,8 @@ In functional programming the null object pattern is typically formalized with o
 > [...] an option type or maybe type is a polymorphic type that represents encapsulation of an optional value; e.g., it is used as the return type of functions which may or may not return a meaningful value when they are applied. It consists of a constructor which either is empty (named None or `Nothing`), or which encapsulates the original data type `A` (written `Just A` or Some A).
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Option_type)
 
+(See also: [Null Object as Identity](http://blog.ploeh.dk/2018/04/23/null-object-as-identity/))
+
 In Haskell the most simple option type is `Maybe`. Let's directly dive into an example. We define a reverse index, mapping songs to album titles.
 If we now lookup up a song title we may either be lucky and find the respective album or not so lucky when there is no album matching our song:
 
@@ -785,7 +787,7 @@ Actually the `Maybe`type is simply defined as:
 data  Maybe a  =  Nothing | Just a 
     deriving (Eq, Ord)
 ```
-All code using the `Map.lookup` function will never be confronted with any kind of Exceptions, null pointers or other nasty things. Even in case of errors lookup will allways return a properly typed `Maybe` instance. By pattern matching for `Nothing` or `Just a` client code can react on failing matches or positive results:
+All code using the `Map.lookup` function will never be confronted with any kind of Exceptions, null pointers or other nasty things. Even in case of errors lookup will always return a properly typed `Maybe` instance. By pattern matching for `Nothing` or `Just a` client code can react on failing matches or positive results:
 
 ```haskell
     case Map.lookup "Ancient Campfire" songMap of
@@ -849,8 +851,8 @@ What's not so nice is:
 >the dreaded ladder of code marching off the right of the screen
 > [Quoted from Real World Haskell](http://book.realworldhaskell.org/)
 
-The good news is that it is possible to avoid this ladder by utilizing the Monad features of `Maybe`.
-We can rewrite our search by applying the `andThen` operator `>>=` as Maybe is an instance of Monad:
+The good news is that it is possible to avoid this ladder.
+We can rewrite our search by applying the `andThen` operator `>>=` as `Maybe` is an instance of `Monad`:
 ```haskell
 findUrlFromSong' :: Song -> Maybe URL
 findUrlFromSong' song =
@@ -858,7 +860,7 @@ findUrlFromSong' song =
     findArtist album >>= \artist ->
     findWebSite artist  
 ```
-or even shorter as we can eliminate the lambda notation due to eta-conversion (https://wiki.haskell.org/Eta_conversion):
+or even shorter as we can eliminate the lambda expressions by applying [eta-conversion](https://wiki.haskell.org/Eta_conversion):
 ```haskell
 findUrlFromSong'' :: Song -> Maybe URL
 findUrlFromSong'' song =
@@ -871,45 +873,27 @@ Nothing
 ghci> findUrlFromSong'' "An Ending"
 Just "http://www.brian-eno.net"
 ```
-Here is how `Maybe` implements the Monad logic:
+
+The expression `findAlbum song >>= findArtist >>= findWebSite` and the sequencing of actions in the [pipeline](#pipeline---monad) example `return str >>= return . length . words >>= return . (3 *)` have a similar structure.
+
+But the behaviour of both chains is quite different: In the Maybe Monad `a >>= b` does not evaluate b if `a == Nothing` but stops the whole chain of actions by simply returning `Nothing`. 
+
+This 'short-circuiting' is directly coded into the definition of `>>=` in the Monad implementation of `Maybe`:
 ```haskell
-- | @since 2.01
-instance Applicative Maybe where
-    pure = Just
-
-    Just f  <*> m       = fmap f m
-    Nothing <*> _m      = Nothing
-
-    liftA2 f (Just x) (Just y) = Just (f x y)
-    liftA2 _ _ _ = Nothing
-
-    Just _m1 *> m2      = m2
-    Nothing  *> _m2     = Nothing
-
--- | @since 2.01
 instance  Monad Maybe  where
     (Just x) >>= k      = k x
     Nothing  >>= _      = Nothing
-
-    (>>) = (*>)
-
-    fail _              = Nothing
-
 ```
 
 
 
-http://blog.ploeh.dk/2018/04/23/null-object-as-identity/
 
-## Blockchain -> State Monad
+## TBD: Factory -> Function Currying
 
-## Factory -> Function Currying
-
-## A Table of Patterns
+## TBD: A Table of Patterns
 TBD: a comprehensive list of patterns with their functional counterpart
 
-## Conclusion
-TBD:
+## TBD: Conclusion
 > While we (me included) have been on an a thirty-odd year long detour around object-orientation, I don't think all is lost. 
 > [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/)
 
