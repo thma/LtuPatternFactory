@@ -18,6 +18,7 @@ executable LtuPatternFactory
   other-modules:       Adapter
                      , Builder
                      , Composite
+                     , Iterator
                      , NullObject
                      , Pipeline
                      , Singleton

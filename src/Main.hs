@@ -9,6 +9,7 @@ import Adapter
 import Builder
 import TemplateMethod
 import NullObject
+import Iterator
 
 main :: IO ()
 main = do
@@ -22,3 +23,4 @@ main = do
   builderDemo
   templateMethodDemo
   nullObjectDemo
+  iteratorDemo
