@@ -657,7 +657,7 @@ http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 
 ## Iterator -> Traversable
 
-> [...] the iterator pattern is a design pattern in which an iterator is used to traverse a container and access the container's elements. The iterator pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled. 
+> [...] the iter pattern is a design pattern in which an iter is used to traverse a container and access the container's elements. The iter pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled. 
 > [Quoted from Wikipedia] (https://en.wikipedia.org/wiki/Iterator_pattern)
 
 
@@ -666,9 +666,8 @@ http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 private static int[] wordCountIterator(String str) {
     int nl=0, nw=0, nc=0;
     boolean readingWord = false;
-    Iterator<Character> iterator = str.chars().mapToObj(c -> (char) c).collect(Collectors.toList()).iterator();
-    while (iterator.hasNext()) {
-        Character c = iterator.next();
+    for (Iterator<Character> iter = getIteratorFor(str); iter.hasNext();) {
+        Character c = iter.next();
         nc++;
         if (c == '\n') {
             nl++;
@@ -681,6 +680,10 @@ private static int[] wordCountIterator(String str) {
         }
     }
     return new int[]{nl,nw,nc};
+}
+
+private static Iterator<Character> getIteratorFor(String str) {
+    return str.chars().mapToObj(c -> (char) c).collect(Collectors.toList()).iterator();
 }
 ```
 
