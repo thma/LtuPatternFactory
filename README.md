@@ -660,7 +660,50 @@ http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 > [...] the iterator pattern is a design pattern in which an iterator is used to traverse a container and access the container's elements. The iterator pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled. 
 > [Quoted from Wikipedia] (https://en.wikipedia.org/wiki/Iterator_pattern)
 
-TBD: Traversable Demo
+
+
+```java
+private static int[] wordCountIterator(String str) {
+    int nl=0, nw=0, nc=0;
+    boolean readingWord = false;
+    Iterator<Character> iterator = str.chars().mapToObj(c -> (char) c).collect(Collectors.toList()).iterator();
+    while (iterator.hasNext()) {
+        Character c = iterator.next();
+        nc++;
+        if (c == '\n') {
+            nl++;
+        }
+        if (c == ' ' || c == '\n' || c == '\t') {
+            readingWord = false;
+        } else if (readingWord == false) {
+            readingWord = true;
+            nw++;
+        }
+    }
+    return new int[]{nl,nw,nc};
+}
+```
+
+```java
+private static int[] wordCount(String str) {
+    int nl=0, nw=0, nc=0;
+    boolean readingWord = false;
+    char[] chars = str.toCharArray();
+    for (char c : str.toCharArray()) {
+        nc++;
+        if (c == '\n') {
+            nl++;
+        }
+        if (c == ' ' || c == '\n' || c == '\t') {
+            readingWord = false;
+        } else if (readingWord == false) {
+            readingWord = true;
+            nw++;
+        }
+    }
+    return new int[]{nl,nw,nc};
+}
+```
 
 
 ## Typeclasses Category, Arrow & Co.
