@@ -1,6 +1,5 @@
 module Visitor where
 import Singleton (Exp (..))
-import Data.Monoid (Sum (..), getSum)
 
 -- we are re-using the Exp data type from the Singleton example 
 -- and transform it into a Foldable type:
