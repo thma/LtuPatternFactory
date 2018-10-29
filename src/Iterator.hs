@@ -5,23 +5,19 @@ import Data.Functor.Const
 import Data.Monoid (Sum (..), getSum)
 
 instance Functor Exp where
-    fmap f (Var x)   = Var x
-    fmap f (Val a)   = Val $ f a
-    fmap f (Add x y) = Add (fmap f x) (fmap f y)
-    fmap f (Mul x y) = Mul (fmap f x) (fmap f y)
+    fmap f (Var x)       = Var x
+    fmap f (Val a)       = Val $ f a
+    fmap f (Add x y)     = Add (fmap f x) (fmap f y)
+    fmap f (Mul x y)     = Mul (fmap f x) (fmap f y)
 
 instance Traversable Exp where
     traverse g (Var x)   = pure $ Var x
     traverse g (Val x)   = Val <$> g x
-    traverse g (Add l r) = Add <$> traverse g l
-                               <*> traverse g r
-    traverse g (Mul l r) = Mul <$> traverse g l
-                               <*> traverse g r
+    traverse g (Add x y) = Add <$> traverse g x <*> traverse g y
+    traverse g (Mul x y) = Mul <$> traverse g x <*> traverse g y
 
 str :: [Char]
 str = "hello \n nice \t and \n busy world"
-
-
 
 type Count = Const (Sum Integer)
 count :: a -> Count b
@@ -61,6 +57,6 @@ iteratorDemo = do
     let exp = Mul (Add (Val 3) (Val 1)) 
                   (Mul (Val 2) (Var "pi"))
         env = [("pi", pi)]
-    print $ traverse (\x -> if even x then [x] else [2*x]) exp
+    print $ traverse (\x c -> if even x then [x] else [2*x]) exp 0
     --print $ traverse count str
                             

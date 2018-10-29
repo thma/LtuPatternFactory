@@ -660,39 +660,17 @@ http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 > [...] the iter pattern is a design pattern in which an iter is used to traverse a container and access the container's elements. The iter pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled. 
 > [Quoted from Wikipedia] (https://en.wikipedia.org/wiki/Iterator_pattern)
 
+### Iterating over a Tree
 
 
-```java
-private static int[] wordCountIterator(String str) {
-    int nl=0, nw=0, nc=0;
-    boolean readingWord = false;
-    for (Iterator<Character> iter = getIteratorFor(str); iter.hasNext();) {
-        Character c = iter.next();
-        nc++;
-        if (c == '\n') {
-            nl++;
-        }
-        if (c == ' ' || c == '\n' || c == '\t') {
-            readingWord = false;
-        } else if (readingWord == false) {
-            readingWord = true;
-            nw++;
-        }
-    }
-    return new int[]{nl,nw,nc};
-}
 
-private static Iterator<Character> getIteratorFor(String str) {
-    return str.chars().mapToObj(c -> (char) c).collect(Collectors.toList()).iterator();
-}
-```
+### Combining traversal operations
 
 ```java
 private static int[] wordCount(String str) {
     int nl=0, nw=0, nc=0;
     boolean readingWord = false;
-    char[] chars = str.toCharArray();
-    for (char c : str.toCharArray()) {
+    for (Character c : asList(str)) {
         nc++;
         if (c == '\n') {
             nl++;
@@ -706,7 +684,34 @@ private static int[] wordCount(String str) {
     }
     return new int[]{nl,nw,nc};
 }
+
+private static List<Character> asList(String str) {
+    return str.chars().mapToObj(c -> (char) c).collect(Collectors.toList());
+}
 ```
+
+```java
+    private static int[] wordCountIterator(String str) {
+        int nl=0, nw=0, nc=0;
+        boolean readingWord = false;
+        for (Iterator<Character> iter = asList(str).iterator(); iter.hasNext();) {
+            Character c = iter.next();
+            nc++;
+            if (c == '\n') {
+                nl++;
+            }
+            if (c == ' ' || c == '\n' || c == '\t') {
+                readingWord = false;
+            } else if (readingWord == false) {
+                readingWord = true;
+                nw++;
+            }
+        }
+        return new int[]{nl,nw,nc};
+    }
+```
+
+
 
 
 ## Typeclasses Category, Arrow & Co.
