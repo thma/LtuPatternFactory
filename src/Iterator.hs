@@ -3,6 +3,8 @@ import Singleton (Exp (..))
 import Visitor
 import Data.Functor.Const
 import Data.Monoid (Sum (..), getSum)
+import Control.Monad.State.Lazy
+import Control.Applicative
 
 instance Functor Exp where
     fmap f (Var x)       = Var x
@@ -31,9 +33,27 @@ cci = traverse cciBody
 
 lciBody :: Char -> Count a
 lciBody c = Const (if c == '\n' then 1 else 0)
+--lciBody c = Const Sum $ test (c == '\n')
 
 lci :: String -> Count [a]
 lci = traverse lciBody
+
+wcmBody :: Char -> State (Integer, Bool) Char
+wcmBody c = let s =  c /= ' ' in do
+                (n, w) <- get
+                put (n+test(not(w && s)), s)
+                return c
+
+{-               
+wciBody :: Char -> (WrappedMonad (Prod (State Bool) Count)) a
+wciBody c =  pure (state (updateState c)) where
+    updateState :: Char -> Bool -> (Integer, Bool)
+    updateState c w = let s = c /= ' ' in (if not(w && s) then 1 else 0, s)
+-}
+--wci = traverse wciBody
+
+test :: Bool -> Integer
+test b = if b then 1 else 0
 
 data Prod m n a = Prod {pfst:: m a, psnd:: n a} deriving (Show)
 
@@ -47,8 +67,6 @@ instance (Applicative m, Applicative n) => Applicative (Prod m n) where
     pure x = Prod (pure x) (pure x)
     mf <*> mx = Prod (pfst mf <*> pfst mx) (psnd mf <*> psnd mx)
 
---wciBody :: Char -> (Monad (State Bool) . Count) a
-
 clci :: String -> Prod Count Count [a]
 clci = traverse (cciBody `x` lciBody)
 
@@ -58,5 +76,5 @@ iteratorDemo = do
                   (Mul (Val 2) (Var "pi"))
         env = [("pi", pi)]
     print $ traverse (\x c -> if even x then [x] else [2*x]) exp 0
-    --print $ traverse count str
+    print $ clci str
                             

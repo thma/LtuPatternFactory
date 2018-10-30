@@ -666,20 +666,31 @@ http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 
 ### Combining traversal operations
 
+The Unix utility `wc` is a good example for a traversal operation that performs several different tasks while traversing its input:
+
+```bash
+echo "counting lines, words and characters in one traversal" | wc
+      1       8      54
+```
+The output simply means that our input has 1 line, 8 words and a total of 54 characters.
+Obviously an efficients implementation of `wc` will accumulate the three counters for lines, words and characters in a single pass of the input will not run three iterations for each counter separately.
+
+Here is a Java implementation:
+
 ```java
 private static int[] wordCount(String str) {
-    int nl=0, nw=0, nc=0;
-    boolean readingWord = false;
+    int nl=0, nw=0, nc=0;         // number of lines, number of words, number of characters
+    boolean readingWord = false;  // state information for "parsing" words
     for (Character c : asList(str)) {
-        nc++;
+        nc++;                     // count just any character
         if (c == '\n') {
-            nl++;
+            nl++;                 // count only newlines
         }
         if (c == ' ' || c == '\n' || c == '\t') {
-            readingWord = false;
+            readingWord = false;  // when detecting white space, signal end of word
         } else if (readingWord == false) {
-            readingWord = true;
-            nw++;
+            readingWord = true;   // when switching from white space to characters, signal new word
+            nw++;                 // increase the word counter only once while in a word
         }
     }
     return new int[]{nl,nw,nc};
@@ -689,29 +700,23 @@ private static List<Character> asList(String str) {
     return str.chars().mapToObj(c -> (char) c).collect(Collectors.toList());
 }
 ```
+Please note that the `for (Character c : asList(str)) {...}` notation is just syntactic sugar for 
 
 ```java
-    private static int[] wordCountIterator(String str) {
-        int nl=0, nw=0, nc=0;
-        boolean readingWord = false;
-        for (Iterator<Character> iter = asList(str).iterator(); iter.hasNext();) {
-            Character c = iter.next();
-            nc++;
-            if (c == '\n') {
-                nl++;
-            }
-            if (c == ' ' || c == '\n' || c == '\t') {
-                readingWord = false;
-            } else if (readingWord == false) {
-                readingWord = true;
-                nw++;
-            }
-        }
-        return new int[]{nl,nw,nc};
-    }
+for (Iterator<Character> iter = asList(str).iterator(); iter.hasNext();) {
+    Character c = iter.next();
+    ...
+}     
 ```
+For efficiency reasons this solution may be okay, but from a designers perspective the solution lacks clarity as the required logic for accumlating the three counters is heavily entangled within one code block. Just imagine how the complexity of the for-loop will increase once we have to add new features like counting bytes, counting white space or counting maximum line width.
+
+So we would like to be able to isolate the different counting algorithms (*separation of concerns*) and be able to combine them in a way that provides efficient one-time traversal.
 
 
+
+
+The wordcount example has been implemented according to ideas presented in the execellent paper 
+[The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
 
 
 ## Typeclasses Category, Arrow & Co.
