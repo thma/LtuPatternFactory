@@ -1,5 +1,4 @@
 module Main where
-import Data.Semigroup  
 import Strategy  
 import Singleton
 import Pipeline
