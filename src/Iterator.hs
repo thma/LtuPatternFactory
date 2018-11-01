@@ -1,3 +1,4 @@
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, UndecidableInstances #-}
 module Iterator where
 import Singleton (Exp (..))
 import Visitor
@@ -26,13 +27,48 @@ instance (Functor m, Functor n) => Functor (Prod m n) where
     fmap f (Prod m n) = Prod (fmap f m) (fmap f n)
 
 instance (Applicative m, Applicative n) => Applicative (Prod m n) where
-    pure x = Prod (pure x) (pure x)
+    pure x    = Prod (pure x) (pure x)
     mf <*> mx = Prod (pfst mf <*> pfst mx) (psnd mf <*> psnd mx)
 
 -- Functor Product
-x :: (Functor m, Functor n) => (a -> m b) -> (a -> n b) -> (a -> Prod m n b)
-(f `x` g) y = Prod (f y) (g y) 
+(<#>) :: (Functor m, Functor n) => (a -> m b) -> (a -> n b) -> (a -> Prod m n b)
+(f <#> g) y = Prod (f y) (g y) 
 
+newtype Comp m n a = Comp {unComp :: m (n a)} deriving (Show)
+
+instance (Functor m, Functor n) => Functor (Comp m n) where  
+    fmap f (Comp x) = Comp (fmap (fmap f) x)  
+
+instance (Applicative m, Applicative n) => Applicative (Comp m n) where
+    pure x                  = Comp (pure (pure x))
+    (Comp mf) <*> (Comp mx) = Comp (pure (<*>) <*> mf <*> mx)
+
+(<.>) :: (Functor m, Functor n) => (b -> n c) -> (a -> m b) -> (a -> (Comp m n) c)
+f <.> g = Comp . fmap f . g
+
+class Coerce a b | a -> b where
+    down :: a -> b
+    up   :: b -> a
+
+instance Coerce (Const a b) a where
+    down = getConst
+    up   = Const
+
+instance (Coerce(m a) b, Coerce(n a) c) => Coerce((Prod m n) a) (b,c) where
+    down mnx = (down (pfst mnx), down(psnd mnx))
+    up (x,y) = Prod(up x) (up y)
+
+instance (Functor m, Functor n, Coerce(m b)c, Coerce(n a)b) => Coerce((Comp m n) a) c where
+    down = down . fmap down . unComp
+    up   = Comp . fmap up . up    
+
+instance Coerce (m a) c => Coerce (WrappedMonad m a) c where
+    down = down . unwrapMonad
+    up   = WrapMonad . up
+
+instance Coerce (State s a) (s -> (a,s)) where
+    down = runState
+    up = state
 
 type Count = Const (Sum Integer)
 
@@ -47,34 +83,32 @@ cci = traverse cciBody
 
 
 lciBody :: Char -> Count a
-lciBody c = Const (Sum $ test (c == '\n'))
+lciBody c = up $ test (c == '\n')
 
-test :: Bool -> Integer
-test b = if b then 1 else 0
+test :: Bool -> Sum Integer
+test b = Sum $ if b then 1 else 0
 
 lci :: String -> Count [a]
 lci = traverse lciBody
 
 clci :: String -> Prod Count Count [a]
-clci = traverse (cciBody `x` lciBody)
+clci = traverse (cciBody <#> lciBody)
 
-{--
-wciBody :: Char -> (WrappedMonad (Prod (State Bool) Count)) a
-wciBody c =  pure $ state (updateState c) where
-    updateState :: Char -> Bool -> (Integer, Bool)
-    updateState c w = let s = c /= ' ' in (test (not(w && s)), s)
+wciBody :: Char -> Comp (WrappedMonad (State Bool)) Count a
+wciBody c = up (updateState c) where
+    updateState :: Char -> Bool -> (Sum Integer, Bool)
+    updateState c w = let s = not(isSpace c) in (test (not w && s), s)
+    isSpace :: Char -> Bool
+    isSpace c = c == ' ' || c == '\n' || c == '\t'
 
-wci :: String -> (WrappedMonad (Prod (State Bool) Count)) [a]
+wci :: String -> Comp (WrappedMonad (State Bool)) Count [a]
 wci = traverse wciBody
 
-clwci :: String -> (Prod (Prod Count Count) (WrappedMonad (Prod (State Bool) Count))) [a]
-clwci = traverse (cciBody `x` lciBody `x` wciBody)
+clwci :: String -> (Prod (Prod Count Count) (Comp (WrappedMonad (State Bool)) Count)) [a]
+clwci = traverse (cciBody <#> lciBody <#> wciBody)
 
---}
-
-str :: [Char]
-str = "hello \n nice \t and \n busy world"
-
+str :: String
+str = "hello nice \n and busy world"
 
 iteratorDemo = do
     putStrLn "Iterator -> Traversable"
@@ -83,12 +117,9 @@ iteratorDemo = do
         env = [("pi", pi)]
     print $ traverse (\x c -> if even x then [x] else [2*x]) exp 0
     print $ clci str
-    --print $ clwci str
+    let wordcount = clwci str
+    print $ pfst wordcount
+    print $ runState (unwrapMonad (unComp (psnd wordcount))) False
                             
 
-wcmBody :: Char -> State (Integer, Bool) Char
-wcmBody c = let s =  c /= ' ' in do
-                (n, w) <- get
-                put (n+test(not(w && s)), s)
-                return c
     
