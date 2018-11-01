@@ -1,8 +1,12 @@
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
+{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 module Iterator where
 import Singleton (Exp (..))
 import Visitor
-import Data.Functor.Const
+
+import Data.Functor.Product
+import Data.Functor.Compose
+import Data.Functor.Const               -- for Const
 import Data.Monoid (Sum (..), getSum)   -- for Sum
 import Control.Monad.State.Lazy         -- for State
 import Control.Applicative              -- for WrappedMonad
@@ -19,33 +23,15 @@ instance Traversable Exp where
     traverse g (Add x y) = Add <$> traverse g x <*> traverse g y
     traverse g (Mul x y) = Mul <$> traverse g x <*> traverse g y
 
--- the applicative product adventure
-
-data Prod m n a = Prod {pfst:: m a, psnd:: n a} deriving (Show)
-
-instance (Functor m, Functor n) => Functor (Prod m n) where    
-    fmap f (Prod m n) = Prod (fmap f m) (fmap f n)
-
-instance (Applicative m, Applicative n) => Applicative (Prod m n) where
-    pure x    = Prod (pure x) (pure x)
-    mf <*> mx = Prod (pfst mf <*> pfst mx) (psnd mf <*> psnd mx)
-
 -- Functor Product
-(<#>) :: (Functor m, Functor n) => (a -> m b) -> (a -> n b) -> (a -> Prod m n b)
-(f <#> g) y = Prod (f y) (g y) 
+(<#>) :: (Functor m, Functor n) => (a -> m b) -> (a -> n b) -> (a -> Product m n b)
+(f <#> g) y = Pair (f y) (g y) 
 
-newtype Comp m n a = Comp {unComp :: m (n a)} deriving (Show)
+-- Functor composition
+(<.>) :: (Functor m, Functor n) => (b -> n c) -> (a -> m b) -> (a -> (Compose m n) c)
+f <.> g = Compose . fmap f . g
 
-instance (Functor m, Functor n) => Functor (Comp m n) where  
-    fmap f (Comp x) = Comp (fmap (fmap f) x)  
-
-instance (Applicative m, Applicative n) => Applicative (Comp m n) where
-    pure x                  = Comp (pure (pure x))
-    (Comp mf) <*> (Comp mx) = Comp (pure (<*>) <*> mf <*> mx)
-
-(<.>) :: (Functor m, Functor n) => (b -> n c) -> (a -> m b) -> (a -> (Comp m n) c)
-f <.> g = Comp . fmap f . g
-
+--{--
 class Coerce a b | a -> b where
     down :: a -> b
     up   :: b -> a
@@ -54,13 +40,13 @@ instance Coerce (Const a b) a where
     down = getConst
     up   = Const
 
-instance (Coerce(m a) b, Coerce(n a) c) => Coerce((Prod m n) a) (b,c) where
+instance (Coerce(m a) b, Coerce(n a) c) => Coerce((Product m n) a) (b,c) where
     down mnx = (down (pfst mnx), down(psnd mnx))
-    up (x,y) = Prod(up x) (up y)
+    up (x,y) = Pair (up x) (up y)
 
-instance (Functor m, Functor n, Coerce(m b)c, Coerce(n a)b) => Coerce((Comp m n) a) c where
-    down = down . fmap down . unComp
-    up   = Comp . fmap up . up    
+instance (Functor m, Functor n, Coerce(m b)c, Coerce(n a)b) => Coerce((Compose m n) a) c where
+    down = down . fmap down . getCompose
+    up   = Compose . fmap up . up    
 
 instance Coerce (m a) c => Coerce (WrappedMonad m a) c where
     down = down . unwrapMonad
@@ -69,7 +55,7 @@ instance Coerce (m a) c => Coerce (WrappedMonad m a) c where
 instance Coerce (State s a) (s -> (a,s)) where
     down = runState
     up = state
-
+--}
 type Count = Const (Sum Integer)
 
 count :: a -> Count b
@@ -83,7 +69,7 @@ cci = traverse cciBody
 
 
 lciBody :: Char -> Count a
-lciBody c = up $ test (c == '\n')
+lciBody c = Const $ test (c == '\n')
 
 test :: Bool -> Sum Integer
 test b = Sum $ if b then 1 else 0
@@ -91,24 +77,29 @@ test b = Sum $ if b then 1 else 0
 lci :: String -> Count [a]
 lci = traverse lciBody
 
-clci :: String -> Prod Count Count [a]
+clci :: String -> Product Count Count [a]
 clci = traverse (cciBody <#> lciBody)
 
-wciBody :: Char -> Comp (WrappedMonad (State Bool)) Count a
-wciBody c = up (updateState c) where
+wciBody :: Char -> Compose (WrappedMonad (State Bool)) Count a
+wciBody c =  up (updateState c) where
     updateState :: Char -> Bool -> (Sum Integer, Bool)
     updateState c w = let s = not(isSpace c) in (test (not w && s), s)
     isSpace :: Char -> Bool
     isSpace c = c == ' ' || c == '\n' || c == '\t'
 
-wci :: String -> Comp (WrappedMonad (State Bool)) Count [a]
+wci :: String -> Compose (WrappedMonad (State Bool)) Count [a]
 wci = traverse wciBody
 
-clwci :: String -> (Prod (Prod Count Count) (Comp (WrappedMonad (State Bool)) Count)) [a]
+clwci :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
 clwci = traverse (cciBody <#> lciBody <#> wciBody)
 
 str :: String
 str = "hello nice \n and busy world"
+
+pfst :: Product f g a -> f a
+pfst (Pair fst _) = fst
+psnd :: Product f g a -> g a
+psnd (Pair _ snd) = snd
 
 iteratorDemo = do
     putStrLn "Iterator -> Traversable"
@@ -116,10 +107,9 @@ iteratorDemo = do
                 (Mul (Val 2) (Var "pi"))
         env = [("pi", pi)]
     print $ traverse (\x c -> if even x then [x] else [2*x]) exp 0
-    print $ clci str
-    let wordcount = clwci str
-    print $ pfst wordcount
-    print $ runState (unwrapMonad (unComp (psnd wordcount))) False
-                            
-
+    let wordcount = clwci str 
+    print $ getSum $ getConst $ pfst (pfst wordcount) 
+    print $ getSum $ getConst $ psnd (pfst wordcount)
+    print $ getSum $ getConst $ evalState (unwrapMonad (getCompose (psnd wordcount))) False
+                        
     
