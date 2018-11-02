@@ -9,6 +9,7 @@ import Builder
 import TemplateMethod
 import NullObject
 import Iterator
+import Coerce
 
 main :: IO ()
 main = do
