@@ -657,7 +657,7 @@ http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 
 ## Iterator -> Traversable
 
-> [...] the iter pattern is a design pattern in which an iter is used to traverse a container and access the container's elements. The iter pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled. 
+> [...] the iterator pattern is a design pattern in which an iterator is used to traverse a container and access the container's elements. The iterator pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled. 
 > [Quoted from Wikipedia] (https://en.wikipedia.org/wiki/Iterator_pattern)
 
 ### Iterating over a Tree
@@ -741,7 +741,7 @@ for (Iterator<Character> iter = asList(str).iterator(); iter.hasNext();) {
     ...
 }     
 ```
-For efficiency reasons this solution may be okay, but from a designers perspective the solution lacks clarity as the required logic for accumlating the three counters is heavily entangled within one code block. Just imagine how the complexity of the for-loop will increase once we have to add new features like counting bytes, counting white space or counting maximum line width.
+For efficiency reasons this solution may be okay, but from a design perspective the solution lacks clarity as the required logic for accumulating the three counters is heavily entangled within one code block. Just imagine how the complexity of the for-loop will increase once we have to add new features like counting bytes, counting white space or counting maximum line width.
 
 So we would like to be able to isolate the different counting algorithms (*separation of concerns*) and be able to combine them in a way that provides efficient one-time traversal.
 
@@ -762,8 +762,8 @@ cci = traverse cciBody
 > cci "hello world"
 Const (Sum {getSum = 11})
 ```
-For each character we just emit a `Const 1` which are elements of the `Sum Integer` monoid.
-This allows automatic summation over all collected elements.
+For each character we just emit a `Const 1` which are elements of type `Const (Sum Integer)`.
+As `(Sum Integer)` is the monoid of Integers under addition, this design allows automatic summation over all collected `Const` values.
 
 The next step of counting newlines looks similar:
 ```haskell
@@ -790,7 +790,7 @@ traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
 ```
 we had to define `cciBody` and `lciBody` so that their return types are `Applicative Functors`.
 The good news is that the product of two `Applicatives` is again an `Applicative` (the same holds true for Composition of `Applicatives`).
-With this knowledge we can now use traverse to use the product of `cciBody` and `lciBody`:
+With this knowledge we can now use `traverse` to use the product of `cciBody` and `lciBody`:
 
 ```haskell
 import Data.Functor.Product             -- Product of Functors
@@ -821,7 +821,7 @@ import Control.Applicative              -- WrappedMonad (wrapping a Monad as App
 import Data.Coerce (coerce)             -- Coercion (forcing types to match, when 
                                         -- their underlying representations are equal)
 
--- we use a (State Bool) monad to carry the 'isInWord' state through all invocations
+-- we use a (State Bool) monad to carry the 'readingWord' state through all invocations
 -- WrappedMonad is used to use the monad as an Applicative Functor
 -- This Applicative is then Composed with the actual Count a
 wciBody :: Char -> Compose (WrappedMonad (State Bool)) Count a
@@ -836,7 +836,7 @@ wci :: String -> Compose (WrappedMonad (State Bool)) Count [a]
 wci = traverse wciBody
 
 -- Forming the Product of character counting, line counting and word counting
--- and performing a one go traversal unsing this Functor product
+-- and performing a one go traversal using this Functor product
 clwci :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
 clwci = traverse (cciBody <#> lciBody <#> wciBody)
 
@@ -855,7 +855,7 @@ wc str =
 (1,2,13)
 ```
 
-The wordcount example has been implemented according to ideas presented in the execellent paper 
+This example has been implemented according to ideas presented in the paper 
 [The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
 
 
@@ -870,6 +870,8 @@ TBD:
 - Chain of Responsibility: ADT + pattern matching the ADT (at least the distpatch variant)
 
 - Currying / Partial application
+
+- Blockchain as Monadic chain of Actions
 
 ## Dependency Injection -> Parameter Binding
 > [...] Dependency injection is a technique whereby one object (or static method) supplies the dependencies of another object. A dependency is an object that can be used (a service). An injection is the passing of a dependency to a dependent object (a client) that would use it. The service is made part of the client's state. Passing the service to the client, rather than allowing a client to build or find the service, is the fundamental requirement of the pattern.
@@ -1058,13 +1060,13 @@ As an example let's extend the type `WallTime` by an associative binary operatio
 ```haskell
 addWallTimes :: WallTime -> WallTime -> WallTime
 addWallTimes a@(WallTime (h,m)) b =
-  let aMin = h*60 + m
-  in  addMinutesToWallTime aMin b
+    let aMin = h*60 + m
+    in  addMinutesToWallTime aMin b
 
 instance Semigroup WallTime where
-  (<>)   = addWallTimes
+    (<>)   = addWallTimes
 instance Monoid WallTime where
-  mempty = WallTime (0,0)
+    mempty = WallTime (0,0)
 ```
 Even though we specified only `mempty` and `(<>)` we can now use the functions `mappend :: Monoid a => a -> a -> a` and `mconcat :: Monoid a => [a] -> a` on WallTime instances:
 
@@ -1078,16 +1080,16 @@ By looking at the definition of the `Monoid` typeclass we can see how this 'magi
 
 ```haskell
 class Semigroup a => Monoid a where
-        -- | Identity of 'mappend'
-        mempty  :: a
+    -- | Identity of 'mappend'
+    mempty  :: a
 
-        -- | An associative operation
-        mappend :: a -> a -> a
-        mappend = (<>)
+    -- | An associative operation
+    mappend :: a -> a -> a
+    mappend = (<>)
 
-        -- | Fold a list using the monoid.
-        mconcat :: [a] -> a
-        mconcat = foldr mappend mempty
+    -- | Fold a list using the monoid.
+    mconcat :: [a] -> a
+    mconcat = foldr mappend mempty
 ```
 For `mempty` only a type requirement but no definition is given.
 But for `mappend` and `mconcat` default implementations are provided. 
@@ -1099,9 +1101,7 @@ So the Monoid typeclass definition forms a *template* where the default implemen
 
 ## TBD: Factory -> Function Currying
 
-## TBD: A Table of Patterns
-TBD: a comprehensive list of patterns with their functional counterpart
-
+<!--
 ## TBD: Conclusion
 > While we (me included) have been on an a thirty-odd year long detour around object-orientation, I don't think all is lost. 
 > [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/)
@@ -1115,7 +1115,7 @@ TBD: a comprehensive list of patterns with their functional counterpart
 
 http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/
 http://blog.ploeh.dk/2017/10/04/from-design-patterns-to-category-theory/
-
+-->
 
 # some interesting links
 https://www.ibm.com/developerworks/library/j-ft10/index.html
