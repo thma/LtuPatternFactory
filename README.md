@@ -4,7 +4,7 @@
     - [Strategy -> Functor](#strategy---functor) 
     - [Singleton -> Pointed -> Applicative](#singleton---pointed---applicative) 
     - [Pipeline -> Monad](#pipeline---monad)
-        - [NullObject -> Maybe Monad](#nullobject---maybe-monad)
+    - [NullObject -> Maybe Monad](#nullobject---maybe-monad)
     - [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
     - [Visitor -> Foldable](#visitor---foldable)
     - [Iterator -> Traversable](#iterator---traversable)
@@ -13,7 +13,6 @@
     - [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
     - [Adapter -> Function Composition](#adapter---function-composition)
     - [Template Method -> type class default functions](#template-method---type-class-default-functions)
-        - [type class minimal implementation as template method](#type-class-minimal-implementations-as-template-method)
 - [Some related links](#some-interesting-links)
 
 # Lambda the Ultimate Pattern Factory
@@ -298,7 +297,7 @@ To make this statement a bit clearer we will have a closer look at the internal 
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Pipeline.hs)
 
-### NullObject -> Maybe Monad
+## NullObject -> Maybe Monad
 
 >[...] a null object is an object with no referenced value or with defined neutral ("null") behavior. The null object design pattern describes the uses of such objects and their behavior (or lack thereof).
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Null_object_pattern)
@@ -876,6 +875,8 @@ wc str =
 
 This example has been implemented according to ideas presented in the paper 
 [The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
+
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
 
 
 ## Type classes Category, Arrow & Co.
