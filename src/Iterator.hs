@@ -42,11 +42,11 @@ cciBody = count
 cci :: String -> Count [a]
 cci = traverse cciBody
 
-lciBody :: Char -> Count a
-lciBody c = Const $ test (c == '\n')
-
 test :: Bool -> Sum Integer
 test b = Sum $ if b then 1 else 0
+
+lciBody :: Char -> Count a
+lciBody c = Const $ test (c == '\n')
 
 lci :: String -> Count [a]
 lci = traverse lciBody

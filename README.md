@@ -662,9 +662,42 @@ http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 
 ### Iterating over a Tree
 
+The most generic type class enabling iteration over algebraic data types is `Traversable` as it allows combinations of `map` and `fold` operations.
+We are re-using the `Exp` type from earlier examples to show what's needed for enabling iteration in functional languages.
 
+```haskell
+instance Functor Exp where
+    fmap f (Var x)       = Var x
+    fmap f (Val a)       = Val $ f a
+    fmap f (Add x y)     = Add (fmap f x) (fmap f y)
+    fmap f (Mul x y)     = Mul (fmap f x) (fmap f y)
+
+instance Traversable Exp where
+    traverse g (Var x)   = pure $ Var x
+    traverse g (Val x)   = Val <$> g x
+    traverse g (Add x y) = Add <$> traverse g x <*> traverse g y
+    traverse g (Mul x y) = Mul <$> traverse g x <*> traverse g y
+```
+With this declaration we can traverse an `Exp` tree:
+```haskell
+iteratorDemo = do
+    putStrLn "Iterator -> Traversable"
+    let exp = Mul (Add (Val 3) (Val 1)) 
+                (Mul (Val 2) (Var "pi"))
+        env = [("pi", pi)]
+    print $ traverse (\x c -> if even x then [x] else [2*x]) exp 0
+```
+In this example we are touching all (nested) `Val` elements and multiply all odd values by 2.
 
 ### Combining traversal operations
+
+Compared with `Foldable` or `Functor` the declaration of a `Traversable` instance looks a bit intimidating. In particular the type declaration for `traverse`:
+```haskell
+traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
+```
+looks like quite a bit of over-engineering for simple traversals as in the above example.
+
+In oder to explain real power of the `Traversable` type class we will look at a more sophisticated example in this section.
 
 The Unix utility `wc` is a good example for a traversal operation that performs several different tasks while traversing its input:
 
@@ -712,8 +745,115 @@ For efficiency reasons this solution may be okay, but from a designers perspecti
 
 So we would like to be able to isolate the different counting algorithms (*separation of concerns*) and be able to combine them in a way that provides efficient one-time traversal.
 
+We start with the simple task of character counting:
+```haskell
+type Count = Const (Sum Integer)
 
+count :: a -> Count b
+count _ = Const 1
 
+cciBody :: Char -> Count a
+cciBody = count
+
+cci :: String -> Count [a]
+cci = traverse cciBody
+
+-- and then in ghci:
+> cci "hello world"
+Const (Sum {getSum = 11})
+```
+For each character we just emit a `Const 1` which are elements of the `Sum Integer` monoid.
+This allows automatic summation over all collected elements.
+
+The next step of counting newlines looks similar:
+```haskell
+-- return (Sum 1) if true, else (Sum 0)
+test :: Bool -> Sum Integer
+test b = Sum $ if b then 1 else 0
+
+-- use the test function to emit (Sum 1) only when a newline char is detected
+lciBody :: Char -> Count a
+lciBody c = Const $ test (c == '\n')
+
+-- define the linecount using traverse
+lci :: String -> Count [a]
+lci = traverse lciBody
+
+-- and the in ghci:
+> lci "hello \n world"
+Const (Sum {getSum = 1})
+```
+Now let's try to combine character counting and line counting.
+In order to match the type declaration for `traverse`:
+```haskell
+traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
+```
+we had to define `cciBody` and `lciBody` so that their return types are `Applicative Functors`.
+The good news is that the product of two `Applicatives` is again an `Applicative` (the same holds true for Composition of `Applicatives`).
+With this knowledge we can now use traverse to use the product of `cciBody` and `lciBody`:
+
+```haskell
+import Data.Functor.Product             -- Product of Functors
+
+-- define infix operator for building a Functor Product
+(<#>) :: (Functor m, Functor n) => (a -> m b) -> (a -> n b) -> (a -> Product m n b)
+(f <#> g) y = Pair (f y) (g y) 
+
+-- use a single traverse to apply the Product of cciBody and lciBody
+clci :: String -> Product Count Count [a]
+clci = traverse (cciBody <#> lciBody)
+
+-- and then in ghci:
+> clci "hello \n world"
+Pair (Const (Sum {getSum = 13})) (Const (Sum {getSum = 1}))
+```
+So we have achieved our aim of separating line counting and character counting in separate functions while still being able to apply them in only one traversal.
+
+The only piece missing is the word counting. This is a bit tricky as it involves dealing with a state monad and wrapping it as an Applicative Functor:
+
+```haskell
+import Data.Functor.Compose             -- Composition of Functors
+import Data.Functor.Const               -- Const Functor
+import Data.Functor.Identity            -- Identity Functor (needed for coercion)
+import Data.Monoid (Sum (..), getSum)   -- Sum Monoid for Integers
+import Control.Monad.State.Lazy         -- State Monad
+import Control.Applicative              -- WrappedMonad (wrapping a Monad as Applicative Functor)
+import Data.Coerce (coerce)             -- Coercion (forcing types to match, when 
+                                        -- their underlying representations are equal)
+
+-- we use a (State Bool) monad to carry the 'isInWord' state through all invocations
+-- WrappedMonad is used to use the monad as an Applicative Functor
+-- This Applicative is then Composed with the actual Count a
+wciBody :: Char -> Compose (WrappedMonad (State Bool)) Count a
+wciBody c =  coerce (updateState c) where
+    updateState :: Char -> Bool -> (Sum Integer, Bool)
+    updateState c w = let s = not(isSpace c) in (test (not w && s), s)
+    isSpace :: Char -> Bool
+    isSpace c = c == ' ' || c == '\n' || c == '\t'
+
+-- using traverse to count words in a String
+wci :: String -> Compose (WrappedMonad (State Bool)) Count [a]
+wci = traverse wciBody
+
+-- Forming the Product of character counting, line counting and word counting
+-- and performing a one go traversal unsing this Functor product
+clwci :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
+clwci = traverse (cciBody <#> lciBody <#> wciBody)
+
+-- the actual wordcount implementation. 
+-- for any String a triple of line count, word count, character count is returned
+wc :: String -> (Integer, Integer, Integer)
+wc str = 
+    let raw = clwci str
+        cc  = coerce $ pfst (pfst raw)
+        lc  = coerce $ psnd (pfst raw)
+        wc  = coerce $ evalState (unwrapMonad (getCompose (psnd raw))) False
+    in (lc,wc,cc)
+
+-- and then in ghci:
+> wc "hello \n world"
+(1,2,13)
+```
 
 The wordcount example has been implemented according to ideas presented in the execellent paper 
 [The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
