@@ -1,3 +1,21 @@
+# Table of contents
+- [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
+- [The Patternopedia](#the-patternopedia)
+    - [Strategy -> Functor](#strategy---functor) 
+    - [Singleton -> Pointed -> Applicative](#singleton---pointed---applicative) 
+    - [Pipeline -> Monad](#pipeline---monad)
+        - [NullObject -> Maybe Monad](#nullobject---maybe-monad)
+    - [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
+    - [Visitor -> Foldable](#visitor---foldable)
+    - [Iterator -> Traversable](#iterator---traversable)
+    - [Type classes Category, Arrow & Co.](#type-classes-category-arrow--co)
+- [Beyond type class patterns](#beyond-type-class-patterns)
+    - [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
+    - [Adapter -> Function Composition](#adapter---function-composition)
+    - [Template Method -> type class default functions](#template-method---type-class-default-functions)
+        - [type class minimal implementation as template method](#type-class-minimal-implementations-as-template-method)
+- [Some related links](#some-interesting-links)
+
 # Lambda the Ultimate Pattern Factory
 
 My first programming languages were Lisp, Scheme, and ML. When I later started to work in OO languages like C++ and Java I noticed that idioms that are standard vocabulary in functional programming (fp) were not so easy to achieve and required sophisticated structures. Books like [Design Patterns: Elements of Reusable Object-Oriented Software](https://en.wikipedia.org/wiki/Design_Patterns) were a great starting point to reason about those structures. One of my earliest findings was that several of the GoF-Patterns had a stark resemblance of structures that are built into in functional languages: for instance the strategy pattern corresponds to higher order functions in fp (more details see [below](#strategy)).
@@ -9,6 +27,7 @@ By searching the web I found some blog entries studying specific patterns, but I
 I think this kind of exposition could be helpful if you are either:
 * a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
 * a functional programmer who wants to get a deeper intuition for type classes.
+
 
 
 # The Patternopedia
