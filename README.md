@@ -2,7 +2,7 @@
 
 My first programming languages were Lisp, Scheme, and ML. When I later started to work in OO languages like C++ and Java I noticed that idioms that are standard vocabulary in functional programming (fp) were not so easy to achieve and required sophisticated structures. Books like [Design Patterns: Elements of Reusable Object-Oriented Software](https://en.wikipedia.org/wiki/Design_Patterns) were a great starting point to reason about those structures. One of my earliest findings was that several of the GoF-Patterns had a stark resemblance of structures that are built into in functional languages: for instance the strategy pattern corresponds to higher order functions in fp (more details see [below](#strategy)).
 
-Recently, while re-reading through the [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia) I thought it would be a good exercise to map the structure of software [design-patterns](https://en.wikipedia.org/wiki/Software_design_pattern#Classification_and_list) to the concepts found in the Haskell typeclass library and in functional programming in general.
+Recently, while re-reading through the [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia) I thought it would be a good exercise to map the structure of software [design-patterns](https://en.wikipedia.org/wiki/Software_design_pattern#Classification_and_list) to the concepts found in the Haskell type class library and in functional programming in general.
 
 By searching the web I found some blog entries studying specific patterns, but I did not come across any comprehensive study. As it seemed that nobody did this kind of work yet I found it worthy to spend some time on it and write down all my findings on the subject.
 
@@ -52,7 +52,7 @@ ghci> context strategyDouble [1..10]
 [2,4,6,8,10,12,14,16,18,20]
 ```
 Instead of map we could use just any other function that accepts a function of type `Num a => a -> a` and applies it in a given context.
-In Haskell the application of a function in a computational context is generalized with the typeclass `Functor`:
+In Haskell the application of a function in a computational context is generalized with the type class `Functor`:
 ```haskell
 class  Functor f  where
     fmap :: (a -> b) -> f a -> f b
@@ -62,7 +62,7 @@ Actually `map` is the fmap implementation for the List Functor instance:
 instance Functor [] where
     fmap = map
 ```
-Although it would be fair to say that the typeclass `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose. Other typeclasses like `Foldable` or `Traversable` can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context. 
+Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose. Other type classes like `Foldable` or `Traversable` can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context. 
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
 
@@ -83,7 +83,7 @@ in  mainComputation
 
 Via the `let`-Binding we can thread the singleton through arbitrary code in the `in` block. All occurences of `singleton` in the `mainComputation`will point to the same instance.
 
-Typeclasses provide several tools to make this kind of threading more convenient or even to avoid explicit threading of instances.
+Type classes provide several tools to make this kind of threading more convenient or even to avoid explicit threading of instances.
 
 ### Using Pointed to create singletons
 
@@ -215,7 +215,7 @@ The interplay of a Context type `Stream a` and the functions `echo` and `|>` is 
 
 There is an interesting paper available elaborating on the monadic nature of Unix pipes: http://okmij.org/ftp/Computation/monadic-shell.html.
 
-Here is the definition of the Monad typeclass in Haskell:
+Here is the definition of the Monad type class in Haskell:
 ```Haskell
 class Applicative m => Monad m where
     -- | Sequentially compose two actions, passing any value produced
@@ -491,7 +491,7 @@ If we take a closer look at `addTest` we will see that it is a associative binar
 
 In mathemathics a set with an associative binary operation is a [Semigroup](https://en.wikipedia.org/wiki/Semigroup).
 
-We can thus make our type `Test` an instance of the typeclass `Semigroup` with the following declaration:
+We can thus make our type `Test` an instance of the type class `Semigroup` with the following declaration:
 
 ```haskell
 instance Semigroup Test where
@@ -529,12 +529,12 @@ From our additions it's obvious that `Empty` is the identity element of the `add
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Monoid)
 
 
-With haskell we can declare `Test` as an instance of the `Monoid` typeclass by defining:
+With haskell we can declare `Test` as an instance of the `Monoid` type class by defining:
 ```haskell
 instance Monoid Test where
     mempty = Empty
 ```
-We can now use all functions provided by the `Monoid` typeclass to work with our `Test`:
+We can now use all functions provided by the `Monoid` type class to work with our `Test`:
 
 ```haskell
 compositeDemo = do
@@ -601,7 +601,7 @@ run' tc = getAll $ tc ()
 ```
 
 This version of `run` is much simpler than the original and we can completely avoid the rather laborious `addTest` function. We also don't need any composite type `Test`.
-By just sticking to the Haskell built-in typeclasses we achieve cleanly designed functionality with just a few lines of code.
+By just sticking to the Haskell built-in type classes we achieve cleanly designed functionality with just a few lines of code.
 
 ```haskell
 compositeDemo = do
@@ -625,7 +625,7 @@ http://blog.ploeh.dk/2018/03/12/composite-as-a-monoid/
 
 In functional languages - and Haskell in particular - we have a whole armada of tools serving this purpose:
 * higher order functions like map, fold, filter and all their variants allow to "visit" lists
-* The Haskell typeclasses `Functor`, `Foldable`, `Traversable`, etc. provide a generic framework to allow visiting any algebraic datatype by just deriving one of these typeclasses.
+* The Haskell type classes `Functor`, `Foldable`, `Traversable`, etc. provide a generic framework to allow visiting any algebraic datatype by just deriving one of these type classes.
 ### Using Foldable
 ```haskell
 -- we are re-using the Exp data type from the Singleton example 
@@ -859,12 +859,12 @@ This example has been implemented according to ideas presented in the paper
 [The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
 
 
-## Typeclasses Category, Arrow & Co.
-Theses typeclasses aim at generalizing elements of Monads or Functors.
+## Type classes Category, Arrow & Co.
+Theses type classes aim at generalizing elements of Monads or Functors.
 
-If you have ideas how these typeclasses map to specific design patterns please let me know!
+If you have ideas how these type classes map to specific design patterns please let me know!
 
-# Beyond Typeclass patterns
+# Beyond type class patterns
 
 TBD:
 - Chain of Responsibility: ADT + pattern matching the ADT (at least the distpatch variant)
@@ -981,7 +981,7 @@ adapterDemo = do
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Adapter.hs)
 
-## Template Method -> Typeclass default functions
+## Template Method -> type class default functions
 
 > In software engineering, the template method pattern is a behavioral design pattern that defines the program skeleton of an algorithm in an operation, deferring some steps to subclasses. 
 > It lets one redefine certain steps of an algorithm without changing the algorithm's structure.
@@ -1048,15 +1048,15 @@ templateMethodDemo = do
     putStrLn $ "cyclic time: " ++ (show $ cyclicTimeAdd 100 (Minute 1400))
 ```
 
-### Typeclass minimal implementations as template method
+### type class minimal implementations as template method
 
 > The template method is used in frameworks, where each implements the invariant parts of a domain's architecture, 
 > leaving "placeholders" for customization options. This is an example of inversion of control. 
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Template_method_pattern)
 
-The Typeclasses in Haskells base library apply this template approach frequently to reduce the effort for implementing typeclass instances and to provide a predefined structure with specific 'customization options'. 
+The type classes in Haskells base library apply this template approach frequently to reduce the effort for implementing type class instances and to provide a predefined structure with specific 'customization options'. 
 
-As an example let's extend the type `WallTime` by an associative binary operation `addWallTimes` to form an instance of the `Monoid` typeclass
+As an example let's extend the type `WallTime` by an associative binary operation `addWallTimes` to form an instance of the `Monoid` type class
 ```haskell
 addWallTimes :: WallTime -> WallTime -> WallTime
 addWallTimes a@(WallTime (h,m)) b =
@@ -1076,7 +1076,7 @@ templateMethodDemo = do
     print $ mappend a a
     print $ mconcat [a,a,a,a,a,a,a,a,a]
 ```
-By looking at the definition of the `Monoid` typeclass we can see how this 'magic' is made possible:
+By looking at the definition of the `Monoid` type class we can see how this 'magic' is made possible:
 
 ```haskell
 class Semigroup a => Monoid a where
@@ -1093,7 +1093,7 @@ class Semigroup a => Monoid a where
 ```
 For `mempty` only a type requirement but no definition is given.
 But for `mappend` and `mconcat` default implementations are provided. 
-So the Monoid typeclass definition forms a *template* where the default implementations define the 'invariant parts' of the typeclass and the part specified by us form the 'customization options'. 
+So the Monoid type class definition forms a *template* where the default implementations define the 'invariant parts' of the type class and the part specified by us form the 'customization options'. 
 
 (please note that it's generally possible to override the default implementations)
 
