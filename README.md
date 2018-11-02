@@ -27,7 +27,12 @@ I think this kind of exposition could be helpful if you are either:
 * a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
 * a functional programmer who wants to get a deeper intuition for type classes.
 
-
+>This project is still work in progress, so please feel free to contact me with any corrections, adjustments, wishes and additional ideas you might have.
+>
+>Directions I'd like to cover in more depths are for instance:
+> - complete coverage of the GOF set of patterns
+> - coverage of category theory based patterns (any ideas are welcome!)
+> - coverage of patterns with a clear FP background, eg. MapReduce, Blockchain, Function-as-a-service 
 
 # The Patternopedia
 The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) is a now classic paper that introduces the Haskell type classes by clarifying their algebraic and category-theoretic background. In particular it explains the relationships among those type classes.
