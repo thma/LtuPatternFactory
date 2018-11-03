@@ -27,7 +27,8 @@ I think this kind of exposition could be helpful if you are either:
 * a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
 * a functional programmer who wants to get a deeper intuition for type classes.
 
->This project is still work in progress, so please feel free to contact me with any corrections, adjustments, wishes and additional ideas you might have.
+>This project is still work in progress, so please feel free to contact me with any corrections, adjustments, comments, suggestions and additional ideas you might have.
+> Please use the [Issue Tracker](https://github.com/thma/LtuPatternFactory/issues) to enter your requests.
 >
 >Directions I'd like to cover in more depths are for instance:
 > - complete coverage of the GOF set of patterns
