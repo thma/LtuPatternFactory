@@ -9,10 +9,8 @@ data BankAccount = BankAccount {
   , interestRate :: Double
 } deriving (Show)
 
-builder :: Int -> ((Int, String) -> (Int, String, String))
-builder acc name = withName (acc, name)
-
-withName = undefined
+defaultAccount :: Int -> BankAccount
+defaultAccount i = BankAccount i "" "" 0 0
 
 builderDemo = do
     putStrLn "Builder -> ???"
@@ -22,6 +20,10 @@ builderDemo = do
                 , branch = "Reikjavik"
                 , balance = 1000
                 , interestRate = 2.5
-                } 
-    putStrLn "build an account"
+                }
     print acc1
+    let acc2 = defaultAccount 4711
+    print acc2
+    let acc3 = acc2 {name="Hans Mejer", branch="London", balance=10000}
+    print acc3
+    
