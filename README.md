@@ -1127,6 +1127,17 @@ So the Monoid type class definition forms a *template* where the default impleme
 
 ## TBD: Factory -> Function Currying
 
+## Conclusions
+> Design patterns are reusable abstractions in object-oriented software. 
+> However, using current mainstream programming languages, these elements can only be expressed extra-linguistically: as prose,pictures, and prototypes. 
+> We believe that this is not inherent in the patterns themselves, but evidence of a lack of expressivity in the languages of today. 
+> We expect that, in the languages of the future, the code parts of design patterns will be expressible as reusable library components. 
+> Indeed, we claim that the languages of tomorrow will suffice; the future is not far away. All that is needed, in addition to commonly-available features, 
+> are higher-order and datatype-generic constructs; 
+> these features are already or nearly available now.  
+> Quoted from [Design Patterns as Higher-Order Datatype-Generic Programs](http://www.cs.ox.ac.uk/jeremy.gibbons/publications/hodgp.pdf)
+
+
 <!--
 ## TBD: Conclusion
 > While we (me included) have been on an a thirty-odd year long detour around object-orientation, I don't think all is lost. 
