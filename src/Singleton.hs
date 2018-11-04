@@ -1,4 +1,5 @@
 module Singleton where
+import IdiomBrackets
 
 data Exp a = 
       Var String
@@ -45,6 +46,14 @@ eval2 (Val i)   = pure i
 eval2 (Add p q) = pure (+) <*> eval2 p  <*> eval2 q
 eval2 (Mul p q) = pure (*) <*> eval2 p  <*> eval2 q
 
+-- using the Idiom Bracket syntax suggested by Conor McBride
+-- 'iI f a b ... Ii' stands for '[[f a b ...]]' which denotes 'pure f <*> a <*> b <*> ...'
+eval3 :: (Num a) => Exp a -> Env a -> a
+eval3 (Var x)   = fetch x
+eval3 (Val i)   = iI i Ii
+eval3 (Add p q) = iI (+) (eval3 p) (eval3 q) Ii
+eval3 (Mul p q) = iI (*) (eval3 p) (eval3 q) Ii
+
 -- simple environment lookup
 fetch :: String -> Env a -> a
 fetch x []        = error $ "variable " ++ x ++ " is not defined"
@@ -61,4 +70,5 @@ singletonDemo = do
     print $ eval exp env
     print $ eval1 exp env
     print $ eval2 exp env
+    print $ eval3 exp env
     putStrLn ""
