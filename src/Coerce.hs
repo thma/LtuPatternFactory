@@ -7,7 +7,7 @@ import Data.Functor.Const               -- Const Functor
 import Control.Applicative              -- WrappedMonad
 import Control.Monad.State.Lazy         -- State Monad
   
--- | This module provides explicition coercion.
+-- | This module provides explicit coercion.
 --   Just in case you want to know what's behind the "magic" Data.Coerce.coerce 
 class Coerce a b | a -> b where
     down :: a -> b
