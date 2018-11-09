@@ -1127,11 +1127,11 @@ So the Monoid type class definition forms a *template* where the default impleme
 
 ## TBD: Factory -> Function Currying
 
-<!--
+
 ### Builder -> record syntax, smart constructor
 
 The Builder patterns is frequently used to ease the construction of complex objects by providing a safe and convenient API to client code.
-In the following Jvaa example we define a (not so complex) POJO Class `BankAccount`:
+In the following Java example we define a POJO Class `BankAccount`:
 ```java
 public class BankAccount {
 
@@ -1156,9 +1156,8 @@ public class BankAccount {
     }
 }
 ```
-The class provides a package private construtor that takes 5 arguments that are used to fill the instance attributes.
-Using such constructors in client code is often considerd inconvenient and potentially unsafe as certain internal constraints on
-the attributes might not be maintained by a client code invoking this constructor.
+The class provides a package private constructor that takes 5 arguments that are used to fill the instance attributes.
+Using constructors with so many arguments is often considered inconvenient and potentially unsafe as certain constraints on the arguments might not be maintained by client code invoking this constructor.
 
 The typical solution is to provide a Builder class that is responsible for maintaining internal data constraints and providing a robust and convenient API.
 In the following example the Builder ensures that a BankAccount must have an accountNo and that non null values are provided for the String attributes:
@@ -1220,9 +1219,10 @@ public class BankAccountTest {
 
     public void testAccount() {
         BankAccountBuilder builder = new BankAccountBuilder(1234);
-        BankAccount account = builder.build();
+        // the builder can provide a dummy instance, that might be used for testing
+        BankAccount account = builder.build();        
         System.out.println(account);
-
+        // the builder provides a fluent API to construct regular instances
         BankAccount account1 =
                  builder.withName("Marjin Mejer")
                         .withBranch("Paris")
@@ -1239,9 +1239,14 @@ As we see the Builder can be either used to create dummy instaces that are still
 BankAccount {accountNo = 1234, name = "Dummy Customer", branch = "London", balance = 0.0, interestRate = 0.0}
 BankAccount {accountNo = 1234, name = "Marjin Mejer", branch = "Paris", balance = 10000.0, interestRate = 2.0}
 ```
--->
-<!--
-In functional languages there is typically no need for the Builder patterns as the languages already provide infrastructure for safely constructing instances.
+
+From an API client perspective the Builder pattern can help to provide safe and convenient object construction which is not provided by the Java core language.
+As the Builder code is quite a redundant (e.g. having all attributes of the actual instance class)Builders are typically generated (e.g. with [Lombok](https://projectlombok.org/features/Builder)).
+
+
+In functional languages there is usually no need for the Builder pattern as the languages already provide infrastructure for safely constructing instances.
+
+The following example shows how the above example could be solved in Haskell:
 ```haskell
 data BankAccount = BankAccount {
     accountNo    :: Int
@@ -1251,26 +1256,29 @@ data BankAccount = BankAccount {
   , interestRate :: Double
 } deriving (Show)
 
+-- a "smart constructor" that just need a unique int to construct a BankAccount
 buildAccount :: Int -> BankAccount
 buildAccount i = BankAccount i "Dummy Customer" "London" 0 0
 
 builderDemo = do
+    -- construct a dummmy instance 
     let account = buildAccount 1234
     print account
+    -- use record syntax to create a modified clone of the dummy instance
     let account1 = account {name="Marjin Mejer", branch="Paris", balance=10000, interestRate=2}
     print account
 
+    -- directly using record syntax to create an instance
     let account2 = BankAccount {
-          accountNo = 5678
-        , name = "Marjin"
-        , branch = "Reikjavik"
-        , balance = 1000
+          accountNo    = 5678
+        , name         = "Marjin"
+        , branch       = "Reikjavik"
+        , balance      = 1000
         , interestRate = 2.5
         }
     print account2
     
 ```
--->
 
 ## Conclusions
 > Design patterns are reusable abstractions in object-oriented software. 
