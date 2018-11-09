@@ -65,7 +65,7 @@ strategyDouble n = 2*n
 -- now we define a context that applies a function of type Num a => a -> a to a list of a's:
 context :: Num a => (a -> a) -> [a] -> [a]
 context f l = map f l
--- according to the rules of currying this can be abbreviated to:
+-- using point-free notation this can be written as:
 context = map
 ``` 
 The `context` function uses higher order `map` function  (`map :: (a -> b) -> [a] -> [b]`) to apply the strategies to lists of numbers:
@@ -1126,6 +1126,151 @@ So the Monoid type class definition forms a *template* where the default impleme
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/TemplateMethod.hs)
 
 ## TBD: Factory -> Function Currying
+
+<!--
+### Builder -> record syntax, smart constructor
+
+The Builder patterns is frequently used to ease the construction of complex objects by providing a safe and convenient API to client code.
+In the following Jvaa example we define a (not so complex) POJO Class `BankAccount`:
+```java
+public class BankAccount {
+
+    private int accountNo;
+    private String name;
+    private String branch;
+    private double balance;
+    private double interestRate;
+
+    BankAccount(int accountNo, String name, String branch, double balance, double interestRate) {
+        this.accountNo = accountNo;
+        this.name = name;
+        this.branch = branch;
+        this.balance = balance;
+        this.interestRate = interestRate;
+    }
+
+    @Override
+    public String toString() {
+        return "BankAccount {accountNo = " + accountNo + ", name = \"" + name
+                + "\", branch = \"" + branch + "\", balance = " + balance + ", interestRate = " + interestRate + "}";
+    }
+}
+```
+The class provides a package private construtor that takes 5 arguments that are used to fill the instance attributes.
+Using such constructors in client code is often considerd inconvenient and potentially unsafe as certain internal constraints on
+the attributes might not be maintained by a client code invoking this constructor.
+
+The typical solution is to provide a Builder class that is responsible for maintaining internal data constraints and providing a robust and convenient API.
+In the following example the Builder ensures that a BankAccount must have an accountNo and that non null values are provided for the String attributes:
+
+```java
+public class BankAccountBuilder {
+
+    private int accountNo;
+    private String name;
+    private String branch;
+    private double balance;
+    private double interestRate;
+
+    public BankAccountBuilder(int accountNo) {
+        this.accountNo = accountNo;
+        this.name = "Dummy Customer";
+        this.branch = "London";
+        this.balance = 0;
+        this.interestRate = 0;
+    }
+
+    public BankAccountBuilder withAccountNo(int accountNo) {
+        this.accountNo = accountNo;
+        return this;
+    }
+
+    public BankAccountBuilder withName(String name) {
+        this.name = name;
+        return this;
+    }
+
+    public BankAccountBuilder withBranch(String branch) {
+        this.branch = branch;
+        return this;
+    }
+
+    public BankAccountBuilder withBalance(double balance) {
+        this.balance = balance;
+        return this;
+    }
+
+    public BankAccountBuilder withInterestRate(double interestRate) {
+        this.interestRate = interestRate;
+        return this;
+    }
+
+    public BankAccount build() {
+        return new BankAccount(this.accountNo, this.name, this.branch, this.balance, this.interestRate);
+    }
+}
+```
+Next comes an example of how the builder is used in client code:
+```java
+public class BankAccountTest {
+
+    public static void main(String[] args) {
+        new BankAccountTest().testAccount();
+    }
+
+    public void testAccount() {
+        BankAccountBuilder builder = new BankAccountBuilder(1234);
+        BankAccount account = builder.build();
+        System.out.println(account);
+
+        BankAccount account1 =
+                 builder.withName("Marjin Mejer")
+                        .withBranch("Paris")
+                        .withBalance(10000)
+                        .withInterestRate(2)
+                        .build();
+
+        System.out.println(account1);
+    }
+}
+```
+As we see the Builder can be either used to create dummy instaces that are still safe to use (e.g. for test cases) or by using the `withXxx` methods to populate all attributs:
+```haskell
+BankAccount {accountNo = 1234, name = "Dummy Customer", branch = "London", balance = 0.0, interestRate = 0.0}
+BankAccount {accountNo = 1234, name = "Marjin Mejer", branch = "Paris", balance = 10000.0, interestRate = 2.0}
+```
+-->
+<!--
+In functional languages there is typically no need for the Builder patterns as the languages already provide infrastructure for safely constructing instances.
+```haskell
+data BankAccount = BankAccount {
+    accountNo    :: Int
+  , name         :: String
+  , branch       :: String
+  , balance      :: Double
+  , interestRate :: Double
+} deriving (Show)
+
+buildAccount :: Int -> BankAccount
+buildAccount i = BankAccount i "Dummy Customer" "London" 0 0
+
+builderDemo = do
+    let account = buildAccount 1234
+    print account
+    let account1 = account {name="Marjin Mejer", branch="Paris", balance=10000, interestRate=2}
+    print account
+
+    let account2 = BankAccount {
+          accountNo = 5678
+        , name = "Marjin"
+        , branch = "Reikjavik"
+        , balance = 1000
+        , interestRate = 2.5
+        }
+    print account2
+    
+```
+-->
 
 ## Conclusions
 > Design patterns are reusable abstractions in object-oriented software. 

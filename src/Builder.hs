@@ -9,21 +9,22 @@ data BankAccount = BankAccount {
   , interestRate :: Double
 } deriving (Show)
 
-defaultAccount :: Int -> BankAccount
-defaultAccount i = BankAccount i "" "" 0 0
+buildAccount :: Int -> BankAccount
+buildAccount i = BankAccount i "Dummy Customer" "London" 0 0
 
 builderDemo = do
-    putStrLn "Builder -> ???"
-    let acc1 = BankAccount {
-                  accountNo = 1234
-                , name = "Marjin"
-                , branch = "Reikjavik"
-                , balance = 1000
-                , interestRate = 2.5
-                }
-    print acc1
-    let acc2 = defaultAccount 4711
-    print acc2
-    let acc3 = acc2 {name="Hans Mejer", branch="London", balance=10000}
-    print acc3
+    putStrLn "Builder -> record syntax, smart constructor"
+    let account = buildAccount 1234
+    print account
+    let account1 = account {name="Marjin Mejer", branch="Paris", balance=10000, interestRate=2}
+    print account
+
+    let account2 = BankAccount {
+          accountNo = 5678
+        , name = "Marjin Mejer"
+        , branch = "Reikjavik"
+        , balance = 1000
+        , interestRate = 2.5
+        }
+    print account2
     
