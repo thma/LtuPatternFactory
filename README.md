@@ -32,7 +32,7 @@ I think this kind of exposition could be helpful if you are either:
 - [Beyond type class patterns](#beyond-type-class-patterns)
     - [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
     - [Adapter -> Function Composition](#adapter---function-composition)
-    - [Template Method -> type class default functions](#template-method---type-class-default-functions)TB
+    - [Template Method -> type class default functions](#template-method---type-class-default-functions)
     - Factory -> TBD
         - [Builder -> record syntax, smart constructor](#builder---record-syntax-smart-constructor)
 - [Some related links](#some-interesting-links)
