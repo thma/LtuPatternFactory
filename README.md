@@ -1,20 +1,3 @@
-# Table of contents
-- [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
-- [The Patternopedia](#the-patternopedia)
-    - [Strategy -> Functor](#strategy---functor) 
-    - [Singleton -> Pointed -> Applicative](#singleton---pointed---applicative) 
-    - [Pipeline -> Monad](#pipeline---monad)
-    - [NullObject -> Maybe Monad](#nullobject---maybe-monad)
-    - [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
-    - [Visitor -> Foldable](#visitor---foldable)
-    - [Iterator -> Traversable](#iterator---traversable)
-    - [Type classes Category, Arrow & Co.](#type-classes-category-arrow--co)
-- [Beyond type class patterns](#beyond-type-class-patterns)
-    - [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
-    - [Adapter -> Function Composition](#adapter---function-composition)
-    - [Template Method -> type class default functions](#template-method---type-class-default-functions)
-- [Some related links](#some-interesting-links)
-
 # Lambda the Ultimate Pattern Factory
 
 My first programming languages were Lisp, Scheme, and ML. When I later started to work in OO languages like C++ and Java I noticed that idioms that are standard vocabulary in functional programming (fp) were not so easy to achieve and required sophisticated structures. Books like [Design Patterns: Elements of Reusable Object-Oriented Software](https://en.wikipedia.org/wiki/Design_Patterns) were a great starting point to reason about those structures. One of my earliest findings was that several of the GoF-Patterns had a stark resemblance of structures that are built into in functional languages: for instance the strategy pattern corresponds to higher order functions in fp (more details see [below](#strategy)).
@@ -34,6 +17,26 @@ I think this kind of exposition could be helpful if you are either:
 > - complete coverage of the GOF set of patterns
 > - coverage of category theory based patterns (any ideas are welcome!)
 > - coverage of patterns with a clear FP background, eg. MapReduce, Blockchain, Function-as-a-service 
+
+# Table of contents
+- [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
+- [The Patternopedia](#the-patternopedia)
+    - [Strategy -> Functor](#strategy---functor) 
+    - [Singleton -> Pointed -> Applicative](#singleton---pointed---applicative) 
+    - [Pipeline -> Monad](#pipeline---monad)
+    - [NullObject -> Maybe Monad](#nullobject---maybe-monad)
+    - [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
+    - [Visitor -> Foldable](#visitor---foldable)
+    - [Iterator -> Traversable](#iterator---traversable)
+    - [Type classes Category, Arrow & Co.](#type-classes-category-arrow--co)
+- [Beyond type class patterns](#beyond-type-class-patterns)
+    - [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
+    - [Adapter -> Function Composition](#adapter---function-composition)
+    - [Template Method -> type class default functions](#template-method---type-class-default-functions)TB
+    - Factory -> TBD
+        - [Builder -> record syntax, smart constructor](#builder---record-syntax-smart-constructor)
+- [Some related links](#some-interesting-links)
+
 
 # The Patternopedia
 The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) is a now classic paper that introduces the Haskell type classes by clarifying their algebraic and category-theoretic background. In particular it explains the relationships among those type classes.
