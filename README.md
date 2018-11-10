@@ -1247,7 +1247,7 @@ From an API client perspective the Builder pattern can help to provide safe and 
 As the Builder code is quite a redundant (e.g. having all attributes of the actual instance class)Builders are typically generated (e.g. with [Lombok](https://projectlombok.org/features/Builder)).
 
 
-In functional languages there is usually no need for the Builder pattern as the languages already provide infrastructure for safely constructing instances.
+In functional languages there is usually no need for the Builder pattern as the languages already provide the necessary infrastructure.
 
 The following example shows how the above example could be solved in Haskell:
 ```haskell
@@ -1269,7 +1269,7 @@ builderDemo = do
     print account
     -- use record syntax to create a modified clone of the dummy instance
     let account1 = account {name="Marjin Mejer", branch="Paris", balance=10000, interestRate=2}
-    print account
+    print account1
 
     -- directly using record syntax to create an instance
     let account2 = BankAccount {
@@ -1281,6 +1281,11 @@ builderDemo = do
         }
     print account2
     
+-- an then in Ghci:
+> builderDemo
+BankAccount {accountNo = 1234, name = "Dummy Customer", branch = "London", balance = 0.0, interestRate = 0.0}
+BankAccount {accountNo = 1234, name = "Marjin Mejer", branch = "Paris", balance = 10000.0, interestRate = 2.0}
+BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", balance = 1000.0, interestRate = 2.5}    
 ```
 
 ## Conclusions

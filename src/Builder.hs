@@ -17,7 +17,7 @@ builderDemo = do
     let account = buildAccount 1234
     print account
     let account1 = account {name="Marjin Mejer", branch="Paris", balance=10000, interestRate=2}
-    print account
+    print account1
 
     let account2 = BankAccount {
           accountNo = 5678
