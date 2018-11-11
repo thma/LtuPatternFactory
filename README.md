@@ -265,39 +265,50 @@ In this simplified example that's true, because we have designed the `|>` operat
 Stream x |> f = f x
 ```
 But we are free to implement the `andThen` operator in any way that we seem fit as long we maintain the type signature and the [monad laws](https://en.wikipedia.org/wiki/Monad_%28functional_programming%29#Monad_laws).
-So we could for instance change the semantic of `>>=` to keep a log along the execution pipeline.
-In the following snippet I have extended `>>=` to increment a counter so that at the and of the pipeline we are informed about the number of invocations of `>>=`.
+So we could for instance change the semantics of `>>=` to keep a log along the execution pipeline:
 
 ```haskell
 -- The DeriveFunctor Language Pragma provides automatic derivation of Functor instances
 {-# LANGUAGE DeriveFunctor #-}
--- the Stream type is extened by an Int that keeps the counter state
-newtype Stream a = Stream (a, Int) deriving (Show, Functor)
 
--- as any Monad must be an Applicative we also have to instantiate Applicative
-instance Applicative Stream where
+-- a Log is just a list of Strings
+type Log = [String]
+
+-- the Stream type is extended by a Log that keeps track of any logged messages
+newtype LoggerStream a = LoggerStream (a, Log) deriving (Show, Functor)
+
+instance Applicative LoggerStream where
   pure = return
-  Stream (f, _) <*> r = fmap f r
+  LoggerStream (f, _) <*> r = fmap f r  
 
--- our definition of the Stream Monad
-instance Monad Stream where
-  -- returns a Stream wrapping a tuple of the actual payload and an initial counter state of 0
-  return a = Stream (a, 0)
-  -- we define (>>=) to reach an incremented counter to the subsequent action
-  m >>= k = let Stream(a, c1) = m
-                next          = k a
-                Stream(b, c2) = next
-            in Stream (b, c1 + 1 + c2)
+-- our definition of the Logging Stream Monad:
+instance Monad LoggerStream where
+  -- returns a Stream wrapping a tuple of the actual payload and an empty Log
+  return a = LoggerStream (a, [])
 
--- instead of echo and |> we now use the "official" monadic versions return and >>=
-pipeline :: String -> Stream Int
-pipeline str =
-  return str >>= return . length . words >>= return . (3 *)
+  -- we define (>>=) to return a tuple (composed functions, concatenated logs)
+  m1 >>= m2  = let LoggerStream(f1, l1) = m1
+                   LoggerStream(f2, l2) = m2 f1
+               in LoggerStream(f2, l1 ++ l2)
+   
+-- compute length of a String and provide a log message               
+logLength :: String -> LoggerStream Int
+logLength str = let l = length(words str)
+                in LoggerStream (l, ["length(" ++ str ++ ") = " ++ show l])
 
--- when using this in GHCI we receive a Stream wrapping a tuple of the result of the 
--- actual pipeline plus the result of the counter:
-ghci> pipeline "hello world"
-Stream (6,2)
+-- multiply x with 3 and provide a log message
+logMultiply :: Int -> LoggerStream Int
+logMultiply x = let z = x * 3
+                in LoggerStream (z, ["multiply(" ++ show x ++ ", 3" ++") = " ++ show z])
+
+-- the logging version of the pipeline
+logPipeline :: String -> LoggerStream Int
+logPipeline str =
+  return str >>= logLength >>= logMultiply
+
+-- and then in Ghci:
+> logPipeline "hello logging world"
+LoggerStream (9,["length(hello logging world) = 3","multiply(3, 3) = 9"])
 ```
 What's noteworthy here is that Monads allow to make the mechanism of chaining functions *explicit*. We can define what `andThen` should mean in our pipeline by choosing a different Monad implementation.
 So in a sense Monads could be called [programmable semicolons](http://book.realworldhaskell.org/read/monads.html#id642960)
@@ -1237,19 +1248,19 @@ public class BankAccountTest {
     }
 }
 ```
-As we see the Builder can be either used to create dummy instaces that are still safe to use (e.g. for test cases) or by using the `withXxx` methods to populate all attributs:
+As we see the Builder can be either used to create dummy instaces that are still safe to use (e.g. for test cases) or by using the `withXxx` methods to populate all attributes:
 ```haskell
 BankAccount {accountNo = 1234, name = "Dummy Customer", branch = "London", balance = 0.0, interestRate = 0.0}
 BankAccount {accountNo = 1234, name = "Marjin Mejer", branch = "Paris", balance = 10000.0, interestRate = 2.0}
 ```
 
 From an API client perspective the Builder pattern can help to provide safe and convenient object construction which is not provided by the Java core language.
-As the Builder code is quite a redundant (e.g. having all attributes of the actual instance class)Builders are typically generated (e.g. with [Lombok](https://projectlombok.org/features/Builder)).
+As the Builder code is quite a redundant (e.g. having all attributes of the actual instance class) Builders are typically generated (e.g. with [Lombok](https://projectlombok.org/features/Builder)).
 
 
 In functional languages there is usually no need for the Builder pattern as the languages already provide the necessary infrastructure.
 
-The following example shows how the above example could be solved in Haskell:
+The following example shows how the above example would be solved in Haskell:
 ```haskell
 data BankAccount = BankAccount {
     accountNo    :: Int
@@ -1259,7 +1270,7 @@ data BankAccount = BankAccount {
   , interestRate :: Double
 } deriving (Show)
 
--- a "smart constructor" that just need a unique int to construct a BankAccount
+-- a "smart constructor" that just needs a unique int to construct a BankAccount
 buildAccount :: Int -> BankAccount
 buildAccount i = BankAccount i "Dummy Customer" "London" 0 0
 

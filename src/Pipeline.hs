@@ -20,32 +20,40 @@ pipeline :: String -> Stream Int
 pipeline str = 
   echo str |> echo . length . words |> echo . (3 *)
 
+-- a log is just a list of Strings
+type Log = [String]
 
--- the Stream type is extened by an Int that keeps the counter state
-newtype CountingStream a = CountingStream (a, Int) deriving (Show, Functor)
+-- the Stream type is extended by a Log, that keeps track of any logged messages
+newtype LoggerStream a = LoggerStream (a, Log) deriving (Show, Functor)
 
--- as any Monad must be an Applicative we also have to instantiate Applicative
-instance Applicative CountingStream where
+instance Applicative LoggerStream where
   pure = return
-  CountingStream (f, _) <*> r = fmap f r
+  LoggerStream (f, _) <*> r = fmap f r  
 
--- our definition of the Stream Monad
-instance Monad CountingStream where
-  -- returns a Stream wrapping a tuple of the actual payload and an initial counter state of 0
-  return a = CountingStream (a, 0)
-  -- we define (>>=) to reach an incremented counter to the subsequent action
-  m >>= k = let CountingStream(a, c1) = m
-                next                  = k a
-                CountingStream(b, c2) = next
-            in CountingStream (b, c1 + 1 + c2)
+-- our definition of the Logging Stream Monad
+instance Monad LoggerStream where
+  -- returns a Stream wrapping a tuple of the actual payload and an empty Log
+  return a = LoggerStream (a, [])
+  -- we define (>>=) to return a tuple (composed functions, concatenated logs)
+  m1 >>= m2  = let LoggerStream(f1, l1) = m1
+                   LoggerStream(f2, l2) = m2 f1
+               in  LoggerStream(f2, l1 ++ l2)
+   
+-- compute length of a String and provide a log message               
+logLength :: String -> LoggerStream Int
+logLength str = let l = length(words str)
+                in LoggerStream (l, ["length(" ++ str ++ ") = " ++ show l])
 
--- instead of echo and |> we now use the "official" monadic versions return and >>=
-countingPipeline :: String -> CountingStream Int
-countingPipeline str =
-  return str >>= return . length . words >>= return . (3 *)
+logMultiply :: Int -> LoggerStream Int
+logMultiply x = let z = x * 3
+                in LoggerStream (z, ["multiply(" ++ show x ++ ", 3" ++") = " ++ show z])
+
+logPipeline :: String -> LoggerStream Int
+logPipeline str =
+  return str >>= logLength >>= logMultiply
 
 pipelineDemo = do 
     putStrLn "Pipeline -> Monad"
     print $ pipeline "hello world"
-    print $ countingPipeline "hello counting world"
+    print $ logPipeline "hello logging world"
     putStrLn ""
