@@ -22,7 +22,7 @@ I think this kind of exposition could be helpful if you are either:
 - [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
 - [The Patternopedia](#the-patternopedia)
     - [Strategy -> Functor](#strategy---functor) 
-    - [Singleton -> Pointed -> Applicative](#singleton---pointed---applicative) 
+    - [Singleton -> Applicative](#singleton---applicative) 
     - [Pipeline -> Monad](#pipeline---monad)
     - [NullObject -> Maybe Monad](#nullobject---maybe-monad)
     - [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
@@ -93,7 +93,7 @@ Although it would be fair to say that the type class `Functor` captures the esse
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
 
-## Singleton -> Pointed -> Applicative
+## Singleton -> Applicative
 > "The singleton pattern is a software design pattern that restricts the instantiation of a class to one object. This is useful when exactly one object is needed to coordinate actions across the system." 
 > (quoted from https://en.wikipedia.org/wiki/Singleton_pattern)
 
@@ -111,18 +111,6 @@ in  mainComputation
 Via the `let`-Binding we can thread the singleton through arbitrary code in the `in` block. All occurences of `singleton` in the `mainComputation`will point to the same instance.
 
 Type classes provide several tools to make this kind of threading more convenient or even to avoid explicit threading of instances.
-
-### Using Pointed to create singletons
-
-> "Given a Functor, the Pointed class represents the additional ability to put a value into a “default context.” Often, this corresponds to creating a container with exactly one element, but it is more general than that." 
-> (quoted from the Typeclassopedia)
-
-```haskell
-class Functor f => Pointed f where
-    pure :: a -> f a
-```
-
-
 
 ### Using Applicative Functor for threading of singletons
 
@@ -148,7 +136,7 @@ eval (Mul p q) env = eval p env * eval q env
 Note how the explicit `env`parameter is threaded through the recursive eval calls. This is needed to have the 
 environment avalailable for variable lookup at any recursive call depth.
 
-If we now bind `env` to a value as in the following snippet it is used as an imutable singleton within the recursive evaluation of `eval exp env`.
+If we now bind `env` to a value as in the following snippet it is used as an immutable singleton within the recursive evaluation of `eval exp env`.
 
 ```haskell
 main = do
