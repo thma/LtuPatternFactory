@@ -68,7 +68,7 @@ strategyDouble n = 2*n
 -- now we define a context that applies a function of type Num a => a -> a to a list of a's:
 context :: Num a => (a -> a) -> [a] -> [a]
 context f l = map f l
--- using point-free notation this can be written as:
+-- using pointfree style this can be written as:
 context = map
 ``` 
 The `context` function uses higher order `map` function  (`map :: (a -> b) -> [a] -> [b]`) to apply the strategies to lists of numbers:
