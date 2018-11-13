@@ -107,3 +107,6 @@ safeReciprocal x
 
 safeRootReciprocal :: Double -> Maybe Double
 safeRootReciprocal = safeReciprocal >=> safeRoot
+
+safeRootReciprocal' :: Double -> Maybe Double
+safeRootReciprocal' x = return x >>= safeReciprocal >>= safeRoot

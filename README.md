@@ -448,7 +448,34 @@ instance  Monad Maybe  where
 
 This elegant feature of `(>>=)` in the `Maybe` Monad allows us to avoid ugly and repetetive coding.  
 
-There are several predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`. But that's a different story...
+#### Avoiding partial function by using Maybe
+
+Maybe is often used to avoid any kind of partial functions. Take for example division by zero or computing the square root of negative numbers which are undefined (at least for real numbers).
+Here come safe definitions of these functions that return `Nothing` for undefined cases:
+```haskell
+safeRoot :: Double -> Maybe Double
+safeRoot x
+    | x >= 0    = Just (sqrt x)
+    | otherwise = Nothing
+
+safeReciprocal :: Double -> Maybe Double
+safeReciprocal x
+    | x /= 0    = Just (1/x)
+    | otherwise = Nothing
+```
+As we have already learned the monadic `>>=` operator allows to chain such function as in the following example:
+```haskell
+safeRootReciprocal :: Double -> Maybe Double
+safeRootReciprocal x = return x >>= safeReciprocal >>= safeRoot
+```
+This can even written more terse as:
+```haskell
+safeRootReciprocal :: Double -> Maybe Double
+safeRootReciprocal = safeReciprocal >=> safeRoot
+```
+The use of the Kleisli operator `>=>` makes it more evident that we are actually aiming at a composition of the monadic functions `safeReciprocal` and `safeRoot`. 
+
+There are many predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`. But that's a different story...
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/NullObject.hs)
 
