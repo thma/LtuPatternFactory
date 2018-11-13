@@ -40,4 +40,14 @@ instance Coerce (m a) c => Coerce (WrappedMonad m a) c where
 instance Coerce (State s a) (s -> (a,s)) where
     unwrap = runState
     wrap   = state
-    
+
+coerce :: (Coerce a b, Coerce b a, Typeable a, Typeable b) => a -> b
+coerce = undefined
+{--
+coerce x = let u = wrap x
+               d = unwrap x
+               --ta = typeRep ([] :: [a])
+               tb = typeRep ([] :: [b])
+           in  if (typeOf u == tb) then u
+               else d
+--}

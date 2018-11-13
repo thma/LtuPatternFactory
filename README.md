@@ -1297,6 +1297,18 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 > these features are already or nearly available now.  
 > Quoted from [Design Patterns as Higher-Order Datatype-Generic Programs](http://www.cs.ox.ac.uk/jeremy.gibbons/publications/hodgp.pdf)
 
+> Crystallizing design patterns
+>  To end with FP benefits, there is this curious thing called Curry–Howard correspondence which is a direct analogy between mathematical concepts and computational calculus (which is what we do, programmers).
+>  
+>  This correspondence means that a lot of useful stuff discovered and proven for decades in Math can then be transposed to programming, opening a way for a lot of extremely robust constructs for free.
+>  
+>  In OOP, Design patterns are used a lot and could be defined as idiomatic ways to solve a given problems, in specific contexts but their existences won’t save you from having to apply and write them again and again each time you encounter the problems they solve.
+>  
+>  Functional programming constructs, some directly coming from category theory (mathematics), solve directly what you would have tried to solve with design patterns.
+>
+>  Quoted from [Geekocephale](http://geekocephale.com/blog/2018/10/08/fp)
+
+https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence
 
 <!--
 ## TBD: Conclusion
@@ -1324,3 +1336,7 @@ https://staticallytyped.wordpress.com/2013/03/09/gang-of-four-patterns-with-type
 http://norvig.com/design-patterns/design-patterns.pdf
 
 [Scala Typeclassopedia](https://github.com/tel/scala-typeclassopedia)
+
+https://github.com/mmenestret/fp-resources/blob/master/README.md
+
+
