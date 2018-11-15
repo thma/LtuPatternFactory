@@ -10,7 +10,7 @@ import Control.Monad.State.Lazy         -- State Monad
 import Data.Typeable
   
 -- | This module provides explicit coercion.
---   Just in case you want to know what's behind the "magic" Data.Coerce.coerce 
+--   Instead of the "magic" Data.Coerce.coerce you could use wrap and unwrap to explicitely write the coercions.
 class Coerce a b | a -> b where
     unwrap :: a -> b
     wrap   :: b -> a
@@ -40,14 +40,3 @@ instance Coerce (m a) c => Coerce (WrappedMonad m a) c where
 instance Coerce (State s a) (s -> (a,s)) where
     unwrap = runState
     wrap   = state
-
-coerce :: (Coerce a b, Coerce b a, Typeable a, Typeable b) => a -> b
-coerce = undefined
-{--
-coerce x = let u = wrap x
-               d = unwrap x
-               --ta = typeRep ([] :: [a])
-               tb = typeRep ([] :: [b])
-           in  if (typeOf u == tb) then u
-               else d
---}
