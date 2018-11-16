@@ -1159,6 +1159,10 @@ So the Monoid type class definition forms a *template* where the default impleme
 
 ### Builder -> record syntax, smart constructor
 
+> The Builder is a design pattern designed to provide a flexible solution to various object creation problems in object-oriented programming. The intent of the Builder design pattern is to separate the construction of a complex object from its representation.
+>
+> Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Builder_pattern)
+
 The Builder patterns is frequently used to ease the construction of complex objects by providing a safe and convenient API to client code.
 In the following Java example we define a POJO Class `BankAccount`:
 ```java
