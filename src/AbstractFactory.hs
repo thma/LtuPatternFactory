@@ -1,43 +1,64 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE OverloadedStrings             #-}
 module AbstractFactory where
-import           GHC.Generics    (Generic)              -- needed to derive type class instances declaratively
-import           Data.Aeson      (ToJSON, FromJSON, eitherDecode, toJSON)     -- needed to provide JSON encoding/decoding
-import           Data.Text
-import           Data.Aeson.Text (encodeToTextBuilder)
-import           Data.Text.Lazy (toStrict)
-import           Data.Text.Lazy.Builder (toLazyText)
+import           GHC.Generics              (Generic) -- needed to derive type class instances declaratively
+import           Data.Aeson                (ToJSON, FromJSON, eitherDecode, toJSON) -- JSON encoding/decoding
+import           Data.Text                 (unpack)
+import           Data.Aeson.Text           (encodeToTextBuilder)
+import           Data.Text.Lazy            (toStrict)
+import           Data.Text.Lazy.Builder    (toLazyText)
 import qualified Data.ByteString.Lazy as B (readFile)
-import           Data.Typeable (Typeable, TypeRep, typeRep) -- runtime type reflection
+import           Data.UUID
+import           System.Random
 
-data User = User Integer String String String deriving (Show, Read, Eq, Generic, ToJSON, FromJSON)
+class (ToJSON e, FromJSON e) => Entity e where 
+    getId :: e -> UUID
 
-data Post = Post Integer Integer String deriving (Show, Read, Eq, Generic, ToJSON, FromJSON)
+data User = User {
+      userId    :: UUID
+    , firstName :: String
+    , lastName  :: String
+    , email     :: String
+} deriving (Show, Read, Eq, Generic, ToJSON, FromJSON)
+
+instance Entity User where
+    getId = userId 
+
+data Post = Post {
+      postId :: UUID
+    , user   :: UUID
+    , text   :: String
+} deriving (Show, Read, Eq, Generic, ToJSON, FromJSON)
+
+instance Entity Post where
+    getId = postId 
 
 -- | load persistent entity of type a and identified by id
-retrieveEntity :: forall a. (FromJSON a, Read a, Typeable a) => Text -> IO a
+retrieveEntity :: (Entity a) => UUID -> IO a
 retrieveEntity id = do
     -- compute file path based on type and id
-    let jsonFileName = getPath (typeRep ([] :: [a])) id
-    parseFromJsonFile jsonFileName :: FromJSON a => IO a
+    let jsonFileName = getPath id
+    parseFromJsonFile jsonFileName
 
--- | store persistent entity of type a and identified by id to the backend
-storeEntity :: forall a. (ToJSON a, Show a, Typeable a) => Text -> a -> IO ()
-storeEntity id entity = do
-  let jsonFileName = getPath (typeRep ([] :: [a])) id
-  writeFile jsonFileName (showJson entity)
-    where
+-- | store persistent entity of type a to a json file
+storeEntity :: (Entity a) => a -> IO ()
+storeEntity entity = do
+    let jsonFileName = getPath (getId entity)
+    writeFile jsonFileName (showJson entity) where
         -- create a JSON representation of an entity
         showJson :: (ToJSON a) => a -> String
         showJson = unpack . toStrict . toLazyText . encodeToTextBuilder . toJSON
 
--- | compute path of data file
-getPath :: TypeRep -> Text -> String
-getPath tr id = ".stack-work/" ++ show tr ++ "." ++ unpack id ++ ".json"
+-- | compute random UUID        
+newUUID :: IO UUID
+newUUID = randomIO
 
--- | read from file fileName and then parse the contents as a FromJSON instance.
-parseFromJsonFile :: FromJSON a => FilePath -> IO a
+-- | compute path of data file
+getPath :: UUID -> String
+getPath id = ".stack-work/" ++ toString id ++ ".json"
+
+-- | read from file fileName and then parse the contents as an Entity instance.
+parseFromJsonFile :: Entity a => FilePath -> IO a
 parseFromJsonFile fileName = do
     contentBytes <- B.readFile fileName
     case eitherDecode contentBytes of
@@ -46,15 +67,16 @@ parseFromJsonFile fileName = do
 
 abstractFactoryDemo = do
     putStrLn "AbstractFactory -> type class polymorphism"
-    let user1 = User 4711 "Heinz" "Meier" "hm@meier.com"
-    let post1 = Post 1 4711 "This is my first post"
-    storeEntity "4711" user1
-    storeEntity "1" post1
-    user2 <- retrieveEntity "4711" -- 
+    idUser <- newUUID
+    idPost <- newUUID
+    let user1 = User {userId = idUser, firstName = "Heinz", lastName = "Meier", email = "hm@meier.com"}
+    let post1 = Post idPost idUser "My name is Heinz, this is my first post"
+    storeEntity user1
+    storeEntity post1
+    user2 <- retrieveEntity idUser -- 
     if user1 == user2 
-        then
-            putStrLn "user data successfully restored"
+        then putStrLn "user data successfully restored"
         else putStrLn "user data restore failed"
     print user2
-    post2 <- retrieveEntity "1" :: IO Post
+    post2 <- retrieveEntity idPost :: IO Post
     print post2
