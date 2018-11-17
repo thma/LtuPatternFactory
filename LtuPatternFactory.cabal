@@ -15,7 +15,8 @@ extra-source-files:  README.md
 
 executable LtuPatternFactory
   hs-source-dirs:      src
-  other-modules:       Adapter
+  other-modules:       AbstractFactory
+                     , Adapter
                      , Builder
                      , Composite
                      , Iterator
@@ -25,8 +26,15 @@ executable LtuPatternFactory
                      , Strategy
                      , TemplateMethod
                      , Visitor
+                     , Coerce
+                     , IdiomBrackets
   main-is:             Main.hs
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5
                      , containers
                      , mtl
+                     , aeson
+                     , aeson-pretty
+                     , text
+                     , directory
+                     , bytestring

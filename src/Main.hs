@@ -10,6 +10,7 @@ import TemplateMethod
 import NullObject
 import Iterator
 import Coerce
+import AbstractFactory
 
 main :: IO ()
 main = do
@@ -24,3 +25,4 @@ main = do
   templateMethodDemo
   nullObjectDemo
   iteratorDemo
+  abstractFactoryDemo
