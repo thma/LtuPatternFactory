@@ -1,73 +1,58 @@
 {-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
 {-# LANGUAGE OverloadedStrings             #-}
 module AbstractFactory where
-import           GHC.Generics (Generic) -- needed to derive type class instances declaratively
-import           Data.Aeson   (ToJSON, FromJSON, eitherDecodeFileStrict, toJSON, encodeFile) -- JSON encoding/decoding
-import           Data.UUID
-import           System.Random
+import GHC.Generics (Generic) -- needed to derive type class instances declaratively
+import Data.Aeson   (ToJSON, FromJSON, eitherDecodeFileStrict, toJSON, encodeFile) -- JSON encoding/decoding
+import Data.Tagged -- used to tag type information to 
 
-class (ToJSON e, FromJSON e, Eq e) => Entity e where 
-    getId :: e -> UUID
+type TaggedId a = Tagged a Integer
+data Identified a = Identified
+    { ident :: TaggedId a
+    , val :: a
+    } deriving (Eq, Ord, Read, Show, Generic, ToJSON, FromJSON)
+
+class (ToJSON a, FromJSON a, Eq a, Show a) => Entity a where
+    -- | store persistent entity of type a to a json file
+    store :: Identified a -> IO ()
+    store (Identified id val) = do
+        -- compute file path based on entity id
+        let jsonFileName = getPath id
+        -- serialize entity as JSON and write to file
+        encodeFile jsonFileName val
+
+    -- | load persistent entity of type a and identified by id
+    retrieve :: TaggedId a -> IO a
+    retrieve id = do
+        -- compute file path based on id
+        let jsonFileName = getPath id
+        -- parse entity from JSON file
+        eitherEntity <- eitherDecodeFileStrict jsonFileName
+        case eitherEntity of
+            Left msg -> fail msg
+            Right e  -> return e
+
+    -- | compute path of data file
+    getPath :: TaggedId a -> String
+    getPath id = ".stack-work/" ++ show i ++ ".json"
+        where (Tagged i) = id
+
+    -- | publish an entity (e.g. to a message bus, or just print it out)
+    publish  :: Identified a -> IO ()
+    publish = print
+
+retrieveIDd :: Entity a => TaggedId a -> IO (Identified a)
+retrieveIDd id = Identified id <$> retrieve id
 
 data User = User {
-      userId    :: UUID
-    , firstName :: String
-    , lastName  :: String
+      name      :: String
     , email     :: String
-} deriving (Show, Eq, Generic, ToJSON, FromJSON)
-
-instance Entity User where
-    getId = userId 
-
-data Post = Post {
-      postId :: UUID
-    , user   :: UUID
-    , text   :: String
-} deriving (Show, Eq, Generic, ToJSON, FromJSON)
-
-instance Entity Post where
-    getId = postId 
-
--- | load persistent entity of type a and identified by id
-retrieveEntity :: (Entity a) => UUID -> IO a
-retrieveEntity id = do
-    -- compute file path based on id
-    let jsonFileName = getPath id
-    -- parse entity from JSON file
-    eitherEntity <- eitherDecodeFileStrict jsonFileName
-    case eitherEntity of
-        Left msg -> fail msg
-        Right e  -> return e
-
--- | store persistent entity of type a to a json file
-storeEntity :: (Entity a) => a -> IO ()
-storeEntity entity = do
-    -- compute file path based on entity id
-    let jsonFileName = getPath (getId entity)
-    -- serialize entity as JSON and write to file
-    encodeFile jsonFileName entity
-
--- | compute path of data file
-getPath :: UUID -> String
-getPath id = ".stack-work/" ++ toString id ++ ".json"
-
--- | compute random UUID        
-newUUID :: IO UUID
-newUUID = randomIO
+} deriving (Show, Eq, Generic, ToJSON, FromJSON, Entity)
 
 abstractFactoryDemo = do
     putStrLn "AbstractFactory -> type class polymorphism"
-    idUser <- newUUID
-    idPost <- newUUID
-    let user1 = User idUser "Heinz" "Meier" "hm@meier.com"
-    let post1 = Post idPost idUser "My name is Heinz, this is my first post"
-    storeEntity user1
-    storeEntity post1
-    user2 <- retrieveEntity idUser -- 
-    if user1 == user2 
-        then putStrLn "user data successfully restored"
-        else putStrLn "user data restore failed"
-    print user2
-    post2 <- retrieveEntity idPost :: IO Post
-    print post2
-    
+    let user = Identified 1 (User "Heinz Meier" "hm@meier.com")
+    --let post = Post idPost idUser "My name is Heinz, this is my first post"
+    publish user
+    store user
+    user' <- retrieveIDd (ident user)
+    publish user'

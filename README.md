@@ -1156,7 +1156,16 @@ So the Monoid type class definition forms a *template* where the default impleme
 
 ## TBD: Factory -> Function Currying
 
+<!--
+### Abstract Factory -> type class polymorphism
 
+>
+> 
+
+```haskell
+
+```
+-->
 ### Builder -> record syntax, smart constructor
 
 > The Builder is a design pattern designed to provide a flexible solution to various object creation problems in object-oriented programming. The intent of the Builder design pattern is to separate the construction of a complex object from its representation.

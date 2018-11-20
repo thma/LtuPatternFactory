@@ -38,5 +38,4 @@ executable LtuPatternFactory
                      , text
                      , directory
                      , bytestring
-                     , uuid
-                     , random
+                     , tagged
