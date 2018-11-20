@@ -3,11 +3,11 @@
 module AbstractFactory where
 import GHC.Generics (Generic) -- needed to derive type class instances declaratively
 import Data.Aeson   (ToJSON, FromJSON, eitherDecodeFileStrict, toJSON, encodeFile) -- JSON encoding/decoding
-import Data.Tagged -- used to tag type information to 
+import Data.Tagged -- used to tag type information to Ids
 
-type TaggedId a = Tagged a Integer
+type Id a = Tagged a Integer
 data Identified a = Identified
-    { ident :: TaggedId a
+    { ident :: Id a
     , val :: a
     } deriving (Eq, Ord, Read, Show, Generic, ToJSON, FromJSON)
 
@@ -21,7 +21,7 @@ class (ToJSON a, FromJSON a, Eq a, Show a) => Entity a where
         encodeFile jsonFileName val
 
     -- | load persistent entity of type a and identified by id
-    retrieve :: TaggedId a -> IO a
+    retrieve :: Id a -> IO a
     retrieve id = do
         -- compute file path based on id
         let jsonFileName = getPath id
@@ -32,7 +32,7 @@ class (ToJSON a, FromJSON a, Eq a, Show a) => Entity a where
             Right e  -> return e
 
     -- | compute path of data file
-    getPath :: TaggedId a -> String
+    getPath :: Id a -> String
     getPath id = ".stack-work/" ++ show i ++ ".json"
         where (Tagged i) = id
 
@@ -40,7 +40,7 @@ class (ToJSON a, FromJSON a, Eq a, Show a) => Entity a where
     publish  :: Identified a -> IO ()
     publish = print
 
-retrieveIDd :: Entity a => TaggedId a -> IO (Identified a)
+retrieveIDd :: Entity a => Id a -> IO (Identified a)
 retrieveIDd id = Identified id <$> retrieve id
 
 data User = User {
@@ -48,11 +48,19 @@ data User = User {
     , email     :: String
 } deriving (Show, Eq, Generic, ToJSON, FromJSON, Entity)
 
+data Post = Post {
+      userId    :: Integer
+    , text      :: String
+} deriving (Show, Eq, Generic, ToJSON, FromJSON, Entity)
+
 abstractFactoryDemo = do
     putStrLn "AbstractFactory -> type class polymorphism"
     let user = Identified 1 (User "Heinz Meier" "hm@meier.com")
-    --let post = Post idPost idUser "My name is Heinz, this is my first post"
-    publish user
+    let post = Identified 4711 (Post 1 "My name is Heinz, this is my first post")
     store user
+    store post
     user' <- retrieveIDd (ident user)
     publish user'
+    retrieveIDd (ident post) >>= publish
+
+     
