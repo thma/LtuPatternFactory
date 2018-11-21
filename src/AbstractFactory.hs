@@ -31,19 +31,17 @@ class (ToJSON a, FromJSON a, Eq a, Show a) => Entity a where
             Left msg -> fail msg
             Right e  -> return e
 
-    -- | compute path of data file
-    getPath :: Id a -> String
-    getPath id = ".stack-work/" ++ show i ++ ".json"
-        where (Tagged i) = id
-
     -- | publish an entity (e.g. to a message bus, or just print it out)
     publish  :: Identified a -> IO ()
     publish = print
 
     -- | produce a tagged id
-    taggedId :: Integer -> Id a
-    taggedId id = Tagged id :: Id a
+    tagId :: Integer -> Id a
+    tagId = Tagged
 
+-- | compute path of data file
+getPath :: Id a -> String
+getPath (Tagged i) = ".stack-work/" ++ show i ++ ".json"
 
 data User = User {
       name      :: String
@@ -64,4 +62,4 @@ abstractFactoryDemo = do
     user' <- retrieve (ident user)
     publish user'
     retrieve (ident post) >>= publish
-    retrieve (taggedId (userId (val post)) :: Id User) >>= publish
+    retrieve (tagId (userId (val post)) :: Id User) >>= publish
