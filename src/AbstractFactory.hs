@@ -1,65 +1,39 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings             #-}
 module AbstractFactory where
-import GHC.Generics (Generic) -- needed to derive type class instances declaratively
-import Data.Aeson   (ToJSON, FromJSON, eitherDecodeFileStrict, toJSON, encodeFile) -- JSON encoding/decoding
-import Data.Tagged            -- used to tag type information to Ids
 
-type Id a = Tagged a Integer
-data Identified a = Identified
-    { ident :: Id a
-    , val :: a
-    } deriving (Eq, Ord, Read, Show, Generic, ToJSON, FromJSON)
+-- | representation of a Button UI widget    
+data Button = Button 
+    { label  :: String -- the text label of the button
+    , paint  :: IO ()  -- a platform dependent rendering action
+    }
 
-class (ToJSON a, FromJSON a, Eq a, Show a) => Entity a where
-    -- | store persistent entity of type a to a json file
-    store :: Identified a -> IO ()
-    store identified@(Identified id val) = do
-        -- compute file path based on entity id
-        let jsonFileName = getPath id
-        -- serialize entity as JSON and write to file
-        encodeFile jsonFileName identified
+-- | rendering a Button for the WIN platform (we just simulate it by printing the label) 
+winPaint :: String -> IO ()
+winPaint lbl = putStrLn $ "winButton: " ++ lbl
 
-    -- | load persistent entity of type a and identified by id
-    retrieve :: Id a -> IO (Identified a)
-    retrieve id = do
-        -- compute file path based on id
-        let jsonFileName = getPath id
-        -- parse entity from JSON file
-        eitherEntity <- eitherDecodeFileStrict jsonFileName
-        case eitherEntity of
-            Left msg -> fail msg
-            Right e  -> return e
+-- | rendering a Button for the OSX platform
+osxPaint :: String -> IO ()
+osxPaint lbl = putStrLn $ "osxButton: " ++ lbl
+ 
+-- | enumeration of supported operating system platforms
+data OS = OSX | WIN deriving (Show, Eq, Enum)
 
-    -- | publish an entity (e.g. to a message bus, or just print it out)
-    publish  :: Identified a -> IO ()
-    publish = print
-
-    -- | produce a tagged id
-    tagId :: Integer -> Id a
-    tagId = Tagged
-
--- | compute path of data file
-getPath :: Id a -> String
-getPath (Tagged i) = ".stack-work/" ++ show i ++ ".json"
-
-data User = User {
-      name      :: String
-    , email     :: String
-} deriving (Show, Eq, Generic, ToJSON, FromJSON, Entity)
-
-data Post = Post {
-      userId    :: Integer
-    , text      :: String
-} deriving (Show, Eq, Generic, ToJSON, FromJSON, Entity)
+-- | create a button for os platform with label lbl
+createButton :: OS -> String -> Button
+createButton os lbl = 
+    case os of
+        WIN -> Button lbl (winPaint lbl)
+        OSX -> Button lbl (osxPaint lbl)
 
 abstractFactoryDemo = do
-    putStrLn "AbstractFactory -> type class polymorphism"
-    let user = Identified 1 (User "Heinz Meier" "hm@meier.com")
-    let post = Identified 4711 (Post 1 "My name is Heinz, this is my first post")
-    store user
-    store post
-    user' <- retrieve (ident user)
-    publish user'
-    retrieve (ident post) >>= publish
-    retrieve (tagId (userId (val post)) :: Id User) >>= publish
+    putStrLn "AbstractFactory -> functions as data type values"
+    let os = WIN
+    let newButton = createButton os
+    let ok = newButton "OK"
+    let exit = newButton "Exit"    
+    paint ok
+    paint exit
+
+    paint $ createButton OSX "about"
+
+    let linuxButton = Button "penguin" (putStrLn "linuxButton: penguin")    
+    paint linuxButton

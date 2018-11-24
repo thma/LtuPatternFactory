@@ -11,6 +11,7 @@ import NullObject
 import Iterator
 import Coerce
 import AbstractFactory
+import JsonPersistence
 
 main :: IO ()
 main = do
@@ -26,3 +27,4 @@ main = do
   nullObjectDemo
   iteratorDemo
   abstractFactoryDemo
+  jsonPersistenceDemo

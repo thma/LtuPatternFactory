@@ -20,6 +20,7 @@ executable LtuPatternFactory
                      , Builder
                      , Composite
                      , Iterator
+                     , JsonPersistence
                      , NullObject
                      , Pipeline
                      , Singleton
