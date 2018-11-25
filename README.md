@@ -34,6 +34,7 @@ I think this kind of exposition could be helpful if you are either:
     - [Adapter -> Function Composition](#adapter---function-composition)
     - [Template Method -> type class default functions](#template-method---type-class-default-functions)
     - Factory -> TBD
+        - [Abstract Factory -> functions as data type values](#abstract-factory---functions-as-data-type-values)
         - [Builder -> record syntax, smart constructor](#builder---record-syntax-smart-constructor)
 - [Some related links](#some-interesting-links)
 
