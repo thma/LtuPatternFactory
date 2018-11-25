@@ -18,8 +18,8 @@ osxPaint lbl = putStrLn $ "osxButton: " ++ lbl
 data OS = OSX | WIN deriving (Show, Eq, Enum)
 
 -- | create a button for os platform with label lbl
-createButton :: OS -> String -> Button
-createButton os lbl = 
+createButtonFor :: OS -> String -> Button
+createButtonFor os lbl = 
     case os of
         WIN -> Button lbl (winPaint lbl)
         OSX -> Button lbl (osxPaint lbl)
@@ -27,13 +27,13 @@ createButton os lbl =
 abstractFactoryDemo = do
     putStrLn "AbstractFactory -> functions as data type values"
     let os = WIN
-    let newButton = createButton os
-    let ok = newButton "OK"
-    let exit = newButton "Exit"    
+    let createButton = createButtonFor os
+    let ok = createButton "OK"
+    let exit = createButton "Exit"    
     paint ok
     paint exit
 
-    paint $ createButton OSX "about"
+    paint $ createButtonFor OSX "about"
 
     let linuxButton = Button "penguin" (putStrLn "linuxButton: penguin")    
     paint linuxButton

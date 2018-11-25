@@ -1171,7 +1171,7 @@ There is a classic example that demonstrates the application of this pattern in 
 The example revolves around a small GUI framework that needs different implementations to render Buttons for different OS Platforms (called WIN and OSX in this example).
 A client of the GUI API should work with a uniform API that hides the specifics of the different platforms. The problem then is: how can the  client be provided with a platform specific implementation without explicitely asking for a given implementation and how can we maintain a uniform API that hides the implementation specifics.
 
-In OO languages the abtract factory pattern would be the canonical answer to this problem:
+In OO languages like Java the abstract factory pattern would be the canonical answer to this problem:
 - The client calls an abstract factory `GUIFactory` interface to create a `Button` by calling `createButton() : Button` that somehow chooses (typically by some kind of configuration) which concrete factory has to be used to create concrete `Button` instances. 
 - The concrete classes `WinButton` and `OSXButton` implement the interface `Button` and provide platform specific implementations of `paint () : void`. 
 - As the client uses only the interface methods `createButton()` and `paint()` it does not have to deal with any platform specific code.
@@ -1203,7 +1203,7 @@ winPaint lbl = putStrLn $ "winButton: " ++ lbl
 osxPaint :: String -> IO ()
 osxPaint lbl = putStrLn $ "osxButton: " ++ lbl
 ```
-(Of course a real implementation would be quite more complex, but we don't care about the nitty gitty details here.)
+(Of course a real implementation would be quite more complex, but we don't care about the nitty gritty details here.)
 
 With this code we can now create concrete Buttons like so:
 ```haskell
@@ -1218,8 +1218,8 @@ winButton: Okay
 
 We created a button with `Button "Okay" (winPaint "Okay")`. The field paint of that button instance now holds the function call (winPaint "Okay").
 
-The nice thing about the Haskell record syntax is that we get accessor functions to the fields of the type for free.
-That's why the type declaration of `Button` also created a function `paint :: Button -> IO ()` which will call the function stored in the `paint` field of a `Button` instance.
+The nice thing about the Haskell record syntax is that we get accessor functions to the type fields for free.
+That's why the type declaration of `Button` also created a function `paint :: Button -> IO ()` which will return the function stored in the `paint` field of a `Button` instance.
 
 In this case we constructed `button` with setting `paint` to `winPaint` and thus `paint Button` prints `winButton: Okay`. 
 
@@ -1230,23 +1230,35 @@ Applying this scheme it is now very simple to create buttons with different impl
 data OS = OSX | WIN deriving (Show, Eq, Enum)
 
 -- | create a button for os platform with label lbl
-createButton :: OS -> String -> Button
-createButton os lbl = 
+createButtonFor :: OS -> String -> Button
+createButtonFor os lbl = 
     case os of
-        WIN -> Button lbl (winPaint lbl)
-        OSX -> Button lbl (osxPaint lbl)
+        WIN -> Button lbl (winPaint lbl)  -- use winPaint for WIN platform
+        OSX -> Button lbl (osxPaint lbl)  -- use osxPaint for OSX platform
+``` 
+By calling `createButtonFor` only with the `OS` argument (we assume that this flag comes from some initially available configuration) we can now create a partially applied function createButton:
 
+```haskell
+ghci> createButton = createButtonFor
+ghci> :t createButton
+createButton :: String -> Button
+```
+Now we have an API that hides all implementation specifics from the client and allows him to use only `createButton` and `paint` to work with Buttons for different OS platforms:
+
+```haskell
 abstractFactoryDemo = do
     putStrLn "AbstractFactory -> functions as data type values"
-    let os = WIN
-    let guiFactory = createButton os
-    let ok = guiFactory "OK"
-    let exit = guiFactory "Exit"    
-    paint ok
+    let os = WIN                          -- we assume this value comes from some initial configuration
+    let createButton = createButtonFor os -- createButton :: String -> Button
+
+    let ok = createButton "OK"            -- using th "abstract" API to create buttons
+    let exit = createButton "Exit"    
+    paint ok                              -- using the "abstract" API to paint buttons
     paint exit
 
-    paint $ createButton OSX "about"
+    paint $ createButtonFor OSX "about"   -- paint a platform specific button
 
+    -- now let's create our own linux button implementation:
     let linuxButton = Button "penguin" (putStrLn "linuxButton: penguin")    
     paint linuxButton
 ```
