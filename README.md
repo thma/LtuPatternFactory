@@ -1154,7 +1154,7 @@ So the Monoid type class definition forms a *template* where the default impleme
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/TemplateMethod.hs)
 
-## TBD: Factory -> Function Currying
+## TBD: Factory -> partial application
 
 
 ### Abstract Factory -> functions as data type values
@@ -1165,13 +1165,35 @@ So the Monoid type class definition forms a *template* where the default impleme
 > This pattern separates the details of implementation of a set of objects from their general usage and relies on object composition, as object creation is implemented in methods exposed in the factory interface.
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Abstract_factory_pattern)
 
+There is a classic example that demonstrates the application of this pattern in the context of a typical problem in object oriented software design:
+
+The example revolves around a small GUI framework that needs different implementations to render Buttons for different OS Platforms (called WIN and OSX in this example).
+A client of the GUI API should work with a uniform API that hides the specifics of the different platforms. The problem then is: how can the  client be provided with a platform specific implementation without explicitely asking for a given implementation and how can we maintain a uniform API that hides the implementation specifics.
+
+In OO languages the abtract factory pattern would be the canonical answer to this problem:
+- The client calls an abstract factory `GUIFactory` interface to create a `Button` by calling `createButton() : Button` that somehow chooses (typically by some kind of configuration) which concrete factory has to be used to create concrete `Button` instances. 
+- The concrete classes `WinButton` and `OSXButton` implement the interface `Button` and provide platform specific implementations of `paint () : void`. 
+- As the client uses only the interface methods `createButton()` and `paint()` it does not have to deal with any platform specific code.
+
+The following diagram depicts the structure of interfaces and classes in this scenario:
+
+![The abstract Button Factory](https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Abstract_factory.svg/517px-Abstract_factory.svg.png)
+
+In a functional language this kind of problem would be solved quite differently. In FP functions are first class citizens and thus it is much easier to treat function that represent platform specific actions as "normal" values that can be reached around.
+
+So we could represent a Button type as a data type with a label (holding the text to display on the button) and an `IO ()` action that represents the platform specific rendering:
+
 ```haskell
 -- | representation of a Button UI widget    
 data Button = Button 
     { label  :: String -- the text label of the button
-    , paint  :: IO ()  -- a platform dependent rendering action
+    , paint  :: IO ()  -- a platform specific rendering action
     }
+```
 
+Platform specific actions to render a `Button` would look like follows:
+
+```haskell
 -- | rendering a Button for the WIN platform (we just simulate it by printing the label) 
 winPaint :: String -> IO ()
 winPaint lbl = putStrLn $ "winButton: " ++ lbl
@@ -1179,7 +1201,30 @@ winPaint lbl = putStrLn $ "winButton: " ++ lbl
 -- | rendering a Button for the OSX platform
 osxPaint :: String -> IO ()
 osxPaint lbl = putStrLn $ "osxButton: " ++ lbl
- 
+```
+(Of course a real implementation would be quite more complex, but we don't care about the nitty gitty details here.)
+
+With this code we can now create concrete Buttons like so:
+```haskell
+ghci> button = Button "Okay" (winPaint "Okay")
+ghci> :type button
+button :: Button
+ghci> :type paint
+paint :: Button -> IO ()
+ghci> paint button
+winButton: Okay
+```
+
+We created a button with `Button "Okay" (winPaint "Okay")`. The field paint of that button instance now holds the function call (winPaint "Okay").
+
+The nice thing about the Haskell record syntax is that we get accessor functions to the fields of the type for free.
+That's why the type declaration of `Button` also created a function `paint :: Button -> IO ()` which will call the function stored in the `paint` field of a `Button` instance.
+
+In this case we constructed `button` with setting `paint` to `winPaint` and thus `paint Button` prints `winButton: Okay`. 
+
+Applying this scheme it is now very simple to create buttons with different implementations of `paint`:
+
+```haskell 
 -- | enumeration of supported operating system platforms
 data OS = OSX | WIN deriving (Show, Eq, Enum)
 
@@ -1193,9 +1238,9 @@ createButton os lbl =
 abstractFactoryDemo = do
     putStrLn "AbstractFactory -> functions as data type values"
     let os = WIN
-    let newButton = createButton os
-    let ok = newButton "OK"
-    let exit = newButton "Exit"    
+    let guiFactory = createButton os
+    let ok = guiFactory "OK"
+    let exit = guiFactory "Exit"    
     paint ok
     paint exit
 
