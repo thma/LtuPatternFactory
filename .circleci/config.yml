@@ -1,13 +1,28 @@
-version: 2
+version: 2.1
 jobs:
   build:
     docker:
-      - image: debian:stretch
+      - image: fpco/stack-build:lts
     steps:
       - checkout
+      - restore_cache:
+          name: Restore Cached Dependencies
+          keys:
+            - cci-demo-haskell-v1-{{ checksum "package.yaml" }}
       - run:
-          name: Greeting
-          command: echo Hello, world.
+          name: Resolve/Update Dependencies
+          command: stack setup
       - run:
-          name: Print the Current Time
-          command: date
+          name: Run tests
+          command: stack test
+      - run:
+          name: Install executable
+          command: stack install
+      - save_cache:
+          name: Cache Dependencies
+          key: cci-demo-haskell-v1-{{ checksum "package.yaml" }}
+          paths:
+            - ".stack-work"
+      - store_artifacts: # upload build artifact for display in CircleCI
+          path: ~/.local/bin/circleci-demo-haskell-exe
+          destination: circleci-demo-haskell-exe
