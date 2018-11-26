@@ -40,3 +40,34 @@ executable LtuPatternFactory
                      , directory
                      , bytestring
                      , tagged
+
+test-suite LtuPatternFactory-Demo
+    type:             exitcode-stdio-1.0
+    other-modules:    AbstractFactory
+                    , Adapter
+                    , Builder
+                    , Composite
+                    , Iterator
+                    , JsonPersistence
+                    , NullObject
+                    , Pipeline
+                    , Singleton
+                    , Strategy
+                    , TemplateMethod
+                    , Visitor
+                    , Coerce
+                    , IdiomBrackets
+
+    hs-source-dirs: src
+    main-is:        Main.hs
+    build-depends:  base >= 4.7 && < 5
+                  , containers
+                  , mtl
+                  , aeson
+                  , aeson-pretty
+                  , text
+                  , directory
+                  , bytestring
+                  , tagged
+                    -- , Cabal, HUnit, test-framework, test-framework-hunit
+    default-language:     Haskell2010

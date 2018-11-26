@@ -24,5 +24,5 @@ jobs:
           paths:
             - ".stack-work"
       - store_artifacts: # upload build artifact for display in CircleCI
-          path: ~/.local/bin/circleci-demo-haskell-exe
-          destination: circleci-demo-haskell-exe
+          path: ~/.local/bin/LtuPatternFactory
+          destination: LtuPatternFactory
