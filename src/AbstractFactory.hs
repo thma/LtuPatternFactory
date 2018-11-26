@@ -1,4 +1,5 @@
 module AbstractFactory where
+import System.Info (os) -- provide Platform information
 
 -- | representation of a Button UI widget    
 data Button = Button 
@@ -14,26 +15,30 @@ winPaint lbl = putStrLn $ "winButton: " ++ lbl
 osxPaint :: String -> IO ()
 osxPaint lbl = putStrLn $ "osxButton: " ++ lbl
  
--- | enumeration of supported operating system platforms
-data OS = OSX | WIN deriving (Show, Eq, Enum)
+data Platform = OSX | WIN | NIX | Other
+
+platform :: Platform
+platform = case os of
+    "darwin"  -> OSX
+    "mingw32" -> WIN
+    "linux"   -> NIX
+    _         -> Other
 
 -- | create a button for os platform with label lbl
-createButtonFor :: OS -> String -> Button
-createButtonFor os lbl = 
-    case os of
-        WIN -> Button lbl (winPaint lbl)
-        OSX -> Button lbl (osxPaint lbl)
+createButton :: String -> Button
+createButton lbl = case platform of
+    OSX    -> Button lbl (osxPaint lbl)
+    WIN    -> Button lbl (winPaint lbl)
+    NIX    -> Button lbl (osxPaint lbl)
+    Other  -> Button lbl (osxPaint lbl)
+
 
 abstractFactoryDemo = do
-    putStrLn "AbstractFactory -> functions as data type values"
-    let os = WIN
-    let createButton = createButtonFor os
-    let ok = createButton "OK"
+    putStrLn "AbstractFactory -> functions as data type values"    
     let exit = createButton "Exit"    
+    let ok = createButton "OK"
     paint ok
     paint exit
 
-    paint $ createButtonFor OSX "about"
-
-    let linuxButton = Button "penguin" (putStrLn "linuxButton: penguin")    
-    paint linuxButton
+    let osxButton = Button "apple" (putStrLn "osxButton: apple")    
+    paint osxButton

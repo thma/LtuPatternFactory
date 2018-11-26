@@ -7,6 +7,7 @@ Recently, while re-reading through the [Typeclassopedia](https://wiki.haskell.or
 By searching the web I found some blog entries studying specific patterns, but I did not come across any comprehensive study. As it seemed that nobody did this kind of work yet I found it worthy to spend some time on it and write down all my findings on the subject.
 
 I think this kind of exposition could be helpful if you are either:
+
 * a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
 * a functional programmer who wants to get a deeper intuition for type classes.
 
@@ -14,29 +15,31 @@ I think this kind of exposition could be helpful if you are either:
 > Please use the [Issue Tracker](https://github.com/thma/LtuPatternFactory/issues) to enter your requests.
 >
 >Directions I'd like to cover in more depths are for instance:
-> - complete coverage of the GOF set of patterns
-> - coverage of category theory based patterns (any ideas are welcome!)
-> - coverage of patterns with a clear FP background, eg. MapReduce, Blockchain, Function-as-a-service 
+>
+> * complete coverage of the GOF set of patterns
+> * coverage of category theory based patterns (any ideas are welcome!)
+> * coverage of patterns with a clear FP background, eg. MapReduce, Blockchain, Function-as-a-service 
 
 # Table of contents
-- [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
-- [The Patternopedia](#the-patternopedia)
-    - [Strategy -> Functor](#strategy---functor) 
-    - [Singleton -> Applicative](#singleton---applicative) 
-    - [Pipeline -> Monad](#pipeline---monad)
-    - [NullObject -> Maybe Monad](#nullobject---maybe-monad)
-    - [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
-    - [Visitor -> Foldable](#visitor---foldable)
-    - [Iterator -> Traversable](#iterator---traversable)
-    - [Type classes Category, Arrow & Co.](#type-classes-category-arrow--co)
-- [Beyond type class patterns](#beyond-type-class-patterns)
-    - [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
-    - [Adapter -> Function Composition](#adapter---function-composition)
-    - [Template Method -> type class default functions](#template-method---type-class-default-functions)
-    - Factory -> TBD
-        - [Abstract Factory -> functions as data type values](#abstract-factory---functions-as-data-type-values)
-        - [Builder -> record syntax, smart constructor](#builder---record-syntax-smart-constructor)
-- [Some related links](#some-interesting-links)
+
+* [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
+* [The Patternopedia](#the-patternopedia)
+  * [Strategy -> Functor](#strategy---functor) 
+  * [Singleton -> Applicative](#singleton---applicative) 
+  * [Pipeline -> Monad](#pipeline---monad)
+  * [NullObject -> Maybe Monad](#nullobject---maybe-monad)
+  * [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
+  * [Visitor -> Foldable](#visitor---foldable)
+  * [Iterator -> Traversable](#iterator---traversable)
+  * [Type classes Category, Arrow & Co.](#type-classes-category-arrow--co)
+* [Beyond type class patterns](#beyond-type-class-patterns)
+  * [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
+  * [Adapter -> Function Composition](#adapter---function-composition)
+  * [Template Method -> type class default functions](#template-method---type-class-default-functions)
+  * Factory -> TBD
+    * [Abstract Factory -> functions as data type values](#abstract-factory---functions-as-data-type-values)
+    * [Builder -> record syntax, smart constructor](#builder---record-syntax-smart-constructor)
+* [Some related links](#some-interesting-links)
 
 
 # The Patternopedia
@@ -45,8 +48,8 @@ The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) 
 In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
 For each of the Typeclassopedia type classes (at least up to Traversable) I try to explain how it corresponds to structures applied in design patterns.
 
-
 ## Strategy -> Functor
+
 > "The strategy pattern [...] is a behavioral software design pattern that enables selecting an algorithm at runtime. Instead of implementing a single algorithm directly, code receives run-time instructions as to which in a family of algorithms to use"
 
 ![strategy pattern](https://upload.wikimedia.org/wikipedia/commons/4/45/W3sDesign_Strategy_Design_Pattern_UML.jpg)
@@ -71,16 +74,20 @@ context :: Num a => (a -> a) -> [a] -> [a]
 context f l = map f l
 -- using pointfree style this can be written as:
 context = map
-``` 
+```
+
 The `context` function uses higher order `map` function  (`map :: (a -> b) -> [a] -> [b]`) to apply the strategies to lists of numbers:
+
 ```haskell
 ghci> context strategyId [1..10]
 [1,2,3,4,5,6,7,8,9,10]
 ghci> context strategyDouble [1..10]
 [2,4,6,8,10,12,14,16,18,20]
 ```
+
 Instead of map we could use just any other function that accepts a function of type `Num a => a -> a` and applies it in a given context.
 In Haskell the application of a function in a computational context is generalized with the type class `Functor`:
+
 ```haskell
 class  Functor f  where
     fmap :: (a -> b) -> f a -> f b
@@ -916,6 +923,7 @@ This example has been implemented according to ideas presented in the paper
 
 
 ## Type classes Category, Arrow & Co.
+
 Theses type classes aim at generalizing elements of Monads or Functors.
 
 If you have ideas how these type classes map to specific design patterns please let me know!
@@ -923,13 +931,15 @@ If you have ideas how these type classes map to specific design patterns please 
 # Beyond type class patterns
 
 TBD:
+
 - Chain of Responsibility: ADT + pattern matching the ADT (at least the distpatch variant)
 
-- Currying / Partial application
+- Partial application
 
 - Blockchain as Monadic chain of Actions
 
 ## Dependency Injection -> Parameter Binding
+
 > [...] Dependency injection is a technique whereby one object (or static method) supplies the dependencies of another object. A dependency is an object that can be used (a service). An injection is the passing of a dependency to a dependent object (a client) that would use it. The service is made part of the client's state. Passing the service to the client, rather than allowing a client to build or find the service, is the fundamental requirement of the pattern.
 >
 > This fundamental requirement means that using values (services) produced within the class from new or static methods is prohibited. The client should accept values passed in from outside. This allows the client to make acquiring dependencies someone else's problem. 
@@ -937,6 +947,7 @@ TBD:
 
 In functional languages this is simply achieved by binding a functions formal parameters to values.
 See the following example where the function `generatePage :: (String -> Html) -> String -> Html` does not only require a String input but also a rendering function that does the actual conversion from text to Html.
+
 ```haskell
 data Html = ...
 
@@ -946,7 +957,9 @@ generatePage renderer text = renderer text
 htmlRenderer :: String -> Html
 htmlRenderer = ...
 ```
+
 With partial application its even possible to form a closure that incorporates the rendering function:
+
 ```haskell
 ghci> closure = generatePage htmlRenderer
 :type closure
@@ -956,6 +969,7 @@ closure :: String -> Html
 
 
 ## Adapter -> Function Composition
+
 > "The adapter pattern is a software design pattern (also known as wrapper, an alternative naming shared with the decorator pattern) that allows the interface of an existing class to be used as another interface. It is often used to make existing classes work with others without modifying their source code." 
 > (Quoted from https://en.wikipedia.org/wiki/Adapter_pattern)
 
@@ -964,29 +978,38 @@ An example is an adapter that converts the interface of a Document Object Model 
 What does an adapter do? It translates a call to the adapter into a call of the adapted backend code. Which may also involve translation of the argument data.
 
 Say we have some `backend` function that we want to provide with an adapter. we assume that `backend` has type `c -> d`:
+
 ```haskell
 backend :: c -> d
 ```
+
 Our adapter should be of type `a -> b`:
+
 ```haskell
 adapter :: a -> b
 ```
 
 In order to write this adapter we have to write two function. The first is:
+
 ```haskell
 marshal :: a -> c
 ```
+
 which translated the input argument of `adapter` into the correct type `c` that can be digested by the backend.
 And the second function is:
+
 ```haskell
 unmarshal :: d -> b
 ```
+
 which translates the result of the `backend`function into the correct return type of `adapter`.
 `adapter` will then look like follows:
+
 ```haskell
 adapter :: a -> b
 adapter = unmarshal . backend . marshal
 ```
+
 So in essence the Adapter Patterns is just function composition.
 
 Here is a simple example. Say we have a backend that understands only 24 hour arithmetics (eg. 23:50 + 0:20 = 0:10).
@@ -1010,7 +1033,7 @@ addMinutesToWallTime x (WallTime (h, m)) =
             let (dnew, hnew') = (hNew + 1) `quotRem` 24
             in  WallTime (24*dnew + hnew', mNew-60)
         else WallTime (hNew, mNew)
-        
+
 -- this is our time representation in Minutes that we want to use in the frontend
 newtype Minute = Minute Int deriving (Show)
 
@@ -1051,6 +1074,7 @@ In functional programming the answer to this kind of problem is again the usage 
 
 In the following example we come back to the example for the [Adapter](#adapter---function-composition).
 The function `addMinutesAdapter` lays out a structure for interfacing to some kind of backend:
+
 1. marshalling the arguments into the backend format
 2. apply the backend logic to the marshalled arguments
 3. unmarshal the backend result data into the frontend format
