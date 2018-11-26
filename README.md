@@ -20,7 +20,7 @@ I think this kind of exposition could be helpful if you are either:
 > * coverage of category theory based patterns (any ideas are welcome!)
 > * coverage of patterns with a clear FP background, eg. MapReduce, Blockchain, Function-as-a-service 
 
-# Table of contents
+## Table of contents
 
 * [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
 * [The Patternopedia](#the-patternopedia)
@@ -41,14 +41,14 @@ I think this kind of exposition could be helpful if you are either:
     * [Builder -> record syntax, smart constructor](#builder---record-syntax-smart-constructor)
 * [Some related links](#some-interesting-links)
 
+## The Patternopedia
 
-# The Patternopedia
 The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) is a now classic paper that introduces the Haskell type classes by clarifying their algebraic and category-theoretic background. In particular it explains the relationships among those type classes.
 
 In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
 For each of the Typeclassopedia type classes (at least up to Traversable) I try to explain how it corresponds to structures applied in design patterns.
 
-## Strategy -> Functor
+### Strategy -> Functor
 
 > "The strategy pattern [...] is a behavioral software design pattern that enables selecting an algorithm at runtime. Instead of implementing a single algorithm directly, code receives run-time instructions as to which in a family of algorithms to use"
 
@@ -92,21 +92,25 @@ In Haskell the application of a function in a computational context is generaliz
 class  Functor f  where
     fmap :: (a -> b) -> f a -> f b
 ```
+
 Actually `map` is the fmap implementation for the List Functor instance:
+
 ```haskell
 instance Functor [] where
     fmap = map
 ```
+
 Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose. Other type classes like `Foldable` or `Traversable` can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context. 
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
 
-## Singleton -> Applicative
-> "The singleton pattern is a software design pattern that restricts the instantiation of a class to one object. This is useful when exactly one object is needed to coordinate actions across the system." 
-> (quoted from https://en.wikipedia.org/wiki/Singleton_pattern)
+### Singleton -> Applicative
+
+> "The singleton pattern is a software design pattern that restricts the instantiation of a class to one object. This is useful when exactly one object is needed to coordinate actions across the system."
+> (quoted from [Wikipedia](https://en.wikipedia.org/wiki/Singleton_pattern)
 
 The singleton pattern ensures that multiple requests to a given object always return one and the same singleton instance.
-In functional programming this semantics can be achieved by ```let```. 
+In functional programming this semantics can be achieved by ```let```.
 
 ```haskell
 let singleton = someExpensiveComputation
@@ -120,7 +124,7 @@ Via the `let`-Binding we can thread the singleton through arbitrary code in the 
 
 Type classes provide several tools to make this kind of threading more convenient or even to avoid explicit threading of instances.
 
-### Using Applicative Functor for threading of singletons
+#### Using Applicative Functor for threading of singletons
 
 The following code defines a simple expression evaluator:
 
@@ -131,15 +135,16 @@ data Exp e = Var String
            | Mul (Exp e) (Exp e)
 
 -- the environment is a list of tupels mapping variable names to values of type e
-type Env e = [(String, e)] 
+type Env e = [(String, e)]
 
 -- a simple evaluator reducing expression to numbers
 eval :: Num e => Exp e -> Env e -> e
 eval (Var x)   env = fetch x env
 eval (Val i)   env = i
 eval (Add p q) env = eval p env + eval q env  
-eval (Mul p q) env = eval p env * eval q env 
+eval (Mul p q) env = eval p env * eval q env
 ```
+
 `eval` is a classic evaluator function that recursively evaluates sub-expression before applying `+` or `*`.
 Note how the explicit `env`parameter is threaded through the recursive eval calls. This is needed to have the 
 environment avalailable for variable lookup at any recursive call depth.
@@ -153,7 +158,9 @@ main = do
       env = [("pi", pi)]
   print $ eval exp env
 ```
+
 Experienced Haskellers will notice the ["eta-reduction smell"](https://wiki.haskell.org/Eta_conversion) in `eval (Var x) env = fetch x env` which hints at the possibilty to remove `env` as an explicit parameter. We can not do this right away as the other equations for `eval` do not allow eta-reduction. In order to do so we have to apply the combinators of the `Applicative Functor`:
+
 ```haskell
 class Functor f => Applicative f where
     pure  :: a -> f a
@@ -163,7 +170,9 @@ instance Applicative ((->) a) where
     pure        = const
     (<*>) f g x = f x (g x)
 ```
+
 This `Applicative` allows us to rewrite `eval` as follows:
+
 ```haskell
 eval :: Num e => Exp e -> Env e -> e
 eval (Var x)   = fetch x
@@ -171,32 +180,41 @@ eval (Val i)   = pure i
 eval (Add p q) = pure (+) <*> eval p  <*> eval q  
 eval (Mul p q) = pure (*) <*> eval p  <*> eval q 
 ```
+
 Any explicit handling of the variable `env` is now removed.
 (I took this example from the classic paper [Applicative programming with effects](http://www.soi.city.ac.uk/~ross/papers/Applicative.pdf) which details how `pure` and `<*>` correspond to the combinatory logic combinators `K` and `S`.)
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Singleton.hs)
 
-## Pipeline -> Monad
+### Pipeline -> Monad
+
 > In software engineering, a pipeline consists of a chain of processing elements (processes, threads, coroutines, functions, etc.), arranged so that the output of each element is the input of the next; the name is by analogy to a physical pipeline.
 > (Quoted from: https://en.wikipedia.org/wiki/Pipeline_(software))
 
 The concept of pipes and filters in Unix shell scripts is a typical example of the pipeline architecture pattern.
+
 ```bash
 $ echo "hello world" | wc -w | xargs printf "%d*3\n" | bc -l
 6
 ``` 
+
 This works exactly as stated in the wikipedia definition of the pattern: the output of `echo "hello world"` is used as input for the next command `wc -w`. The ouptput of this command is then piped as input into `xargs printf "%d*3\n"` and so on.
 On the first glance this might look like ordinary function composition. We could for instance come up with the following approximation in Haskell:
+
 ```haskell
 ((3 *) . length . words) "hello world"
 6
 ```
+
 But with this design we missed an important feature of the chain of shell commands: The commands do not work on elementary types like Strings or numbers but on input and output streams that are used to propagate the actual elementary data around. So we can't just send a String into the `wc` command as in `"hello world" | wc -w`. Instead we have to use `echo` to place the string into a stream that we can then use as input to the `wc` command:
+
 ```bash
-$ echo "hello world" | wc -w
+> echo "hello world" | wc -w
 ```
+
 So we might say that `echo` *injects* the String `"hello world"` into the stream context.
 We can capture this behaviour in a functional program like this:
+
 ```haskell
 -- The Stream type is a wrapper around an arbitrary payload type 'a'
 newtype Stream a = Stream a deriving (Show)
@@ -213,7 +231,7 @@ Stream x |> f = f x
 
 -- echo and |> are used to create the actual pipeline
 pipeline :: String -> Stream Int
-pipeline str = 
+pipeline str =
   echo str |> echo . length . words |> echo . (3 *)
 -- now executing the program in ghci repl:
 ghci> pipeline "hello world"
@@ -221,24 +239,29 @@ Stream 6
 ```
 
 The `echo` function injects any input into the `Stream` context:
+
 ```haskell
 ghci> echo "hello world"
 Stream "hello world"
 ```
+
 The `|>` (pronounced as "andThen") does the function chaining:
+
 ```haskell
 ghci> echo "hello world" |> echo . words
 Stream ["hello","world"]
 ```
+
 The result of `|>` is of type `Stream b` that's why we cannot just write `echo "hello world" |> words`. We have to use echo  to create a `Stream` output that can be digested by a subsequent `|>`.
 
 The interplay of a Context type `Stream a` and the functions `echo` and `|>` is a well known pattern from functional languages: it's the legendary *Monad*. As the [Wikipedia article on the pipeline pattern](https://en.wikipedia.org/wiki/Pipeline_(software)) states:
 
-> Pipes and filters can be viewed as a form of functional programming, using byte streams as data objects; more specifically, they can be seen as a particular form of monad for I/O. 
+> Pipes and filters can be viewed as a form of functional programming, using byte streams as data objects; more specifically, they can be seen as a particular form of monad for I/O.
 
 There is an interesting paper available elaborating on the monadic nature of Unix pipes: http://okmij.org/ftp/Computation/monadic-shell.html.
 
 Here is the definition of the Monad type class in Haskell:
+
 ```Haskell
 class Applicative m => Monad m where
     -- | Sequentially compose two actions, passing any value produced
@@ -249,7 +272,9 @@ class Applicative m => Monad m where
     return :: a -> m a
     return = pure
 ```
+
 By looking at the types of `>>=` and `return` it's easy to see the direct correspondence to `|>` and `echo` in the pipeline example above:
+
 ```haskell
     (|>)   :: Stream a -> (a -> Stream b) -> Stream b
     echo   :: a -> Stream a
@@ -257,9 +282,11 @@ By looking at the types of `>>=` and `return` it's easy to see the direct corres
 
 Mhh, this is nice, but still looks a lot like ordinary composition of functions, just with the addition of a wrapper. 
 In this simplified example that's true, because we have designed the `|>` operator to simply unwrap a value from the Stream and bind it to the formal parameter of the subsequent function:
+
 ```haskell
 Stream x |> f = f x
 ```
+
 But we are free to implement the `andThen` operator in any way that we seem fit as long we maintain the type signature and the [monad laws](https://en.wikipedia.org/wiki/Monad_%28functional_programming%29#Monad_laws).
 So we could for instance change the semantics of `>>=` to keep a log along the execution pipeline:
 
@@ -286,7 +313,7 @@ instance Monad LoggerStream where
   m1 >>= m2  = let LoggerStream(f1, l1) = m1
                    LoggerStream(f2, l2) = m2 f1
                in LoggerStream(f2, l1 ++ l2)
-   
+
 -- compute length of a String and provide a log message               
 logLength :: String -> LoggerStream Int
 logLength str = let l = length(words str)
@@ -306,6 +333,7 @@ logPipeline str =
 > logPipeline "hello logging world"
 LoggerStream (9,["length(hello logging world) = 3","multiply(3, 3) = 9"])
 ```
+
 What's noteworthy here is that Monads allow to make the mechanism of chaining functions *explicit*. We can define what `andThen` should mean in our pipeline by choosing a different Monad implementation.
 So in a sense Monads could be called [programmable semicolons](http://book.realworldhaskell.org/read/monads.html#id642960)
 
@@ -313,7 +341,7 @@ To make this statement a bit clearer we will have a closer look at the internal 
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Pipeline.hs)
 
-## NullObject -> Maybe Monad
+### NullObject -> Maybe Monad
 
 >[...] a null object is an object with no referenced value or with defined neutral ("null") behavior. The null object design pattern describes the uses of such objects and their behavior (or lack thereof).
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Null_object_pattern)
@@ -328,7 +356,7 @@ In Haskell the most simple option type is `Maybe`. Let's directly dive into an e
 If we now lookup up a song title we may either be lucky and find the respective album or not so lucky when there is no album matching our song:
 
 ```haskell
-import           Data.Map (Map, fromList) 
+import           Data.Map (Map, fromList)
 import qualified Data.Map as Map (lookup) -- avoid clash with Prelude.lookup
 
 -- type aliases for Songs and Albums
@@ -342,6 +370,7 @@ songMap = fromList
     ,("An Ending", "Apollo: Atmospheres and Soundtracks")]
 
 ```
+
 We can lookup this map by using the function `Map.lookup :: Ord k => k -> Map k a -> Maybe a`.
 
 If no match is found it will return `Nothing` if a match is found it will return `Just match`:
@@ -352,11 +381,14 @@ Just "Microgravity"
 ghci> Map.lookup "The Fairy Tale" songMap
 Nothing
 ```
+
 Actually the `Maybe` type is defined as:
+
 ```haskell
 data  Maybe a  =  Nothing | Just a 
     deriving (Eq, Ord)
 ```
+
 All code using the `Map.lookup` function will never be confronted with any kind of Exceptions, null pointers or other nasty things. Even in case of errors a lookup will always return a properly typed `Maybe` instance. By pattern matching for `Nothing` or `Just a` client code can react on failing matches or positive results:
 
 ```haskell
@@ -364,9 +396,11 @@ All code using the `Map.lookup` function will never be confronted with any kind 
         Nothing -> print "sorry, could not find your song"
         Just a  -> print a
 ```
+
 Let's try to apply this to an extension of our simple song lookup.
 Let's assume that our music database has much more information available. Apart from a reverse index from songs to albums, there might also be an index mapping album titles to artists.
 And we might also have an index mapping artist names to their websites:
+
 ```haskell
 type Song   = String
 type Album  = String
@@ -381,27 +415,28 @@ songMap = fromList
 albumMap :: Map Album Artist
 albumMap = fromList
     [("Microgravity","Biosphere")
-    ,("Apollo: Atmospheres and Soundtracks", "Brian Eno")]    
+    ,("Apollo: Atmospheres and Soundtracks", "Brian Eno")]
 
 artistMap :: Map Artist URL
 artistMap = fromList
     [("Biosphere","http://www.biosphere.no//")
-    ,("Brian Eno", "http://www.brian-eno.net")]    
+    ,("Brian Eno", "http://www.brian-eno.net")]
 
-loookup' :: Ord a => Map a b -> a -> Maybe b
-loookup' = flip Map.lookup    
+lookup' :: Ord a => Map a b -> a -> Maybe b
+lookup' = flip Map.lookup
 
 findAlbum :: Song -> Maybe Album
-findAlbum = loookup' songMap 
+findAlbum = lookup' songMap 
 
 findArtist :: Album -> Maybe Artist
-findArtist = loookup' albumMap
+findArtist = lookup' albumMap
 
 findWebSite :: Artist -> Maybe URL
-findWebSite = loookup' artistMap
+findWebSite = lookup' artistMap
 ```
 
 With all this information at hand we want to write a function that has an input parameter of type `Song` and returns a `Maybe URL` by going from song to album to artist to website url:
+
 ```haskell
 findUrlFromSong :: Song -> Maybe URL
 findUrlFromSong song = 
@@ -415,6 +450,7 @@ findUrlFromSong song =
                         Nothing  -> Nothing
                         Just url -> Just url
 ```
+
 This code makes use of the pattern matching logic described before. It's worth to note that there is some nice circuit breaking happening in case of a `Nothing`. In this case `Nothing` is directly returned as result of the function and the rest of the case-ladder is not executed.
 What's not so nice is *"the dreaded ladder of code marching off the right of the screen"* [(quoted from Real World Haskell)](http://book.realworldhaskell.org/).
 
@@ -422,6 +458,7 @@ For each find function we have to repeat the same ceremony of pattern matching o
 
 The good news is that it is possible to avoid this ladder.
 We can rewrite our search by applying the `andThen` operator `>>=` as `Maybe` is an instance of `Monad`:
+
 ```haskell
 findUrlFromSong' :: Song -> Maybe URL
 findUrlFromSong' song =
@@ -429,13 +466,17 @@ findUrlFromSong' song =
     findArtist album >>= \artist ->
     findWebSite artist  
 ```
+
 or even shorter as we can eliminate the lambda expressions by applying [eta-conversion](https://wiki.haskell.org/Eta_conversion):
+
 ```haskell
 findUrlFromSong'' :: Song -> Maybe URL
 findUrlFromSong'' song =
     findAlbum song >>= findArtist >>= findWebSite 
 ```
+
 Using it in GHCi:
+
 ```haskell
 ghci> findUrlFromSong'' "All you need is love"
 Nothing
@@ -445,9 +486,10 @@ Just "http://www.brian-eno.net"
 
 The expression `findAlbum song >>= findArtist >>= findWebSite` and the sequencing of actions in the [pipeline](#pipeline---monad) example `return str >>= return . length . words >>= return . (3 *)` have a similar structure.
 
-But the behaviour of both chains is quite different: In the Maybe Monad `a >>= b` does not evaluate b if `a == Nothing` but stops the whole chain of actions by simply returning `Nothing`. 
+But the behaviour of both chains is quite different: In the Maybe Monad `a >>= b` does not evaluate b if `a == Nothing` but stops the whole chain of actions by simply returning `Nothing`.
 
 The pattern matching and 'short-circuiting' is directly coded into the definition of `(>>=)` in the Monad implementation of `Maybe`:
+
 ```haskell
 instance  Monad Maybe  where
     (Just x) >>= k      = k x
@@ -460,6 +502,7 @@ This elegant feature of `(>>=)` in the `Maybe` Monad allows us to avoid ugly and
 
 Maybe is often used to avoid any kind of partial functions. Take for example division by zero or computing the square root of negative numbers which are undefined (at least for real numbers).
 Here come safe definitions of these functions that return `Nothing` for undefined cases:
+
 ```haskell
 safeRoot :: Double -> Maybe Double
 safeRoot x
@@ -471,16 +514,21 @@ safeReciprocal x
     | x /= 0    = Just (1/x)
     | otherwise = Nothing
 ```
+
 As we have already learned the monadic `>>=` operator allows to chain such function as in the following example:
+
 ```haskell
 safeRootReciprocal :: Double -> Maybe Double
 safeRootReciprocal x = return x >>= safeReciprocal >>= safeRoot
 ```
+
 This can even written more terse as:
+
 ```haskell
 safeRootReciprocal :: Double -> Maybe Double
 safeRootReciprocal = safeReciprocal >=> safeRoot
 ```
+
 The use of the Kleisli operator `>=>` makes it more evident that we are actually aiming at a composition of the monadic functions `safeReciprocal` and `safeRoot`. 
 
 There are many predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`. But that's a different story...
@@ -491,7 +539,7 @@ There are many predefined Monads available in the Haskell curated libraries and 
 #### TBD: Reimplementing the Evaluator with Writer-Monad
 -->
 
-## Composite -> SemiGroup -> Monoid
+### Composite -> SemiGroup -> Monoid
 
 >In software engineering, the composite pattern is a partitioning design pattern. The composite pattern describes a group of objects that is treated the same way as a single instance of the same type of object. The intent of a composite is to "compose" objects into tree structures to represent part-whole hierarchies. Implementing the composite pattern lets clients treat individual objects and compositions uniformly.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Composite_pattern))
@@ -499,7 +547,6 @@ There are many predefined Monads available in the Haskell curated libraries and 
 A typical example for the composite pattern is the hierarchical grouping of test cases to TestSuites in a testing framework. Take for instance the following class diagram from the [JUnit cooks tour](http://junit.sourceforge.net/doc/cookstour/cookstour.htm) which shows how JUnit applies the Composite pattern to group `TestCases` to `TestSuites` while both of them implement the `Test` interface:
 
 ![Composite Pattern used in Junit](http://junit.sourceforge.net/doc/cookstour/Image5.gif)
-
 
 In Haskell we could model this kind of hierachy with an algebraic data type (ADT):
 
@@ -512,26 +559,30 @@ data Test = TestCase TestCase
 -- a test case produces a boolean when executed
 type TestCase = () -> Bool
 ```
+
 The function `run` as defined below can either execute a single TestCase or a composite TestSuite:
+
 ```haskell
--- execution of a Test. 
+-- execution of a Test.
 run :: Test -> Bool
 run (TestCase t)  = t () -- evaluating the TestCase by applying t to ()
 run (TestSuite l) = all (True ==) (map run l) -- running all tests in l and return True if all tests pass
 
--- a few most simple test cases    
-t1 :: Test    
+-- a few most simple test cases
+t1 :: Test
 t1 = TestCase (\() -> True)
-t2 :: Test 
+t2 :: Test
 t2 = TestCase (\() -> True)
 t3 :: Test 
 t3 = TestCase (\() -> False)
 -- collecting all test cases in a TestSuite
 ts = TestSuite [t1,t2,t3]
 ```
+
 As run is of type `run :: Test -> Bool` we can use it to execute single `TestCases` or complete `TestSuites`. 
 Let's try it in GHCI:
-```
+
+```haskell
 ghci> run t1
 True
 ghci> run ts
@@ -539,6 +590,7 @@ False
 ```
 
 In order to aggregate TestComponents we follow the design of JUnit and define a function `addTest`. Adding two atomic Tests will result in a TestSuite holding a list with the two Tests. If a Test is added to a TestSuite, the test is added to the list of tests of the suite. Adding TestSuites will merge them.
+
 ```haskell
 -- adding Tests
 addTest :: Test -> Test -> Test
@@ -548,7 +600,7 @@ addTest (TestSuite list) t2@(TestCase _)  = TestSuite (list ++ [t2])
 addTest (TestSuite l1) (TestSuite l2)     = TestSuite (l1 ++ l2)
 ```
 
-If we take a closer look at `addTest` we will see that it is a associative binary operation on the set of `Test`s. 
+If we take a closer look at `addTest` we will see that it is a associative binary operation on the set of `Test`s.
 
 In mathemathics a set with an associative binary operation is a [Semigroup](https://en.wikipedia.org/wiki/Semigroup).
 
@@ -558,9 +610,11 @@ We can thus make our type `Test` an instance of the type class `Semigroup` with 
 instance Semigroup Test where
     (<>)   = addTest
 ```
+
 What's not visible from the JUnit class diagram is how typical object oriented implementations will have to deal with null-references. That is the implementations would have to make sure that the methods `run` and `addTest` will handle empty references correctly. 
 With Haskells algebraic data types we would rather make this explicit with a dedicated `Empty` element.
 Here are the changes we have to add to our code:
+
 ```haskell
 -- the composite data structure: a Test can be Empty, a single TestCase
 -- or a TestSuite holding a list of Tests
@@ -568,7 +622,7 @@ data Test = Empty
           | TestCase TestCase
           | TestSuite [Test]
 
--- execution of a Test. 
+-- execution of a Test.
 run :: Test -> Bool
 run Empty         = True -- empty tests will pass
 run (TestCase t)  = t () -- evaluating the TestCase by applying t to ()
@@ -584,17 +638,19 @@ addTest t1@(TestCase _) (TestSuite list)  = TestSuite ([t1] ++ list)
 addTest (TestSuite list) t2@(TestCase _)  = TestSuite (list ++ [t2])
 addTest (TestSuite l1) (TestSuite l2)     = TestSuite (l1 ++ l2)
 ```
+
 From our additions it's obvious that `Empty` is the identity element of the `addTest` function. In Algebra a Semigroup with an identity element is called *Monoid*:
 
 > In abstract algebra, [...] a monoid is an algebraic structure with a single associative binary operation and an identity element. 
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Monoid)
 
-
 With haskell we can declare `Test` as an instance of the `Monoid` type class by defining:
+
 ```haskell
 instance Monoid Test where
     mempty = Empty
 ```
+
 We can now use all functions provided by the `Monoid` type class to work with our `Test`:
 
 ```haskell
@@ -602,12 +658,15 @@ compositeDemo = do
     print $ run $ t1 <> t2
     print $ run $ t1 <> t2 <> t3
 ```
+
 We can also use the function `mconcat :: Monoid a => [a] -> a` on a list of `Tests`: mconcat composes a list of Tests into a single Test. That's exactly the mechanism of forming a TestSuite from atomic TestCases.
+
 ```haskell
 compositeDemo = do
     print $ run $ mconcat [t1,t2]
     print $ run $ mconcat [t1,t2,t3]
 ```
+
 This particular feature of `mconcat :: Monoid a => [a] -> a` to condense a list of Monoids to a single Monoid can be used to drastically simplify the design of our test framework.
 
 We need just one more hint from our mathematician friends:
@@ -616,9 +675,11 @@ We need just one more hint from our mathematician friends:
 > [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/05/17/composite-as-a-monoid-a-business-rules-example/)
 
 Currently our `TestCases` are defined as functions yielding boolean values:
+
 ```haskell
 type TestCase = () -> Bool
 ```
+
 If `Bool` was a `Monoid` we could use `mconcat` to form test suite aggregates. `Bool` in itself is not a Monoid; but together with a binary associative operation like `(&&)` or `(||)` it will form a Monoid. 
 
 The intuitive semantics of a TestSuite is that a whole Suite is "green" only when all enclosed TestCases succeed. That is the conjunction of all TestCases must return `True`.
@@ -641,11 +702,14 @@ instance Monoid All where
 ```
 
 Making use of `All` our improved definition of TestCases is as follows:
+
 ```haskell
 type SmartTestCase = () -> All
 ```
+
 Now our test cases do not directly return a boolean value but an `All` wrapper, which allows automatic conjunction of test results to a single value. 
 Here are our redefined TestCases:
+
 ```haskell
 tc1 :: SmartTestCase
 tc1 () = All True
@@ -654,6 +718,7 @@ tc2 () = All True
 tc3 :: SmartTestCase
 tc3 () = All False
 ```
+
 We now implement a new evaluation function `run'` which evaluates a `SmartTestCase` (which may be either an atomic TestCase or a TestSuite assembled by `mconcat`) to a single boolean result.
 
 ```haskell
@@ -673,23 +738,26 @@ compositeDemo = do
     print $ run' $ mconcat [tc1,tc2]
     print $ run' $ mconcat [tc1,tc2,tc3]
 ```
+
 For more details on Composite as a Monoid please refer to the following blog:
 http://blog.ploeh.dk/2018/03/12/composite-as-a-monoid/
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Composite.hs)
 
-## Visitor -> Foldable
+### Visitor -> Foldable
 
 > [...] the visitor design pattern is a way of separating an algorithm from an object structure on which it operates. A practical result of this separation is the ability to add new operations to existent object structures without modifying the structures. It is one way to follow the open/closed principle.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Visitor_pattern))
 
-
 In functional languages - and Haskell in particular - we have a whole armada of tools serving this purpose:
+
 * higher order functions like map, fold, filter and all their variants allow to "visit" lists
 * The Haskell type classes `Functor`, `Foldable`, `Traversable`, etc. provide a generic framework to allow visiting any algebraic datatype by just deriving one of these type classes.
-### Using Foldable
+
+#### Using Foldable
+
 ```haskell
--- we are re-using the Exp data type from the Singleton example 
+-- we are re-using the Exp data type from the Singleton example
 -- and transform it into a Foldable type:
 instance Foldable Exp where
     foldMap f (Val x)   = f x
@@ -697,31 +765,33 @@ instance Foldable Exp where
     foldMap f (Mul x y) = foldMap f x `mappend` foldMap f y
 
 filterF :: Foldable f => (a -> Bool) -> f a -> [a]
-filterF p = foldMap (\a -> if p a then [a] else [])     
+filterF p = foldMap (\a -> if p a then [a] else [])
 
 visitorDemo = do
-    let exp = Mul (Add (Val 3) (Val 2)) 
+    let exp = Mul (Add (Val 3) (Val 2))
                   (Mul (Val 4) (Val 6))
     putStr "size of exp: "
     print $ length exp
     putStrLn "filter even numbers from tree"
     print $ filterF even exp
 ```
+
 By virtue of the instance declaration Exp becomes a Foldable instance an can be used with arbitrary functions defined on Foldable like `length` in the example.
 
-`foldMap` can for example be used to write a filtering function `filterF`that collects all elements matching a predicate into a list. 
+`foldMap` can for example be used to write a filtering function `filterF`that collects all elements matching a predicate into a list.
 
-#### Alternative approaches
+##### Alternative approaches
+
 http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Visitor.hs)
 
-## Iterator -> Traversable
+### Iterator -> Traversable
 
-> [...] the iterator pattern is a design pattern in which an iterator is used to traverse a container and access the container's elements. The iterator pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled. 
-> [Quoted from Wikipedia] (https://en.wikipedia.org/wiki/Iterator_pattern)
+> [...] the iterator pattern is a design pattern in which an iterator is used to traverse a container and access the container's elements. The iterator pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled.
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Iterator_pattern)
 
-### Iterating over a Tree
+#### Iterating over a Tree
 
 The most generic type class enabling iteration over algebraic data types is `Traversable` as it allows combinations of `map` and `fold` operations.
 We are re-using the `Exp` type from earlier examples to show what's needed for enabling iteration in functional languages.
@@ -739,7 +809,9 @@ instance Traversable Exp where
     traverse g (Add x y) = Add <$> traverse g x <*> traverse g y
     traverse g (Mul x y) = Mul <$> traverse g x <*> traverse g y
 ```
+
 With this declaration we can traverse an `Exp` tree:
+
 ```haskell
 iteratorDemo = do
     putStrLn "Iterator -> Traversable"
@@ -748,14 +820,17 @@ iteratorDemo = do
         env = [("pi", pi)]
     print $ traverse (\x c -> if even x then [x] else [2*x]) exp 0
 ```
+
 In this example we are touching all (nested) `Val` elements and multiply all odd values by 2.
 
-### Combining traversal operations
+#### Combining traversal operations
 
 Compared with `Foldable` or `Functor` the declaration of a `Traversable` instance looks a bit intimidating. In particular the type declaration for `traverse`:
+
 ```haskell
 traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
 ```
+
 looks like quite a bit of over-engineering for simple traversals as in the above example.
 
 In oder to explain real power of the `Traversable` type class we will look at a more sophisticated example in this section.
@@ -766,6 +841,7 @@ The Unix utility `wc` is a good example for a traversal operation that performs 
 echo "counting lines, words and characters in one traversal" | wc
       1       8      54
 ```
+
 The output simply means that our input has 1 line, 8 words and a total of 54 characters.
 Obviously an efficients implementation of `wc` will accumulate the three counters for lines, words and characters in a single pass of the input will not run three iterations for each counter separately.
 
@@ -794,19 +870,22 @@ private static List<Character> asList(String str) {
     return str.chars().mapToObj(c -> (char) c).collect(Collectors.toList());
 }
 ```
-Please note that the `for (Character c : asList(str)) {...}` notation is just syntactic sugar for 
+
+Please note that the `for (Character c : asList(str)) {...}` notation is just syntactic sugar for
 
 ```java
 for (Iterator<Character> iter = asList(str).iterator(); iter.hasNext();) {
     Character c = iter.next();
     ...
-}     
+}
 ```
+
 For efficiency reasons this solution may be okay, but from a design perspective the solution lacks clarity as the required logic for accumulating the three counters is heavily entangled within one code block. Just imagine how the complexity of the for-loop will increase once we have to add new features like counting bytes, counting white space or counting maximum line width.
 
 So we would like to be able to isolate the different counting algorithms (*separation of concerns*) and be able to combine them in a way that provides efficient one-time traversal.
 
 We start with the simple task of character counting:
+
 ```haskell
 type Count = Const (Sum Integer)
 
@@ -823,10 +902,12 @@ cci = traverse cciBody
 > cci "hello world"
 Const (Sum {getSum = 11})
 ```
+
 For each character we just emit a `Const 1` which are elements of type `Const (Sum Integer)`.
 As `(Sum Integer)` is the monoid of Integers under addition, this design allows automatic summation over all collected `Const` values.
 
 The next step of counting newlines looks similar:
+
 ```haskell
 -- return (Sum 1) if true, else (Sum 0)
 test :: Bool -> Sum Integer
@@ -844,12 +925,15 @@ lci = traverse lciBody
 > lci "hello \n world"
 Const (Sum {getSum = 1})
 ```
+
 Now let's try to combine character counting and line counting.
 In order to match the type declaration for `traverse`:
+
 ```haskell
 traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
 ```
-we had to define `cciBody` and `lciBody` so that their return types are `Applicative Functors`.
+
+We had to define `cciBody` and `lciBody` so that their return types are `Applicative Functors`.
 The good news is that the product of two `Applicatives` is again an `Applicative` (the same holds true for Composition of `Applicatives`).
 With this knowledge we can now use `traverse` to use the product of `cciBody` and `lciBody`:
 
@@ -868,6 +952,7 @@ clci = traverse (cciBody <#> lciBody)
 > clci "hello \n world"
 Pair (Const (Sum {getSum = 13})) (Const (Sum {getSum = 1}))
 ```
+
 So we have achieved our aim of separating line counting and character counting in separate functions while still being able to apply them in only one traversal.
 
 The only piece missing is the word counting. This is a bit tricky as it involves dealing with a state monad and wrapping it as an Applicative Functor:
@@ -921,24 +1006,23 @@ This example has been implemented according to ideas presented in the paper
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
 
-
-## Type classes Category, Arrow & Co.
+### Type classes Category, Arrow & Co
 
 Theses type classes aim at generalizing elements of Monads or Functors.
 
 If you have ideas how these type classes map to specific design patterns please let me know!
 
-# Beyond type class patterns
+## Beyond type class patterns
 
 TBD:
 
-- Chain of Responsibility: ADT + pattern matching the ADT (at least the distpatch variant)
+* Chain of Responsibility: ADT + pattern matching the ADT (at least the distpatch variant)
 
-- Partial application
+* Partial application
 
-- Blockchain as Monadic chain of Actions
+* Blockchain as Monadic chain of Actions
 
-## Dependency Injection -> Parameter Binding
+### Dependency Injection -> Parameter Binding
 
 > [...] Dependency injection is a technique whereby one object (or static method) supplies the dependencies of another object. A dependency is an object that can be used (a service). An injection is the passing of a dependency to a dependent object (a client) that would use it. The service is made part of the client's state. Passing the service to the client, rather than allowing a client to build or find the service, is the fundamental requirement of the pattern.
 >
@@ -966,14 +1050,12 @@ ghci> closure = generatePage htmlRenderer
 closure :: String -> Html
 ```
 
+### Adapter -> Function Composition
 
+> "The adapter pattern is a software design pattern (also known as wrapper, an alternative naming shared with the decorator pattern) that allows the interface of an existing class to be used as another interface. It is often used to make existing classes work with others without modifying their source code."
+> (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Adapter_pattern)
 
-## Adapter -> Function Composition
-
-> "The adapter pattern is a software design pattern (also known as wrapper, an alternative naming shared with the decorator pattern) that allows the interface of an existing class to be used as another interface. It is often used to make existing classes work with others without modifying their source code." 
-> (Quoted from https://en.wikipedia.org/wiki/Adapter_pattern)
-
-An example is an adapter that converts the interface of a Document Object Model of an XML document into a tree structure that can be displayed. 
+An example is an adapter that converts the interface of a Document Object Model of an XML document into a tree structure that can be displayed.
 
 What does an adapter do? It translates a call to the adapter into a call of the adapted backend code. Which may also involve translation of the argument data.
 
@@ -1047,12 +1129,12 @@ marshalMW (Minute x) =
 unmarshalWM :: WallTime -> Minute
 unmarshalWM (WallTime (h,m)) = Minute $ 60 * h + m
 
--- this is our frontend that add Minutes to a time of a day 
+-- this is our frontend that add Minutes to a time of a day
 -- measured in minutes
 addMinutesAdapter :: Int -> Minute -> Minute
 addMinutesAdapter x = unmarshalWM . addMinutesToWallTime x . marshalMW
 
-adapterDemo = do 
+adapterDemo = do
     putStrLn "Adapter vs. function composition"
     print $ addMinutesAdapter 100 $ Minute 400
     putStrLn ""
@@ -1060,14 +1142,14 @@ adapterDemo = do
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Adapter.hs)
 
-## Template Method -> type class default functions
+### Template Method -> type class default functions
 
-> In software engineering, the template method pattern is a behavioral design pattern that defines the program skeleton of an algorithm in an operation, deferring some steps to subclasses. 
+> In software engineering, the template method pattern is a behavioral design pattern that defines the program skeleton of an algorithm in an operation, deferring some steps to subclasses.
 > It lets one redefine certain steps of an algorithm without changing the algorithm's structure.
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Template_method_pattern)
 
-The TemplateMethod pattern is quite similar to the [StrategyPattern](#strategy---functor). The main difference is the level of granularity. 
-In Strategy a complete block of functionality - the Strategy - can be replaced. 
+The TemplateMethod pattern is quite similar to the [StrategyPattern](#strategy---functor). The main difference is the level of granularity.
+In Strategy a complete block of functionality - the Strategy - can be replaced.
 In TemplateMethod the overall layout of an algorithm is predefined and only specific parts of it may be replaced.
 
 In functional programming the answer to this kind of problem is again the usage of higher order functions.
@@ -1089,6 +1171,7 @@ In this code the backend functionality - `addMinutesToWallTime` - is a hardcoded
 Let's assume we want to use different kind of backend implementations - for instance a mock replacement. 
 In this case we would like to keep the overall structure - the template - and would just make a specific part of it flexible.
 This sounds like an ideal candidate for the TemplateMethod pattern:
+
 ```haskell
 addMinutesTemplate :: (Int -> WallTime -> WallTime) -> Int -> Minute -> Minute
 addMinutesTemplate f x =
@@ -1096,7 +1179,9 @@ addMinutesTemplate f x =
     f x .
     marshalMW
 ```
+
 `addMinutesTemplate` has an additional parameter f of type `(Int -> WallTime -> WallTime)`. This parameter may be bound to `addMinutesToWallTime` or alternative implementations:
+
 ```haskell
 -- implements linear addition (the normal case) even for values > 1440
 linearTimeAdd :: Int -> Minute -> Minute
@@ -1122,21 +1207,23 @@ addMinutesToWallTime' x (WallTime (h, m)) =
 ```
 
 And here is how we use it to do actual computations:
+
 ```haskell
 templateMethodDemo = do
     putStrLn $ "linear time: " ++ (show $ linearTimeAdd 100 (Minute 1400))
     putStrLn $ "cyclic time: " ++ (show $ cyclicTimeAdd 100 (Minute 1400))
 ```
 
-### type class minimal implementations as template method
+#### type class minimal implementations as template method
 
-> The template method is used in frameworks, where each implements the invariant parts of a domain's architecture, 
-> leaving "placeholders" for customization options. This is an example of inversion of control. 
+> The template method is used in frameworks, where each implements the invariant parts of a domain's architecture,
+> leaving "placeholders" for customization options. This is an example of inversion of control.
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Template_method_pattern)
 
-The type classes in Haskells base library apply this template approach frequently to reduce the effort for implementing type class instances and to provide a predefined structure with specific 'customization options'. 
+The type classes in Haskells base library apply this template approach frequently to reduce the effort for implementing type class instances and to provide a predefined structure with specific 'customization options'.
 
-As an example let's extend the type `WallTime` by an associative binary operation `addWallTimes` to form an instance of the `Monoid` type class
+As an example let's extend the type `WallTime` by an associative binary operation `addWallTimes` to form an instance of the `Monoid` type class:
+
 ```haskell
 addWallTimes :: WallTime -> WallTime -> WallTime
 addWallTimes a@(WallTime (h,m)) b =
@@ -1148,6 +1235,7 @@ instance Semigroup WallTime where
 instance Monoid WallTime where
     mempty = WallTime (0,0)
 ```
+
 Even though we specified only `mempty` and `(<>)` we can now use the functions `mappend :: Monoid a => a -> a -> a` and `mconcat :: Monoid a => [a] -> a` on WallTime instances:
 
 ```haskell
@@ -1156,6 +1244,7 @@ templateMethodDemo = do
     print $ mappend a a
     print $ mconcat [a,a,a,a,a,a,a,a,a]
 ```
+
 By looking at the definition of the `Monoid` type class we can see how this 'magic' is made possible:
 
 ```haskell
@@ -1171,18 +1260,18 @@ class Semigroup a => Monoid a where
     mconcat :: [a] -> a
     mconcat = foldr mappend mempty
 ```
+
 For `mempty` only a type requirement but no definition is given.
 But for `mappend` and `mconcat` default implementations are provided. 
-So the Monoid type class definition forms a *template* where the default implementations define the 'invariant parts' of the type class and the part specified by us form the 'customization options'. 
+So the Monoid type class definition forms a *template* where the default implementations define the 'invariant parts' of the type class and the part specified by us form the 'customization options'.
 
 (please note that it's generally possible to override the default implementations)
 
 [Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/TemplateMethod.hs)
 
-## TBD: Factory -> partial application
+### TBD: Factory -> partial application
 
-
-### Abstract Factory -> functions as data type values
+#### Abstract Factory -> functions as data type values
 
 > The abstract factory pattern provides a way to encapsulate a group of individual factories that have a common theme without specifying their concrete classes.
 > In normal usage, the client software creates a concrete implementation of the abstract factory and then uses the generic interface of the factory to create the concrete objects that are part of the theme. 
@@ -1196,9 +1285,10 @@ The example revolves around a small GUI framework that needs different implement
 A client of the GUI API should work with a uniform API that hides the specifics of the different platforms. The problem then is: how can the  client be provided with a platform specific implementation without explicitely asking for a given implementation and how can we maintain a uniform API that hides the implementation specifics.
 
 In OO languages like Java the abstract factory pattern would be the canonical answer to this problem:
-- The client calls an abstract factory `GUIFactory` interface to create a `Button` by calling `createButton() : Button` that somehow chooses (typically by some kind of configuration) which concrete factory has to be used to create concrete `Button` instances. 
-- The concrete classes `WinButton` and `OSXButton` implement the interface `Button` and provide platform specific implementations of `paint () : void`. 
-- As the client uses only the interface methods `createButton()` and `paint()` it does not have to deal with any platform specific code.
+
+* The client calls an abstract factory `GUIFactory` interface to create a `Button` by calling `createButton() : Button` that somehow chooses (typically by some kind of configuration) which concrete factory has to be used to create concrete `Button` instances.
+* The concrete classes `WinButton` and `OSXButton` implement the interface `Button` and provide platform specific implementations of `paint () : void`.
+* As the client uses only the interface methods `createButton()` and `paint()` it does not have to deal with any platform specific code.
 
 The following diagram depicts the structure of interfaces and classes in this scenario:
 
@@ -1209,84 +1299,87 @@ In a functional language this kind of problem would be solved quite differently.
 So we could represent a Button type as a data type with a label (holding the text to display on the button) and an `IO ()` action that represents the platform specific rendering:
 
 ```haskell
--- | representation of a Button UI widget    
+-- | representation of a Button UI widget
 data Button = Button 
-    { label  :: String -- the text label of the button
-    , paint  :: IO ()  -- a platform specific rendering action
+    { label  :: String           -- the text label of the button
+    , render :: Button -> IO ()  -- a platform specific rendering action
     }
 ```
 
 Platform specific actions to render a `Button` would look like follows:
 
 ```haskell
--- | rendering a Button for the WIN platform (we just simulate it by printing the label) 
-winPaint :: String -> IO ()
-winPaint lbl = putStrLn $ "winButton: " ++ lbl
+-- | rendering a Button for the WIN platform (we just simulate it by printing the label)
+winPaint :: Button -> IO ()
+winPaint btn = putStrLn $ "winButton: " ++ label btn
 
 -- | rendering a Button for the OSX platform
-osxPaint :: String -> IO ()
-osxPaint lbl = putStrLn $ "osxButton: " ++ lbl
+osxPaint :: Button -> IO ()
+osxPaint btn = putStrLn $ "osxButton: " ++ label btn
+
+-- | paint a button by using the Buttons render function
+paint :: Button -> IO ()
+paint btn@(Button _ render) = render btn
 ```
+
 (Of course a real implementation would be quite more complex, but we don't care about the nitty gritty details here.)
 
-With this code we can now create concrete Buttons like so:
+With this code we can now create and use concrete Buttons like so:
+
 ```haskell
-ghci> button = Button "Okay" (winPaint "Okay")
+ghci> button = Button "Okay" winPaint
 ghci> :type button
 button :: Button
-ghci> :type paint
-paint :: Button -> IO ()
 ghci> paint button
 winButton: Okay
 ```
 
-We created a button with `Button "Okay" (winPaint "Okay")`. The field paint of that button instance now holds the function call (winPaint "Okay").
+We created a button with `Button "Okay" winPaint`. The field `render` of that button instance now holds the function winPaint.
+The function `paint` now applies this `render` function -- i.e. winPaint -- to draw the Button.
 
-The nice thing about the Haskell record syntax is that we get accessor functions to the type fields for free.
-That's why the type declaration of `Button` also created a function `paint :: Button -> IO ()` which will return the function stored in the `paint` field of a `Button` instance.
-
-In this case we constructed `button` with setting `paint` to `winPaint` and thus `paint Button` prints `winButton: Okay`. 
-
-Applying this scheme it is now very simple to create buttons with different implementations of `paint`:
-
-```haskell 
--- | enumeration of supported operating system platforms
-data OS = OSX | WIN deriving (Show, Eq, Enum)
-
--- | create a button for os platform with label lbl
-createButtonFor :: OS -> String -> Button
-createButtonFor os lbl = 
-    case os of
-        WIN -> Button lbl (winPaint lbl)  -- use winPaint for WIN platform
-        OSX -> Button lbl (osxPaint lbl)  -- use osxPaint for OSX platform
-``` 
-By calling `createButtonFor` only with the `OS` argument (we assume that this flag comes from some initially available configuration) we can now create a partially applied function createButton:
+Applying this scheme it is now very simple to create buttons with different `render` implementations:
 
 ```haskell
-ghci> createButton = createButtonFor
-ghci> :t createButton
+-- | a representation of the operating system platform
+data Platform = OSX | WIN | NIX | Other
+
+-- | determine Platform by inspecting System.Info.os string
+platform :: Platform
+platform =
+  case os of
+    "darwin"  -> OSX
+    "mingw32" -> WIN
+    "linux"   -> NIX
+    _         -> Other
+
+-- | create a button for os platform with label lbl
 createButton :: String -> Button
+createButton lbl =
+  case platform of
+    OSX    -> Button lbl osxPaint
+    WIN    -> Button lbl winPaint
+    NIX    -> Button lbl (\btn -> putStrLn $ "nixButton: "   ++ label btn)
+    Other  -> Button lbl (\btn -> putStrLn $ "otherButton: " ++ label btn)
 ```
+
+The function `createButton` determines the actual execution environment and accordingly creates platform specific buttons.
+
 Now we have an API that hides all implementation specifics from the client and allows him to use only `createButton` and `paint` to work with Buttons for different OS platforms:
 
 ```haskell
 abstractFactoryDemo = do
     putStrLn "AbstractFactory -> functions as data type values"
-    let os = WIN                          -- we assume this value comes from some initial configuration
-    let createButton = createButtonFor os -- createButton :: String -> Button
-
-    let ok = createButton "OK"            -- using th "abstract" API to create buttons
-    let exit = createButton "Exit"    
-    paint ok                              -- using the "abstract" API to paint buttons
+    let exit = createButton "Exit"            -- using the "abstract" API to create buttons
+    let ok   = createButton "OK"
+    paint ok                                  -- using the "abstract" API to paint buttons
     paint exit
 
-    paint $ createButtonFor OSX "about"   -- paint a platform specific button
-
-    -- now let's create our own linux button implementation:
-    let linuxButton = Button "penguin" (putStrLn "linuxButton: penguin")    
-    paint linuxButton
+    paint $ Button "Apple" osxPaint           -- paint a platform specific button
+    paint $ Button "Pi"                       -- paint a user-defined button
+        (\btn -> putStrLn $ "raspberryButton: " ++ label btn)
 ```
-### Builder -> record syntax, smart constructor
+
+#### Builder -> record syntax, smart constructor
 
 > The Builder is a design pattern designed to provide a flexible solution to various object creation problems in object-oriented programming. The intent of the Builder design pattern is to separate the construction of a complex object from its representation.
 >
@@ -1294,6 +1387,7 @@ abstractFactoryDemo = do
 
 The Builder patterns is frequently used to ease the construction of complex objects by providing a safe and convenient API to client code.
 In the following Java example we define a POJO Class `BankAccount`:
+
 ```java
 public class BankAccount {
 
@@ -1318,6 +1412,7 @@ public class BankAccount {
     }
 }
 ```
+
 The class provides a package private constructor that takes 5 arguments that are used to fill the instance attributes.
 Using constructors with so many arguments is often considered inconvenient and potentially unsafe as certain constraints on the arguments might not be maintained by client code invoking this constructor.
 
@@ -1371,7 +1466,9 @@ public class BankAccountBuilder {
     }
 }
 ```
+
 Next comes an example of how the builder is used in client code:
+
 ```java
 public class BankAccountTest {
 
@@ -1382,7 +1479,7 @@ public class BankAccountTest {
     public void testAccount() {
         BankAccountBuilder builder = new BankAccountBuilder(1234);
         // the builder can provide a dummy instance, that might be used for testing
-        BankAccount account = builder.build();        
+        BankAccount account = builder.build();
         System.out.println(account);
         // the builder provides a fluent API to construct regular instances
         BankAccount account1 =
@@ -1396,7 +1493,9 @@ public class BankAccountTest {
     }
 }
 ```
+
 As we see the Builder can be either used to create dummy instaces that are still safe to use (e.g. for test cases) or by using the `withXxx` methods to populate all attributes:
+
 ```haskell
 BankAccount {accountNo = 1234, name = "Dummy Customer", branch = "London", balance = 0.0, interestRate = 0.0}
 BankAccount {accountNo = 1234, name = "Marjin Mejer", branch = "Paris", balance = 10000.0, interestRate = 2.0}
@@ -1405,10 +1504,10 @@ BankAccount {accountNo = 1234, name = "Marjin Mejer", branch = "Paris", balance 
 From an API client perspective the Builder pattern can help to provide safe and convenient object construction which is not provided by the Java core language.
 As the Builder code is quite a redundant (e.g. having all attributes of the actual instance class) Builders are typically generated (e.g. with [Lombok](https://projectlombok.org/features/Builder)).
 
-
 In functional languages there is usually no need for the Builder pattern as the languages already provide the necessary infrastructure.
 
 The following example shows how the above example would be solved in Haskell:
+
 ```haskell
 data BankAccount = BankAccount {
     accountNo    :: Int
@@ -1439,37 +1538,36 @@ builderDemo = do
         , interestRate = 2.5
         }
     print account2
-    
--- an then in Ghci:
-> builderDemo
+
+-- and then in Ghci:
+ghci> builderDemo
 BankAccount {accountNo = 1234, name = "Dummy Customer", branch = "London", balance = 0.0, interestRate = 0.0}
 BankAccount {accountNo = 1234, name = "Marjin Mejer", branch = "Paris", balance = 10000.0, interestRate = 2.0}
-BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", balance = 1000.0, interestRate = 2.5}    
+BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", balance = 1000.0, interestRate = 2.5}
 ```
 
 ## Conclusions
-> Design patterns are reusable abstractions in object-oriented software. 
-> However, using current mainstream programming languages, these elements can only be expressed extra-linguistically: as prose,pictures, and prototypes. 
-> We believe that this is not inherent in the patterns themselves, but evidence of a lack of expressivity in the languages of today. 
-> We expect that, in the languages of the future, the code parts of design patterns will be expressible as reusable library components. 
-> Indeed, we claim that the languages of tomorrow will suffice; the future is not far away. All that is needed, in addition to commonly-available features, 
-> are higher-order and datatype-generic constructs; 
+
+> Design patterns are reusable abstractions in object-oriented software.
+> However, using current mainstream programming languages, these elements can only be expressed extra-linguistically: as prose,pictures, and prototypes.
+> We believe that this is not inherent in the patterns themselves, but evidence of a lack of expressivity in the languages of today.
+> We expect that, in the languages of the future, the code parts of design patterns will be expressible as reusable library components.
+> Indeed, we claim that the languages of tomorrow will suffice; the future is not far away. All that is needed, in addition to commonly-available features,
+> are higher-order and datatype-generic constructs;
 > these features are already or nearly available now.  
 > Quoted from [Design Patterns as Higher-Order Datatype-Generic Programs](http://www.cs.ox.ac.uk/jeremy.gibbons/publications/hodgp.pdf)
-
+>
 > *Crystallizing design patterns*
 >
->  To end with FP benefits, there is this curious thing called [Curry–Howard correspondence](https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence) which is a direct analogy between mathematical concepts and computational calculus (which is what we do, programmers).
+> To end with FP benefits, there is this curious thing called [Curry–Howard correspondence](https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence) which is a direct analogy between mathematical concepts and computational calculus (which is what we do, programmers).
 >  
->  This correspondence means that a lot of useful stuff discovered and proven for decades in Math can then be transposed to programming, opening a way for a lot of extremely robust constructs for free.
+> This correspondence means that a lot of useful stuff discovered and proven for decades in Math can then be transposed to programming, opening a way for a lot of extremely robust constructs for free.
 >  
->  In OOP, Design patterns are used a lot and could be defined as idiomatic ways to solve a given problems, in specific contexts but their existences won’t save you from having to apply and write them again and again each time you encounter the problems they solve.
+> In OOP, Design patterns are used a lot and could be defined as idiomatic ways to solve a given problems, in specific contexts but their existences won’t save you from having to apply and write them again and again each time you encounter the problems they solve.
 >  
->  Functional programming constructs, some directly coming from category theory (mathematics), solve directly what you would have tried to solve with design patterns.
+> Functional programming constructs, some directly coming from category theory (mathematics), solve directly what you would have tried to solve with design patterns.
 >
->  Quoted from [Geekocephale](http://geekocephale.com/blog/2018/10/08/fp)
-
-
+> Quoted from [Geekocephale](http://geekocephale.com/blog/2018/10/08/fp)
 
 <!--
 ## TBD: Conclusion
@@ -1487,7 +1585,8 @@ http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/
 http://blog.ploeh.dk/2017/10/04/from-design-patterns-to-category-theory/
 -->
 
-# some interesting links
+## some interesting links
+
 https://www.ibm.com/developerworks/library/j-ft10/index.html
 
 http://blog.ezyang.com/2010/05/design-patterns-in-haskel/
@@ -1499,5 +1598,3 @@ http://norvig.com/design-patterns/design-patterns.pdf
 [Scala Typeclassopedia](https://github.com/tel/scala-typeclassopedia)
 
 https://github.com/mmenestret/fp-resources/blob/master/README.md
-
-
