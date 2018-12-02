@@ -1031,26 +1031,97 @@ TBD:
 > This fundamental requirement means that using values (services) produced within the class from new or static methods is prohibited. The client should accept values passed in from outside. This allows the client to make acquiring dependencies someone else's problem.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Dependency_injection))
 
-In functional languages this is simply achieved by binding a functions formal parameters to values.
-See the following example where the function `generatePage :: (String -> Html) -> String -> Html` does not only require a String input but also a rendering function that does the actual conversion from text to Html.
+In functional languages this is achieved by binding a functions formal parameters to values.
+
+Let's see how this works in real world example. Say we have been building a renderer that allows to produce a markdown representation of a data type that represents the table of contents of a document:
 
 ```haskell
-data Html = ...
+-- | a table of contents consists of a heading and a list of entries
+data TableOfContents = Section Heading [TocEntry]
 
-generatePage :: (String -> Html) -> String -> Html
-generatePage renderer text = renderer text
+-- | a ToC entry can be a heading or a sub-table of contents
+data TocEntry = Head Heading | Sub TableOfContents
 
-htmlRenderer :: String -> Html
-htmlRenderer = ...
+-- | a heading can be just a title string or an url with a title and the actual link
+data Heading = Title String | Url String String
+
+-- | render a ToC entry as a Markdown String with the proper indentation
+teToMd :: Int -> TocEntry -> String
+teToMd depth (Head head) = headToMd depth head
+teToMd depth (Sub toc)   = tocToMd  depth toc 
+
+-- | render a heading as a Markdown String with the proper indentation
+headToMd :: Int -> Heading -> String
+headToMd depth (Title str)     = indent depth ++ "* " ++ str ++ "\n"
+headToMd depth (Url title url) = indent depth ++ "* [" ++ title ++ "](" ++ url ++ ")\n"
+
+-- | convert a ToC to Markdown String. The parameter depth is used for proper indentation.
+tocToMd :: Int -> TableOfContents -> String
+tocToMd depth (Section heading entries) = headToMd depth heading ++ concatMap (teToMd (depth+2)) entries
+
+-- | produce a String of length n, consisting only of blanks
+indent :: Int -> String
+indent n = replicate n ' '    
+
+-- | render a ToC as a Text (consisting of properly indented Markdown)
+tocToMDText :: TableOfContents -> T.Text
+tocToMDText = T.pack . tocToMd 0
 ```
-
-With partial application its even possible to form a closure that incorporates the rendering function:
+We can use these definitions to create a table of contents data structure and to render it to markdown syntax:
 
 ```haskell
-ghci> closure = generatePage htmlRenderer
-:type closure
-closure :: String -> Html
+demoDI = do
+    let toc = Section (Title "Chapter 1")
+                [ Sub $ Section (Title "Section a") 
+                    [Head $ Title "First Heading", 
+                     Head $ Url "Second Heading" "http://the.url"]
+                , Sub $ Section (Url "Section b" "http://the.section.b.url") 
+                    [ Sub $ Section (Title "UnderSection b1") 
+                        [Head $ Title "First", Head $ Title "Second"]]]
+    putStrLn $ T.unpack $ tocToMDText toc
+
+-- and the in ghci:
+ghci > demoDI
+* Chapter 1
+  * Section a
+    * First Heading
+    * [Second Heading](http://the.url)
+  * [Section b](http://the.section.b.url)
+    * UnderSection b1
+      * First
+      * Second
 ```
+So far so good. But of course we also want to be able to render our `TableOfContent` to HTML.
+As we don't want to repeat all the coding work for HTML we think about using an existing Markdown library.
+
+But we don't want any hard coded dependencies to a specific library in our code.
+
+With these design ideas in mind we specify a rendering processor:
+
+```haskell
+tocToHtmlText :: (TableOfContents -> T.Text) -- a renderer function ToC to Text (with Mardown markups)
+              -> (T.Text -> MarkDown)        -- a parser function from Text to a MarkDown document
+              -> (MarkDown -> HTML)          -- a renderer function from MarkDown to a HTML document
+              -> (HTML -> T.Text)            -- a renderer function HTML to Text
+              -> TableOfContents             -- the actual ToC to be rendered
+              -> T.Text                      -- the text output
+tocToHtmlText tocToText textToMd mdToHtml htmlToText = tocToText >>> textToMd >>> mdToHtml >>> htmlToText
+```
+The idea is simple: We render our `TableOfContents` to a Markdown `Text` (e.g. using our already defined `tocToMDText` function).
+This text is then parsed into a `Markdown` document. The `Markdown` document is rendered into an `HTML` document which is then rendered to a `Text` containing html markup.
+
+Please note that at this point we have not provided actual types `HTML` and `Markdown`, we just expect them to be provided.
+In the same way we just specified that there must be actual functions available taht can be bound to the formal parameters 
+`tocToText`, `textToMd`, `mdToHtml` and  `htmlToText`.
+
+If such functions are avaliable we can *inject* them (or rather bind them to the formal parameters) as in the following definition:
+
+```haskell
+defaultTocToHtmlText :: TableOfContents -> T.Text
+defaultTocToHtmlText = tocToHtmlText tocToMDText textToMarkDown markDownToHtml htmlToText
+```
+... to be continued
+
 
 ### Adapter -> Function Composition
 

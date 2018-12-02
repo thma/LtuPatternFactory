@@ -12,6 +12,7 @@ import Iterator
 import Coerce
 import AbstractFactory
 import JsonPersistence
+import DependencyInjection
 
 main :: IO ()
 main = do
@@ -28,3 +29,4 @@ main = do
   iteratorDemo
   abstractFactoryDemo
   jsonPersistenceDemo
+  demoDI
