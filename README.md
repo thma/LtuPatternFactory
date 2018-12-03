@@ -33,7 +33,7 @@ I think this kind of exposition could be helpful if you are either:
   * [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
   * [Visitor -> Foldable](#visitor---foldable)
   * [Iterator -> Traversable](#iterator---traversable)
-  * [Type classes Category, Arrow & Co.](#the-pattern-behind-the-patterns---category)
+  * [The Pattern behind the Patterns -> Category](#the-pattern-behind-the-patterns---category)
 * [Beyond type class patterns](#beyond-type-class-patterns)
   * [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
   * [Adapter -> Function Composition](#adapter---function-composition)
