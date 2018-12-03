@@ -1129,7 +1129,8 @@ If such functions are avaliable we can *inject* them (or rather bind them to the
 
 ```haskell
 -- | a default implementation of a ToC to html Text renderer.
---   this function is constructed by partially applying `tocToHtmlText` to four functions matching the signature of `tocToHtmlText`.
+--   this function is constructed by partially applying `tocToHtmlText` to four functions 
+--   matching the signature of `tocToHtmlText`.
 defaultTocToHtmlText :: TableOfContents -> T.Text
 defaultTocToHtmlText = 
     tocToHtmlText 
