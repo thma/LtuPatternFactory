@@ -1174,6 +1174,8 @@ htmlToText :: HTML -> T.Text
 htmlToText = T.pack . R.renderHtml
 ```
 
+Now let's try it out:
+
 ```haskell
 demoDI = do
     let toc = Section (Title "Chapter 1")
@@ -1248,6 +1250,8 @@ By inlining this output into the present Markdown document we can see that Markd
 > </ul></li>
 > </ul></li>
 > </ul>
+
+[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/DependencyInjection.hs)
 
 ### Adapter -> Function Composition
 
