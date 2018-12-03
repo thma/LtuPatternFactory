@@ -2,8 +2,7 @@ module DependencyInjection where
 import qualified Data.Text as T
 import           Control.Arrow
 import           CheapskateRenderer (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
---import           CMarkGFMRenderer (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
-
+--import           CMarkGFMRenderer   (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
 
 -- | a table of contents consists of a heading and a list of entries
 data TableOfContents = Section Heading [TocEntry]
@@ -36,17 +35,30 @@ indent n = replicate n ' '
 tocToMDText :: TableOfContents -> T.Text
 tocToMDText = T.pack . tocToMd 0
 
-tocToHtmlText :: (TableOfContents -> T.Text) -- a renderer function ToC to Text (with Mardown markups)
-              -> (T.Text -> MarkDown)        -- a parser function from Text to a MarkDown document
-              -> (MarkDown -> HTML)          -- a renderer function from MarkDown to a HTML document
-              -> (HTML -> T.Text)            -- a renderer function HTML to Text
+-- | render a ToC as a Text with html markup. 
+--   we specify this function as a chain of parse and rendering functions that must be provided externally
+tocToHtmlText :: (TableOfContents -> T.Text) -- 1. a renderer function from ToC to Text with markdown markups
+              -> (T.Text -> MarkDown)        -- 2. a parser function from Text to a MarkDown document
+              -> (MarkDown -> HTML)          -- 3. a renderer function from MarkDown to an HTML document
+              -> (HTML -> T.Text)            -- 4. a renderer function from HTML to Text
               -> TableOfContents             -- the actual ToC to be rendered
-              -> T.Text                      -- the text output
-tocToHtmlText tocToText textToMd mdToHtml htmlToText = tocToText >>> textToMd >>> mdToHtml >>> htmlToText
+              -> T.Text                      -- the Text output (containing html markup)
+tocToHtmlText tocToMdText textToMd mdToHtml htmlToText = 
+    tocToMdText >>>    -- 1. render a ToC as a Text (consisting of properly indented Markdown)
+    textToMd    >>>    -- 2. parse text with Markdown to a MarkDown data structure
+    mdToHtml    >>>    -- 3. convert the MarkDown data to an HTML data structure
+    htmlToText         -- 4. render the HTML data to a Text with hmtl markup
 
 
+-- | a default implementation of a ToC to html Text renderer.
+--   this function is constructed by partially applying `tocToHtmlText` to four functions matching the signature of `tocToHtmlText`.
 defaultTocToHtmlText :: TableOfContents -> T.Text
-defaultTocToHtmlText = tocToHtmlText tocToMDText textToMarkDown markDownToHtml htmlToText
+defaultTocToHtmlText = 
+    tocToHtmlText 
+        tocToMDText         -- the ToC to markdown Text renderer as defined above
+        textToMarkDown      -- a MarkDown parser, externally provided via import
+        markDownToHtml      -- a MarkDown to HTML renderer, externally provided via import
+        htmlToText          -- a HTML to Text with html markup, externally provided via import
 
 demoDI = do
     let toc = Section (Title "Chapter 1")
@@ -56,6 +68,7 @@ demoDI = do
                 , Sub $ Section (Url "Section b" "http://the.section.b.url") 
                     [ Sub $ Section (Title "UnderSection b1") 
                         [Head $ Title "First", Head $ Title "Second"]]]
+                        
     putStrLn $ T.unpack $ tocToMDText toc    
                         
     putStrLn $ T.unpack $ defaultTocToHtmlText toc                                                                                                                  

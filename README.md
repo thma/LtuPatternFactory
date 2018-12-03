@@ -1031,9 +1031,9 @@ TBD:
 > This fundamental requirement means that using values (services) produced within the class from new or static methods is prohibited. The client should accept values passed in from outside. This allows the client to make acquiring dependencies someone else's problem.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Dependency_injection))
 
-In functional languages this is achieved by binding a functions formal parameters to values.
+In functional languages this is achieved by binding the formal parameters of a function to values.
 
-Let's see how this works in real world example. Say we have been building a renderer that allows to produce a markdown representation of a data type that represents the table of contents of a document:
+Let's see how this works in a real world example. Say we have been building a renderer that allows to produce a markdown representation of a data type that represents the table of contents of a document:
 
 ```haskell
 -- | a table of contents consists of a heading and a list of entries
@@ -1091,6 +1091,7 @@ ghci > demoDI
       * First
       * Second
 ```
+
 So far so good. But of course we also want to be able to render our `TableOfContent` to HTML.
 As we don't want to repeat all the coding work for HTML we think about using an existing Markdown library.
 
@@ -1099,29 +1100,154 @@ But we don't want any hard coded dependencies to a specific library in our code.
 With these design ideas in mind we specify a rendering processor:
 
 ```haskell
-tocToHtmlText :: (TableOfContents -> T.Text) -- a renderer function ToC to Text (with Mardown markups)
-              -> (T.Text -> MarkDown)        -- a parser function from Text to a MarkDown document
-              -> (MarkDown -> HTML)          -- a renderer function from MarkDown to a HTML document
-              -> (HTML -> T.Text)            -- a renderer function HTML to Text
+-- | render a ToC as a Text with html markup. 
+--   we specify this function as a chain of parse and rendering functions that must be provided externally
+tocToHtmlText :: (TableOfContents -> T.Text) -- 1. a renderer function from ToC to Text with markdown markups
+              -> (T.Text -> MarkDown)        -- 2. a parser function from Text to a MarkDown document
+              -> (MarkDown -> HTML)          -- 3. a renderer function from MarkDown to an HTML document
+              -> (HTML -> T.Text)            -- 4. a renderer function from HTML to Text
               -> TableOfContents             -- the actual ToC to be rendered
-              -> T.Text                      -- the text output
-tocToHtmlText tocToText textToMd mdToHtml htmlToText = tocToText >>> textToMd >>> mdToHtml >>> htmlToText
+              -> T.Text                      -- the Text output (containing html markup)
+tocToHtmlText tocToMdText textToMd mdToHtml htmlToText = 
+    tocToMdText >>>    -- 1. render a ToC as a Text (consisting of properly indented Markdown)
+    textToMd    >>>    -- 2. parse text with Markdown to a MarkDown data structure
+    mdToHtml    >>>    -- 3. convert the MarkDown data to an HTML data structure
+    htmlToText         -- 4. render the HTML data to a Text with hmtl markup
 ```
-The idea is simple: We render our `TableOfContents` to a Markdown `Text` (e.g. using our already defined `tocToMDText` function).
-This text is then parsed into a `Markdown` document. The `Markdown` document is rendered into an `HTML` document which is then rendered to a `Text` containing html markup.
 
-Please note that at this point we have not provided actual types `HTML` and `Markdown`, we just expect them to be provided.
-In the same way we just specified that there must be actual functions available taht can be bound to the formal parameters 
+The idea is simple: 
+1. We render our `TableOfContents` to a Markdown `Text` (e.g. using our already defined `tocToMDText` function).
+2. This text is then parsed into a `MarkDown` data structure. 
+3. The `Markdown` document is rendered into an `HTML` data structure,
+4. which is then rendered to a `Text` containing html markup.
+
+Please note that at this point we have not defined the types `HTML` and `Markdown`. They are just abstract placeholders and we just expect them to be provided externally.
+In the same way we just specified that there must be functions available that can be bound to the formal parameters 
 `tocToText`, `textToMd`, `mdToHtml` and  `htmlToText`.
 
 If such functions are avaliable we can *inject* them (or rather bind them to the formal parameters) as in the following definition:
 
 ```haskell
+-- | a default implementation of a ToC to html Text renderer.
+--   this function is constructed by partially applying `tocToHtmlText` to four functions matching the signature of `tocToHtmlText`.
 defaultTocToHtmlText :: TableOfContents -> T.Text
-defaultTocToHtmlText = tocToHtmlText tocToMDText textToMarkDown markDownToHtml htmlToText
+defaultTocToHtmlText = 
+    tocToHtmlText 
+        tocToMDText         -- the ToC to markdown Text renderer as defined above
+        textToMarkDown      -- a MarkDown parser, externally provided via import
+        markDownToHtml      -- a MarkDown to HTML renderer, externally provided via import
+        htmlToText          -- a HTML to Text with html markup, externally provided via import
 ```
-... to be continued
 
+This definition assumes that `tocToMDText`, `textToMarkDown`, `markDownToHtml` and `htmlToText` are present in the current scope.
+This is done by the following import statement:
+
+```haskell
+import CheapskateRenderer (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
+```
+
+The implementation in file CheapskateRenderer.hs then looks like follows:
+
+```haskell
+module CheapskateRenderer where
+import qualified Cheapskate                      as C
+import qualified Data.Text                       as T
+import qualified Text.Blaze.Html                 as H
+import qualified Text.Blaze.Html.Renderer.Pretty as R
+
+-- | a type synonym that hides the Cheapskate internal Doc type
+type MarkDown = C.Doc
+
+-- | a type synonym the hides the Blaze.Html internal Html type
+type HTML = H.Html
+
+-- | parse Markdown from a Text (with markdown markup). Using the Cheapskate library.
+textToMarkDown :: T.Text -> MarkDown
+textToMarkDown = C.markdown C.def
+
+-- | convert MarkDown to HTML by using the Blaze.Html library
+markDownToHtml :: MarkDown -> HTML
+markDownToHtml = H.toHtml
+
+-- | rendering a Text with html markup from HTML. Using Blaze again.
+htmlToText :: HTML -> T.Text
+htmlToText = T.pack . R.renderHtml
+```
+
+```haskell
+demoDI = do
+    let toc = Section (Title "Chapter 1")
+                [ Sub $ Section (Title "Section a") 
+                    [Head $ Title "First Heading", 
+                     Head $ Url "Second Heading" "http://the.url"]
+                , Sub $ Section (Url "Section b" "http://the.section.b.url") 
+                    [ Sub $ Section (Title "UnderSection b1") 
+                        [Head $ Title "First", Head $ Title "Second"]]]
+                        
+    putStrLn $ T.unpack $ tocToMDText toc    
+                        
+    putStrLn $ T.unpack $ defaultTocToHtmlText toc  
+
+-- using this in ghci:
+ghci > demoDI
+* Chapter 1
+  * Section a
+    * First Heading
+    * [Second Heading](http://the.url)
+  * [Section b](http://the.section.b.url)
+    * UnderSection b1
+      * First
+      * Second
+
+<ul>
+<li>Chapter 1
+<ul>
+<li>Section a
+<ul>
+<li>First Heading</li>
+<li><a href="http://the.url">Second Heading</a></li>
+</ul></li>
+<li><a href="http://the.section.b.url">Section b</a>
+<ul>
+<li>UnderSection b1
+<ul>
+<li>First</li>
+<li>Second</li>
+</ul></li>
+</ul></li>
+</ul></li>
+</ul>
+```
+
+By inlining this output into the present Markdown document we can see that Markdown and HTML rendering produce the same structure:
+
+> * Chapter 1
+>   * Section a
+>     * First Heading
+>     * [Second Heading](http://the.url)
+>   * [Section b](http://the.section.b.url)
+>     * UnderSection b1
+>       * First
+>       * Second
+
+> <ul>
+> <li>Chapter 1
+> <ul>
+> <li>Section a
+> <ul>
+> <li>First Heading</li>
+> <li><a href="http://the.url">Second Heading</a></li>
+> </ul></li>
+> <li><a href="http://the.section.b.url">Section b</a>
+> <ul>
+> <li>UnderSection b1
+> <ul>
+> <li>First</li>
+> <li>Second</li>
+> </ul></li>
+> </ul></li>
+> </ul></li>
+> </ul>
 
 ### Adapter -> Function Composition
 
