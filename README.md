@@ -33,7 +33,7 @@ I think this kind of exposition could be helpful if you are either:
   * [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
   * [Visitor -> Foldable](#visitor---foldable)
   * [Iterator -> Traversable](#iterator---traversable)
-  * [Type classes Category, Arrow & Co.](#type-classes-category-arrow--co)
+  * [Type classes Category, Arrow & Co.](#the-pattern-behind-the-patterns---category)
 * [Beyond type class patterns](#beyond-type-class-patterns)
   * [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
   * [Adapter -> Function Composition](#adapter---function-composition)
@@ -835,7 +835,7 @@ traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
 
 looks like quite a bit of over-engineering for simple traversals as in the above example.
 
-In oder to explain real power of the `Traversable` type class we will look at a more sophisticated example in this section.
+In oder to explain the real power of the `Traversable` type class we will look at a more sophisticated example in this section.
 
 The Unix utility `wc` is a good example for a traversal operation that performs several different tasks while traversing its input:
 
@@ -845,7 +845,7 @@ echo "counting lines, words and characters in one traversal" | wc
 ```
 
 The output simply means that our input has 1 line, 8 words and a total of 54 characters.
-Obviously an efficients implementation of `wc` will accumulate the three counters for lines, words and characters in a single pass of the input will not run three iterations for each counter separately.
+Obviously an efficients implementation of `wc` will accumulate the three counters for lines, words and characters in a single pass of the input and will not run three iterations to compute the three counters separately.
 
 Here is a Java implementation:
 
@@ -1008,11 +1008,13 @@ This example has been implemented according to ideas presented in the paper
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
 
-### Type classes Category, Arrow & Co
+### The Pattern behind the Patterns -> Category
 
-Theses type classes aim at generalizing elements of Monads or Functors.
+TBD
 
-If you have ideas how these type classes map to specific design patterns please let me know!
+### Arrow & Co
+
+TBD
 
 ## Beyond type class patterns
 
@@ -1101,7 +1103,8 @@ With these design ideas in mind we specify a rendering processor:
 
 ```haskell
 -- | render a ToC as a Text with html markup. 
---   we specify this function as a chain of parse and rendering functions that must be provided externally
+--   we specify this function as a chain of parse and rendering functions 
+--   which must be provided externally
 tocToHtmlText :: (TableOfContents -> T.Text) -- 1. a renderer function from ToC to Text with markdown markups
               -> (T.Text -> MarkDown)        -- 2. a parser function from Text to a MarkDown document
               -> (MarkDown -> HTML)          -- 3. a renderer function from MarkDown to an HTML document
@@ -1120,6 +1123,14 @@ The idea is simple:
 2. This text is then parsed into a `MarkDown` data structure. 
 3. The `Markdown` document is rendered into an `HTML` data structure,
 4. which is then rendered to a `Text` containing html markup.
+
+To notate the chaining of functions in their natural order I have used the `>>>` operator from `Control.Arrow` which is defined as follows:
+
+```haskell
+f >>> g = g . f
+```
+
+So `>>>` is just left to right composition of functions which makes reading of longer composition chains much easier to read (at least for people trained to read from left to right).
 
 Please note that at this point we have not defined the types `HTML` and `Markdown`. They are just abstract placeholders and we just expect them to be provided externally.
 In the same way we just specified that there must be functions available that can be bound to the formal parameters 
@@ -1140,8 +1151,8 @@ defaultTocToHtmlText =
         htmlToText          -- a HTML to Text with html markup, externally provided via import
 ```
 
-This definition assumes that `tocToMDText`, `textToMarkDown`, `markDownToHtml` and `htmlToText` are present in the current scope.
-This is done by the following import statement:
+This definition assumes that apart from `tocToMDText` which has already been defined the functions `textToMarkDown`, `markDownToHtml` and `htmlToText` are also present in the current scope.
+This is achieved by the following import statement:
 
 ```haskell
 import CheapskateRenderer (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
