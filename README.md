@@ -104,7 +104,7 @@ instance Functor [] where
 
 Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose. Other type classes like `Foldable` or `Traversable` can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context.
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
 
 ### Singleton -> Applicative
 
@@ -186,7 +186,7 @@ eval (Mul p q) = pure (*) <*> eval p  <*> eval q
 Any explicit handling of the variable `env` is now removed.
 (I took this example from the classic paper [Applicative programming with effects](http://www.soi.city.ac.uk/~ross/papers/Applicative.pdf) which details how `pure` and `<*>` correspond to the combinatory logic combinators `K` and `S`.)
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Singleton.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Singleton.hs)
 
 ### Pipeline -> Monad
 
@@ -341,7 +341,7 @@ So in a sense Monads could be called [programmable semicolons](http://book.realw
 
 To make this statement a bit clearer we will have a closer look at the internal workings of the `Maybe` Monad in the next section.
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Pipeline.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Pipeline.hs)
 
 ### NullObject -> Maybe Monad
 
@@ -535,7 +535,7 @@ The use of the Kleisli operator `>=>` makes it more evident that we are actually
 
 There are many predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`. But that's a different story...
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/NullObject.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/NullObject.hs)
 
 <!-- 
 #### TBD: Reimplementing the Evaluator with Writer-Monad
@@ -744,7 +744,7 @@ compositeDemo = do
 For more details on Composite as a Monoid please refer to the following blog:
 [Composite as Monoid](http://blog.ploeh.dk/2018/03/12/composite-as-a-monoid/)
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Composite.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Composite.hs)
 
 ### Visitor -> Foldable
 
@@ -786,7 +786,7 @@ By virtue of the instance declaration Exp becomes a Foldable instance an can be 
 
 [Visitory as Sum type](http://blog.ploeh.dk/2018/06/25/visitor-as-a-sum-type/)
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Visitor.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Visitor.hs)
 
 ### Iterator -> Traversable
 
@@ -1006,7 +1006,7 @@ wc str =
 This example has been implemented according to ideas presented in the paper
 [The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
 
 ### Type classes Category, Arrow & Co
 
@@ -1252,7 +1252,7 @@ By inlining this output into the present Markdown document we can see that Markd
 > </ul></li>
 > </ul>
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/DependencyInjection.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/DependencyInjection.hs)
 
 ### Adapter -> Function Composition
 
@@ -1344,7 +1344,7 @@ adapterDemo = do
     putStrLn ""
 ```
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Adapter.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Adapter.hs)
 
 ### Template Method -> type class default functions
 
@@ -1471,7 +1471,7 @@ So the Monoid type class definition forms a *template* where the default impleme
 
 (please note that it's generally possible to override the default implementations)
 
-[Full Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/TemplateMethod.hs)
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/TemplateMethod.hs)
 
 ### Creational Patterns
 
@@ -1582,6 +1582,8 @@ abstractFactoryDemo = do
     paint $ Button "Pi"                       -- paint a user-defined button
         (\btn -> putStrLn $ "raspberryButton: " ++ label btn)
 ```
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/AbstractFactory.hs)
+
 
 #### Builder -> record syntax, smart constructor
 
@@ -1749,6 +1751,9 @@ BankAccount {accountNo = 1234, name = "Dummy Customer", branch = "London", balan
 BankAccount {accountNo = 1234, name = "Marjin Mejer", branch = "Paris", balance = 10000.0, interestRate = 2.0}
 BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", balance = 1000.0, interestRate = 2.5}
 ```
+
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Builder.hs)
+
 
 ## Conclusions
 
