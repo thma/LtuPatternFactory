@@ -26,21 +26,21 @@ I think this kind of exposition could be helpful if you are either:
 
 * [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
 * [The Patternopedia](#the-patternopedia)
-  * [Strategy -> Functor](#strategy---functor)
-  * [Singleton -> Applicative](#singleton---applicative)
-  * [Pipeline -> Monad](#pipeline---monad)
-  * [NullObject -> Maybe Monad](#nullobject---maybe-monad)
-  * [Composite -> SemiGroup -> Monoid](#composite---semigroup---monoid)
-  * [Visitor -> Foldable](#visitor---foldable)
-  * [Iterator -> Traversable](#iterator---traversable)
-  * [The Pattern behind the Patterns -> Category](#the-pattern-behind-the-patterns---category)
+  * [Strategy → Functor](#strategy---functor)
+  * [Singleton → Applicative](#singleton---applicative)
+  * [Pipeline → Monad](#pipeline---monad)
+  * [NullObject → Maybe Monad](#nullobject---maybe-monad)
+  * [Composite → SemiGroup -> Monoid](#composite---semigroup---monoid)
+  * [Visitor → Foldable](#visitor---foldable)
+  * [Iterator → Traversable](#iterator---traversable)
+  * [The Pattern behind the Patterns → Category](#the-pattern-behind-the-patterns---category)
 * [Beyond type class patterns](#beyond-type-class-patterns)
-  * [Dependency Injection -> Parameter Binding](#dependency-injection---parameter-binding)
-  * [Adapter -> Function Composition](#adapter---function-composition)
-  * [Template Method -> type class default functions](#template-method---type-class-default-functions)
+  * [Dependency Injection → Parameter Binding](#dependency-injection---parameter-binding)
+  * [Adapter → Function Composition](#adapter---function-composition)
+  * [Template Method → type class default functions](#template-method---type-class-default-functions)
   * [Creational Patterns](#creational-patterns)
-    * [Abstract Factory -> functions as data type values](#abstract-factory---functions-as-data-type-values)
-    * [Builder -> record syntax, smart constructor](#builder---record-syntax-smart-constructor)
+    * [Abstract Factory → functions as data type values](#abstract-factory---functions-as-data-type-values)
+    * [Builder → record syntax, smart constructor](#builder---record-syntax-smart-constructor)
 * [Some related links](#some-interesting-links)
 
 ## The Patternopedia
@@ -50,7 +50,7 @@ The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) 
 In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
 For each of the Typeclassopedia type classes (at least up to Traversable) I try to explain how it corresponds to structures applied in design patterns.
 
-### Strategy -> Functor
+### Strategy → Functor
 
 > "The strategy pattern [...] is a behavioral software design pattern that enables selecting an algorithm at runtime. Instead of implementing a single algorithm directly, code receives run-time instructions as to which in a family of algorithms to use"
 
@@ -106,7 +106,7 @@ Although it would be fair to say that the type class `Functor` captures the esse
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
 
-### Singleton -> Applicative
+### Singleton → Applicative
 
 > "The singleton pattern is a software design pattern that restricts the instantiation of a class to one object. This is useful when exactly one object is needed to coordinate actions across the system."
 > (quoted from [Wikipedia](https://en.wikipedia.org/wiki/Singleton_pattern)
@@ -188,7 +188,7 @@ Any explicit handling of the variable `env` is now removed.
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Singleton.hs)
 
-### Pipeline -> Monad
+### Pipeline → Monad
 
 > In software engineering, a pipeline consists of a chain of processing elements (processes, threads, coroutines, functions, etc.), arranged so that the output of each element is the input of the next; the name is by analogy to a physical pipeline.
 > (Quoted from: [Wikipedia](https://en.wikipedia.org/wiki/Pipeline_(software))
@@ -343,7 +343,7 @@ To make this statement a bit clearer we will have a closer look at the internal 
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Pipeline.hs)
 
-### NullObject -> Maybe Monad
+### NullObject → Maybe Monad
 
 >[...] a null object is an object with no referenced value or with defined neutral ("null") behavior. The null object design pattern describes the uses of such objects and their behavior (or lack thereof).
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Null_object_pattern)
@@ -541,7 +541,7 @@ There are many predefined Monads available in the Haskell curated libraries and 
 #### TBD: Reimplementing the Evaluator with Writer-Monad
 -->
 
-### Composite -> SemiGroup -> Monoid
+### Composite → SemiGroup → Monoid
 
 >In software engineering, the composite pattern is a partitioning design pattern. The composite pattern describes a group of objects that is treated the same way as a single instance of the same type of object. The intent of a composite is to "compose" objects into tree structures to represent part-whole hierarchies. Implementing the composite pattern lets clients treat individual objects and compositions uniformly.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Composite_pattern))
@@ -746,7 +746,7 @@ For more details on Composite as a Monoid please refer to the following blog:
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Composite.hs)
 
-### Visitor -> Foldable
+### Visitor → Foldable
 
 > [...] the visitor design pattern is a way of separating an algorithm from an object structure on which it operates. A practical result of this separation is the ability to add new operations to existent object structures without modifying the structures. It is one way to follow the open/closed principle.
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Visitor_pattern))
@@ -788,7 +788,7 @@ By virtue of the instance declaration Exp becomes a Foldable instance an can be 
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Visitor.hs)
 
-### Iterator -> Traversable
+### Iterator → Traversable
 
 > [...] the iterator pattern is a design pattern in which an iterator is used to traverse a container and access the container's elements. The iterator pattern decouples algorithms from containers; in some cases, algorithms are necessarily container-specific and thus cannot be decoupled.
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Iterator_pattern)
@@ -1008,7 +1008,7 @@ This example has been implemented according to ideas presented in the paper
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
 
-### The Pattern behind the Patterns -> Category
+### The Pattern behind the Patterns → Category
 
 TBD
 
@@ -1026,7 +1026,7 @@ TBD:
 
 * Blockchain as Monadic chain of Actions
 
-### Dependency Injection -> Parameter Binding
+### Dependency Injection → Parameter Binding
 
 > [...] Dependency injection is a technique whereby one object (or static method) supplies the dependencies of another object. A dependency is an object that can be used (a service). An injection is the passing of a dependency to a dependent object (a client) that would use it. The service is made part of the client's state. Passing the service to the client, rather than allowing a client to build or find the service, is the fundamental requirement of the pattern.
 >
@@ -1265,7 +1265,7 @@ By inlining this output into the present Markdown document we can see that Markd
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/DependencyInjection.hs)
 
-### Adapter -> Function Composition
+### Adapter → Function Composition
 
 > "The adapter pattern is a software design pattern (also known as wrapper, an alternative naming shared with the decorator pattern) that allows the interface of an existing class to be used as another interface. It is often used to make existing classes work with others without modifying their source code."
 > (Quoted from [Wikipedia](https://en.wikipedia.org/wiki/Adapter_pattern)
@@ -1357,7 +1357,7 @@ adapterDemo = do
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Adapter.hs)
 
-### Template Method -> type class default functions
+### Template Method → type class default functions
 
 > In software engineering, the template method pattern is a behavioral design pattern that defines the program skeleton of an algorithm in an operation, deferring some steps to subclasses.
 > It lets one redefine certain steps of an algorithm without changing the algorithm's structure.
@@ -1486,7 +1486,7 @@ So the Monoid type class definition forms a *template* where the default impleme
 
 ### Creational Patterns
 
-#### Abstract Factory -> functions as data type values
+#### Abstract Factory → functions as data type values
 
 > The abstract factory pattern provides a way to encapsulate a group of individual factories that have a common theme without specifying their concrete classes.
 > In normal usage, the client software creates a concrete implementation of the abstract factory and then uses the generic interface of the factory to create the concrete objects that are part of the theme.
@@ -1596,7 +1596,7 @@ abstractFactoryDemo = do
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/AbstractFactory.hs)
 
 
-#### Builder -> record syntax, smart constructor
+#### Builder → record syntax, smart constructor
 
 > The Builder is a design pattern designed to provide a flexible solution to various object creation problems in object-oriented programming. The intent of the Builder design pattern is to separate the construction of a complex object from its representation.
 >
