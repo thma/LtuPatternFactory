@@ -1,18 +1,18 @@
 module Main where
-import Strategy  
-import Singleton
-import Pipeline
-import Composite
-import Visitor
-import Adapter
-import Builder
-import TemplateMethod
-import NullObject
-import Iterator
-import Coerce
-import AbstractFactory
-import JsonPersistence
-import DependencyInjection
+import           AbstractFactory
+import           Adapter
+import           Builder
+import           Coerce
+import           Composite
+import           DependencyInjection
+import           Iterator
+import           JsonPersistence
+import           NullObject
+import           Pipeline
+import           Singleton
+import           Strategy
+import           TemplateMethod
+import           Visitor
 
 main :: IO ()
 main = do

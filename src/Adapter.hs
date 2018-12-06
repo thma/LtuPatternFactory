@@ -1,8 +1,8 @@
-module Adapter where 
+module Adapter where
 
 backend :: c -> d
 backend = undefined
-    
+
 marshal :: a -> c
 marshal = undefined
 
@@ -12,7 +12,7 @@ unmarshal = undefined
 adapter :: a -> b
 adapter = unmarshal . backend . marshal
 
--- a 24:00 hour clock representation of time 
+-- a 24:00 hour clock representation of time
 newtype WallTime = WallTime (Int, Int) deriving (Show)
 
 -- this is our backend. It can add minutes to a WallTime representation
@@ -32,7 +32,7 @@ newtype Minute = Minute Int deriving (Show)
 
 -- convert a Minute value into a WallTime representation
 marshalMW :: Minute -> WallTime
-marshalMW (Minute x) = 
+marshalMW (Minute x) =
     let (h,m) = x `quotRem` 60
     in WallTime (h `rem` 24, m)
 
@@ -40,12 +40,12 @@ marshalMW (Minute x) =
 unmarshalWM :: WallTime -> Minute
 unmarshalWM (WallTime (h,m)) = Minute $ 60 * h + m
 
--- this is our frontend that add Minutes to a time of a day 
+-- this is our frontend that add Minutes to a time of a day
 -- measured in minutes
 addMinutesAdapter :: Int -> Minute -> Minute
 addMinutesAdapter x = unmarshalWM . addMinutesToWallTime x . marshalMW
 
-adapterDemo = do 
+adapterDemo = do
     putStrLn "Adapter -> function composition"
     print $ addMinutesAdapter 100 $ Minute 400
     putStrLn ""

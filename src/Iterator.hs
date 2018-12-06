@@ -1,21 +1,21 @@
 module Iterator where
-import Singleton (Exp (..))
-import Visitor
+import           Singleton                (Exp (..))
+import           Visitor
 
-import Data.Functor.Product             -- Product of Functors
-import Data.Functor.Compose             -- Composition of Functors
-import Data.Functor.Const               -- Const Functor
-import Data.Functor.Identity            -- Identity Functor (needed for coercion)
-import Data.Monoid (Sum (..), getSum)   -- Sum Monoid for Integers
-import Control.Monad.State.Lazy         -- State Monad
-import Control.Applicative              -- WrappedMonad
-import Data.Coerce (coerce)             -- Coercion magic
+import           Control.Applicative
+import           Control.Monad.State.Lazy
+import           Data.Coerce              (coerce)
+import           Data.Functor.Compose
+import           Data.Functor.Const
+import           Data.Functor.Identity
+import           Data.Functor.Product
+import           Data.Monoid              (Sum (..), getSum)
 
 instance Functor Exp where
-    fmap f (Var x)       = Var x
-    fmap f (Val a)       = Val $ f a
-    fmap f (Add x y)     = Add (fmap f x) (fmap f y)
-    fmap f (Mul x y)     = Mul (fmap f x) (fmap f y)
+    fmap f (Var x)   = Var x
+    fmap f (Val a)   = Val $ f a
+    fmap f (Add x y) = Add (fmap f x) (fmap f y)
+    fmap f (Mul x y) = Mul (fmap f x) (fmap f y)
 
 instance Traversable Exp where
     traverse g (Var x)   = pure $ Var x
@@ -25,7 +25,7 @@ instance Traversable Exp where
 
 -- Functor Product
 (<#>) :: (Functor m, Functor n) => (a -> m b) -> (a -> n b) -> (a -> Product m n b)
-(f <#> g) y = Pair (f y) (g y) 
+(f <#> g) y = Pair (f y) (g y)
 
 -- Functor composition
 (<.>) :: (Functor m, Functor n) => (b -> n c) -> (a -> m b) -> (a -> (Compose m n) c)
@@ -67,10 +67,10 @@ wci = traverse wciBody
 clwci :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
 clwci = traverse (cciBody <#> lciBody <#> wciBody)
 
--- | the actual wordcount implementation. 
+-- | the actual wordcount implementation.
 --   for any String a triple of linecount, wordcount, charactercount is returned
 wc :: String -> (Integer, Integer, Integer)
-wc str = 
+wc str =
     let raw = clwci str
         cc  = coerce $ pfst (pfst raw)
         lc  = coerce $ psnd (pfst raw)
@@ -87,11 +87,11 @@ psnd (Pair _ snd) = snd
 
 iteratorDemo = do
     putStrLn "Iterator -> Traversable"
-    let exp = Mul (Add (Val 3) (Val 1)) 
+    let exp = Mul (Add (Val 3) (Val 1))
                 (Mul (Val 2) (Var "pi"))
         env = [("pi", pi)]
     print $ traverse (\x c -> if even x then [x] else [2*x]) exp 0
 
     print $ wc str
-                        
-    
+
+

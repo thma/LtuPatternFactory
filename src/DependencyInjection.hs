@@ -1,8 +1,9 @@
 module DependencyInjection where
-import qualified Data.Text as T
-import           Control.Arrow ((>>>))
-import           CheapskateRenderer (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
+import           CheapskateRenderer (HTML, MarkDown, htmlToText, markDownToHtml, textToMarkDown)
 --import           CMarkGFMRenderer   (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
+import           Control.Arrow      ((>>>))
+import qualified Data.Text          as T
+
 
 -- | a table of contents consists of a heading and a list of entries
 data TableOfContents = Section Heading [TocEntry]
@@ -16,7 +17,7 @@ data Heading = Title String | Url String String
 -- | render a ToC entry as a Markdown String with the proper indentation
 teToMd :: Int -> TocEntry -> String
 teToMd depth (Head head) = headToMd depth head
-teToMd depth (Sub toc)   = tocToMd  depth toc 
+teToMd depth (Sub toc)   = tocToMd  depth toc
 
 -- | render a heading as a Markdown String with the proper indentation
 headToMd :: Int -> Heading -> String
@@ -29,13 +30,13 @@ tocToMd depth (Section heading entries) = headToMd depth heading ++ concatMap (t
 
 -- | produce a String of length n, consisting only of blanks
 indent :: Int -> String
-indent n = replicate n ' '    
+indent n = replicate n ' '
 
 -- | render a ToC as a Text (consisting of properly indented Markdown)
 tocToMDText :: TableOfContents -> T.Text
 tocToMDText = T.pack . tocToMd 0
 
--- | render a ToC as a Text with html markup. 
+-- | render a ToC as a Text with html markup.
 --   we specify this function as a chain of parse and rendering functions that must be provided externally
 tocToHtmlText :: (TableOfContents -> T.Text) -- 1. a renderer function from ToC to Text with markdown markups
               -> (T.Text -> MarkDown)        -- 2. a parser function from Text to a MarkDown document
@@ -43,7 +44,7 @@ tocToHtmlText :: (TableOfContents -> T.Text) -- 1. a renderer function from ToC 
               -> (HTML -> T.Text)            -- 4. a renderer function from HTML to Text
               -> TableOfContents             -- the actual ToC to be rendered
               -> T.Text                      -- the Text output (containing html markup)
-tocToHtmlText tocToMdText textToMd mdToHtml htmlToText = 
+tocToHtmlText tocToMdText textToMd mdToHtml htmlToText =
     tocToMdText >>>    -- 1. render a ToC as a Text (consisting of properly indented Markdown)
     textToMd    >>>    -- 2. parse text with Markdown to a MarkDown data structure
     mdToHtml    >>>    -- 3. convert the MarkDown data to an HTML data structure
@@ -53,8 +54,8 @@ tocToHtmlText tocToMdText textToMd mdToHtml htmlToText =
 -- | a default implementation of a ToC to html Text renderer.
 --   this function is constructed by partially applying `tocToHtmlText` to four functions matching the signature of `tocToHtmlText`.
 defaultTocToHtmlText :: TableOfContents -> T.Text
-defaultTocToHtmlText = 
-    tocToHtmlText 
+defaultTocToHtmlText =
+    tocToHtmlText
         tocToMDText         -- the ToC to markdown Text renderer as defined above
         textToMarkDown      -- a MarkDown parser, externally provided via import
         markDownToHtml      -- a MarkDown to HTML renderer, externally provided via import
@@ -62,13 +63,13 @@ defaultTocToHtmlText =
 
 demoDI = do
     let toc = Section (Title "Chapter 1")
-                [ Sub $ Section (Title "Section a") 
-                    [Head $ Title "First Heading", 
+                [ Sub $ Section (Title "Section a")
+                    [Head $ Title "First Heading",
                      Head $ Url "Second Heading" "http://the.url"]
-                , Sub $ Section (Url "Section b" "http://the.section.b.url") 
-                    [ Sub $ Section (Title "UnderSection b1") 
+                , Sub $ Section (Url "Section b" "http://the.section.b.url")
+                    [ Sub $ Section (Title "UnderSection b1")
                         [Head $ Title "First", Head $ Title "Second"]]]
-                        
-    putStrLn $ T.unpack $ tocToMDText toc    
-                        
-    putStrLn $ T.unpack $ defaultTocToHtmlText toc                                                                                                                  
+
+    putStrLn $ T.unpack $ tocToMDText toc
+
+    putStrLn $ T.unpack $ defaultTocToHtmlText toc

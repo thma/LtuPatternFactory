@@ -1,9 +1,9 @@
-module CheapskateRenderer 
+module CheapskateRenderer
     ( MarkDown
     , HTML
     , textToMarkDown
     , markDownToHtml
-    , htmlToText 
+    , htmlToText
     ) where
 
 import qualified Cheapskate                      as C

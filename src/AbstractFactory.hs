@@ -1,13 +1,13 @@
 module AbstractFactory where
-import System.Info (os) -- provide Platform information
+import           System.Info (os)
 
--- | representation of a Button UI widget    
-data Button = Button 
+-- | representation of a Button UI widget
+data Button = Button
     { label  :: String           -- the text label of the button
     , render :: Button -> IO ()  -- a platform specific rendering action
     }
 
--- | rendering a Button for the WIN platform (we just simulate it by printing the label) 
+-- | rendering a Button for the WIN platform (we just simulate it by printing the label)
 winPaint :: Button -> IO ()
 winPaint btn = putStrLn $ "winButton: " ++ label btn
 
@@ -15,10 +15,10 @@ winPaint btn = putStrLn $ "winButton: " ++ label btn
 osxPaint :: Button -> IO ()
 osxPaint btn = putStrLn $ "osxButton: " ++ label btn
 
--- | paint a button by using the Buttons render function 
+-- | paint a button by using the Buttons render function
 paint :: Button -> IO ()
-paint btn@(Button _ render) = render btn 
- 
+paint btn@(Button _ render) = render btn
+
 -- | a representation of the operating system platform
 data Platform = OSX | WIN | NIX | Other
 
@@ -33,13 +33,13 @@ platform = case os of
 -- | create a button for os platform with label lbl
 createButton :: String -> Button
 createButton lbl = case platform of
-    OSX    -> Button lbl osxPaint
-    WIN    -> Button lbl winPaint
-    NIX    -> Button lbl (\btn -> putStrLn $ "nixButton: "   ++ label btn) 
-    Other  -> Button lbl (\btn -> putStrLn $ "otherButton: " ++ label btn)
+    OSX   -> Button lbl osxPaint
+    WIN   -> Button lbl winPaint
+    NIX   -> Button lbl (\btn -> putStrLn $ "nixButton: "   ++ label btn)
+    Other -> Button lbl (\btn -> putStrLn $ "otherButton: " ++ label btn)
 
 abstractFactoryDemo = do
-    putStrLn "AbstractFactory -> functions as data type values"    
+    putStrLn "AbstractFactory -> functions as data type values"
     let exit = createButton "Exit"            -- using the "abstract" API to create buttons
     let ok   = createButton "OK"
     paint ok                                  -- using the "abstract" API to paint buttons

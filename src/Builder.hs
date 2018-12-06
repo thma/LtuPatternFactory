@@ -1,6 +1,6 @@
 module Builder where
 
--- accountNo, Name, branch, balance, interestRate    
+-- accountNo, Name, branch, balance, interestRate
 data BankAccount = BankAccount {
     accountNo    :: Int
   , name         :: String
@@ -27,4 +27,4 @@ builderDemo = do
         , interestRate = 2.5
         }
     print account2
-    
+

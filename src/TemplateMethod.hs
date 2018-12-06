@@ -1,6 +1,6 @@
 module TemplateMethod where
 
-import Adapter (unmarshalWM, marshalMW, addMinutesToWallTime, Minute (..), WallTime (..) )
+import           Adapter (Minute (..), WallTime (..), addMinutesToWallTime, marshalMW, unmarshalWM)
 
 addMinutesTemplate :: (Int -> WallTime -> WallTime) -> Int -> Minute -> Minute
 addMinutesTemplate f x =

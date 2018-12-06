@@ -1,15 +1,17 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
-{-# LANGUAGE OverloadedStrings             #-}
-{-# LANGUAGE PartialTypeSignatures         #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE OverloadedStrings     #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 module JsonPersistence where
-import GHC.Generics (Generic) -- needed to derive type class instances declaratively
-import Data.Aeson   (ToJSON, FromJSON, eitherDecodeFileStrict, toJSON, encodeFile) -- JSON encoding/decoding
-import Data.Tagged            -- used to tag type information to Ids
+import           Data.Aeson   (FromJSON, ToJSON, eitherDecodeFileStrict,
+                               encodeFile, toJSON)
+import           Data.Tagged
+import           GHC.Generics (Generic)
 
 type Id a = Tagged a Integer
 data Identified a = Identified
     { ident :: Id a
-    , val :: a
+    , val   :: a
     } deriving (Eq, Ord, Read, Show, Generic, ToJSON, FromJSON)
 
 class (ToJSON a, FromJSON a, Eq a, Show a) => Entity a where
@@ -45,13 +47,13 @@ getPath :: Id a -> String
 getPath (Tagged i) = ".stack-work/" ++ show i ++ ".json"
 
 data User = User {
-      name      :: String
-    , email     :: String
+      name  :: String
+    , email :: String
 } deriving (Show, Eq, Generic, ToJSON, FromJSON, Entity)
 
 data Post = Post {
-      userId    :: Integer
-    , text      :: String
+      userId :: Integer
+    , text   :: String
 } deriving (Show, Eq, Generic, ToJSON, FromJSON, Entity)
 
 jsonPersistenceDemo = do

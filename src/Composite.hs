@@ -1,5 +1,5 @@
 module Composite where
-import Data.Semigroup (All(..))
+import           Data.Semigroup (All (..))
 
 -- the composite data structure: a Test can be Empty, a single TestCase
 -- or a TestSuite holding a list of Tests
@@ -11,7 +11,7 @@ data Test = Empty
 type TestCase = () -> Bool
 
 
--- execution of a Test. 
+-- execution of a Test.
 run :: Test -> Bool
 run Empty         = True
 run (TestCase t)  = t () -- evaluating the TestCase by applying t to ()
@@ -21,12 +21,12 @@ run (TestSuite l) = all (True ==) (map run l) -- running all tests in l and retu
 
 -- addTesting Tests
 addTest :: Test -> Test -> Test
-addTest Empty t                           = t
-addTest t Empty                           = t
-addTest t1@(TestCase _) t2@(TestCase _)   = TestSuite [t1,t2]
-addTest t1@(TestCase _) (TestSuite list)  = TestSuite ([t1] ++ list)
-addTest (TestSuite list) t2@(TestCase _)  = TestSuite (list ++ [t2])
-addTest (TestSuite l1) (TestSuite l2)     = TestSuite (l1 ++ l2)
+addTest Empty t                          = t
+addTest t Empty                          = t
+addTest t1@(TestCase _) t2@(TestCase _)  = TestSuite [t1,t2]
+addTest t1@(TestCase _) (TestSuite list) = TestSuite ([t1] ++ list)
+addTest (TestSuite list) t2@(TestCase _) = TestSuite (list ++ [t2])
+addTest (TestSuite l1) (TestSuite l2)    = TestSuite (l1 ++ l2)
 
 
 -- in order to make Test an instance of Monoid, we have to provide
@@ -37,12 +37,12 @@ instance Semigroup Test where
 instance Monoid Test where
     mempty = Empty
 
--- a few most simple test cases    
-t1 :: Test    
+-- a few most simple test cases
+t1 :: Test
 t1 = TestCase (\() -> True)
-t2 :: Test 
+t2 :: Test
 t2 = TestCase (\() -> True)
-t3 :: Test 
+t3 :: Test
 t3 = TestCase (\() -> False)
 -- collecting all test cases in a TestSuite
 ts = TestSuite [t1,t2,t3]

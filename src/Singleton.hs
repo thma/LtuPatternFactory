@@ -1,7 +1,7 @@
 module Singleton where
-import IdiomBrackets
+import           IdiomBrackets
 
-data Exp a = 
+data Exp a =
       Var String
     | Val a
     | Add (Exp a) (Exp a)
@@ -64,7 +64,7 @@ fetch x ((y,v):ys)
 singletonDemo :: IO ()
 singletonDemo = do
     putStrLn "Singleton -> Applicative Functor, Pointed (and let in general)"
-    let exp = Mul (Add (Val 3) (Val 1)) 
+    let exp = Mul (Add (Val 3) (Val 1))
                   (Mul (Val 2) (Var "pi"))
         env = [("pi", pi)]
     print $ eval exp env

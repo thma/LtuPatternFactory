@@ -10,7 +10,7 @@ import Control.Monad.State.Lazy         -- State Monad
 import Data.Typeable
   
 -- | This module provides explicit coercion.
---   Instead of the "magic" Data.Coerce.coerce you could use wrap and unwrap to explicitely write the coercions.
+--   Instead of the "magic" Data.Coerce.coerce you could use wrap and unwrap to explicitly write the coercions.
 class Coerce a b | a -> b where
     unwrap :: a -> b
     wrap   :: b -> a

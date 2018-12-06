@@ -1,5 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE UndecidableInstances   #-}
 module IdiomBrackets where
 
 -- This module provides the Idiom Bracket syntax suggested by Conor McBride
@@ -8,14 +10,14 @@ module IdiomBrackets where
 
 class Applicative i => Idiomatic i f g | g -> f i where
     idiomatic :: i f -> g
-    
+
 iI :: Idiomatic i f g => f -> g
 iI = idiomatic . pure
-    
+
 data Ii  =  Ii
-    
+
 instance Applicative i   => Idiomatic i x (Ii -> i x) where
     idiomatic xi Ii  = xi
-    
+
 instance Idiomatic i f g => Idiomatic i (s -> f) (i s -> g) where
     idiomatic sfi si = idiomatic (sfi <*> si)

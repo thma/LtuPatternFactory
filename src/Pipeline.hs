@@ -17,7 +17,7 @@ Stream x |> f = f x
 
 -- echo and |> are used to create the actual pipeline
 pipeline :: String -> Stream Int
-pipeline str = 
+pipeline str =
   echo str |> echo . length . words |> echo . (3 *)
 
 -- a log is just a list of Strings
@@ -28,7 +28,7 @@ newtype LoggerStream a = LoggerStream (a, Log) deriving (Show, Functor)
 
 instance Applicative LoggerStream where
   pure = return
-  LoggerStream (f, _) <*> r = fmap f r  
+  LoggerStream (f, _) <*> r = fmap f r
 
 -- our definition of the Logging Stream Monad
 instance Monad LoggerStream where
@@ -38,8 +38,8 @@ instance Monad LoggerStream where
   m1 >>= m2  = let LoggerStream(f1, l1) = m1
                    LoggerStream(f2, l2) = m2 f1
                in  LoggerStream(f2, l1 ++ l2)
-   
--- compute length of a String and provide a log message               
+
+-- compute length of a String and provide a log message
 logLength :: String -> LoggerStream Int
 logLength str = let l = length(words str)
                 in LoggerStream (l, ["length(" ++ str ++ ") = " ++ show l])
@@ -52,7 +52,7 @@ logPipeline :: String -> LoggerStream Int
 logPipeline str =
   return str >>= logLength >>= logMultiply
 
-pipelineDemo = do 
+pipelineDemo = do
     putStrLn "Pipeline -> Monad"
     print $ pipeline "hello world"
     print $ logPipeline "hello logging world"
