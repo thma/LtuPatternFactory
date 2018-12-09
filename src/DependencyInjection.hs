@@ -1,7 +1,7 @@
 module DependencyInjection where
 import           CheapskateRenderer (HTML, MarkDown, htmlToText, markDownToHtml, textToMarkDown)
 --import           CMarkGFMRenderer   (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
-import           Control.Arrow      ((>>>))
+import           Control.Category   ((>>>))
 import qualified Data.Text          as T
 
 

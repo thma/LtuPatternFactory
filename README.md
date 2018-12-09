@@ -63,46 +63,129 @@ For each of the Typeclassopedia type classes (at least up to Traversable) I try 
 * In an OO language like Java a strategy would be modelled as a single strategy-method interface that would be implemented by different strategy classes that provide implementations of the strategy method.
 * in functional programming a strategy is just a higher order function, that is a parameter of a function that has a function type.
 
+We are starting with a simplified example working on Numbers:
+
 ```haskell
 -- first we define two simple strategies that map numbers to numbers:
-strategyId :: Num a => a -> a
-strategyId n = n
-
+-- first we define two simple strategies that work on numbers:
 strategyDouble :: Num a => a -> a
 strategyDouble n = 2*n
 
--- now we define a context that applies a function of type Num a => a -> a to a list of a's:
-context :: Num a => (a -> a) -> [a] -> [a]
-context f l = map f l
--- using pointfree style this can be written as:
-context = map
+strategySquare :: Num a => a -> a
+strategySquare n = n*n
+
+strategyToString :: Show a => a -> String
+strategyToString = show
 ```
 
-The `context` function uses higher order `map` function  (`map :: (a -> b) -> [a] -> [b]`) to apply the strategies to lists of numbers:
+These *strategies* - or rather functions - can then be used to perform operations on numbers, as shown in the following GHCi (The Glasgow Haskell Compiler REPL) session:
 
 ```haskell
-ghci> context strategyId [1..10]
-[1,2,3,4,5,6,7,8,9,10]
-ghci> context strategyDouble [1..10]
-[2,4,6,8,10,12,14,16,18,20]
+ghci> strategySquare 15
+225
+ghci> strategyDouble 8.0
+16.0
+ghci> strategyToString 4
+"4"
 ```
 
-Instead of map we could use just any other function that accepts a function of type `Num a => a -> a` and applies it in a given context.
-In Haskell the application of a function in a computational context is generalized with the type class `Functor`:
+We are using the functions directly by applying them to some numeric values.
+One nice feature of functions is that they can be composed using the `(.)` operator:
+
+```haskell
+ghci> :type (.)
+(.) :: (b -> c) -> (a -> b) -> a -> c
+
+ghci> (strategyToString . strategySquare ) 15
+"225"
+```
+
+So far we are using functions directly and not as a parameter to some *higher order* function, that is we are using them without a computational context referring to them.
+
+In the next step we will set up such a computaional context.
+
+Let's assume we want to be able to apply our strategies defined above not only to single values but to lists of values. We don't want to rewrite our code, but rather reuse the existing functions and use them in a list context.
+
+```haskell
+-- | applyInListContext applies a function of type Num a => a -> b to a list of a's:
+applyInListContext :: Num a => (a -> b) -> [a] -> [b]
+-- applying f to an empty list returns the empty list
+applyInListContext f [] = []
+-- applying f to a list with head x returns (f x) 'consed' to a list
+resulting from applying applyInListContext f to the tail of the list
+-- applyInListContext f (x:xs) = (f x) : applyInListContext f xs
+
+-- HLint, the Haskell linter advices us to use the predefined map function instead of our definition above:
+applyInListContext = map
+
+```
+
+Now we can use the `applyInListContext` function to apply strategies to lists of numbers:
+
+```haskell
+ghci> applyInListContext strategyDouble [1..10]
+[2,4,6,8,10,12,14,16,18,20]
+ghci> applyInListContext strategySquare [1..10]
+[1,4,9,16,25,36,49,64,81,100]
+-- and again we can use (.) for composing strategies:
+ghci> applyInListContext (strategyToString . strategySquare) [1..10]
+["1","4","9","16","25","36","49","64","81","100"]
+```
+
+Using this approach is not limited to lists but we can apply it to any other parametric datatype.
+As an example we construct a `Context a` type with the corresponding higher order function `applyInContext`.
+This function accepts a function of type `Num a => (a -> b)` and a `Context a` and returns a `Context b`.
+The return value of type `Context b` is constructed by applying the function `f` of type `(a -> b)` to the value `x` which has been extracted from the input value `Context x` by pattern matching:
+
+```haskell
+newtype Context a = Context a deriving (Show, Read)
+
+applyInContext :: Num a => (a -> b) -> Context a -> Context b
+applyInContext f (Context x) = Context (f x)
+
+-- using this in ghci:
+ghci> applyInContext (strategyToString . strategySquare) (Context 14)
+Context "196"
+```
+
+Now imagine we would be asked to implement this way to apply functions within a context for yet another data type.
+Wouldn't it be great to do this without reinventing the wheel each time?
+
+In Functional Prigramming languages the application of a function in a computational context is generalized with the type class `Functor`:
 
 ```haskell
 class  Functor f  where
     fmap :: (a -> b) -> f a -> f b
 ```
 
-Actually `map` is the fmap implementation for the List Functor instance:
+By comparing the signature of `fmap` with our higher order functions `applyInListContext` and `applyIncontext`
+we notice that they bear the same structure:
+
+```haskell
+    fmap               ::          (a -> b) -> f a       -> f b
+
+    applyInContext     :: Num a => (a -> b) -> Context a -> Context b
+
+    applyInListContext :: Num a => (a -> b) -> [a]       -> [b]
+```
+
+Actually the function `map` (which had been suggested as a replacement for applyInContext by the Haskell Linter) is the `fmap` implementation for the List Functor instance:
 
 ```haskell
 instance Functor [] where
     fmap = map
 ```
 
-Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose. Other type classes like `Foldable` or `Traversable` can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context.
+In the same way the Functor definition for the Context type defines `fmap` exactly as the `applyInIncontext` function:
+
+```haskell
+instance Functor Context where
+    fmap f (Context a) = Context (f a)
+```
+
+Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose.
+
+Other type classes like `Foldable` or `Traversable` (which is a `Foldable Functor`) can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context.
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
 
@@ -1050,7 +1133,7 @@ data Heading = Title String | Url String String
 -- | render a ToC entry as a Markdown String with the proper indentation
 teToMd :: Int -> TocEntry -> String
 teToMd depth (Head head) = headToMd depth head
-teToMd depth (Sub toc)   = tocToMd  depth toc 
+teToMd depth (Sub toc)   = tocToMd  depth toc
 
 -- | render a heading as a Markdown String with the proper indentation
 headToMd :: Int -> Heading -> String
@@ -1063,22 +1146,23 @@ tocToMd depth (Section heading entries) = headToMd depth heading ++ concatMap (t
 
 -- | produce a String of length n, consisting only of blanks
 indent :: Int -> String
-indent n = replicate n ' '    
+indent n = replicate n ' '
 
 -- | render a ToC as a Text (consisting of properly indented Markdown)
 tocToMDText :: TableOfContents -> T.Text
 tocToMDText = T.pack . tocToMd 0
 ```
+
 We can use these definitions to create a table of contents data structure and to render it to markdown syntax:
 
 ```haskell
 demoDI = do
     let toc = Section (Title "Chapter 1")
-                [ Sub $ Section (Title "Section a") 
-                    [Head $ Title "First Heading", 
+                [ Sub $ Section (Title "Section a")
+                    [Head $ Title "First Heading",
                      Head $ Url "Second Heading" "http://the.url"]
-                , Sub $ Section (Url "Section b" "http://the.section.b.url") 
-                    [ Sub $ Section (Title "UnderSection b1") 
+                , Sub $ Section (Url "Section b" "http://the.section.b.url")
+                    [ Sub $ Section (Title "UnderSection b1")
                         [Head $ Title "First", Head $ Title "Second"]]]
     putStrLn $ T.unpack $ tocToMDText toc
 
@@ -1102,8 +1186,8 @@ But we don't want any hard coded dependencies to a specific library in our code.
 With these design ideas in mind we specify a rendering processor:
 
 ```haskell
--- | render a ToC as a Text with html markup. 
---   we specify this function as a chain of parse and rendering functions 
+-- | render a ToC as a Text with html markup.
+--   we specify this function as a chain of parse and rendering functions
 --   which must be provided externally
 tocToHtmlText :: (TableOfContents -> T.Text) -- 1. a renderer function from ToC to Text with markdown markups
               -> (T.Text -> MarkDown)        -- 2. a parser function from Text to a MarkDown document
@@ -1111,16 +1195,17 @@ tocToHtmlText :: (TableOfContents -> T.Text) -- 1. a renderer function from ToC 
               -> (HTML -> T.Text)            -- 4. a renderer function from HTML to Text
               -> TableOfContents             -- the actual ToC to be rendered
               -> T.Text                      -- the Text output (containing html markup)
-tocToHtmlText tocToMdText textToMd mdToHtml htmlToText = 
+tocToHtmlText tocToMdText textToMd mdToHtml htmlToText =
     tocToMdText >>>    -- 1. render a ToC as a Text (consisting of properly indented Markdown)
     textToMd    >>>    -- 2. parse text with Markdown to a MarkDown data structure
     mdToHtml    >>>    -- 3. convert the MarkDown data to an HTML data structure
     htmlToText         -- 4. render the HTML data to a Text with hmtl markup
 ```
 
-The idea is simple: 
+The idea is simple:
+
 1. We render our `TableOfContents` to a Markdown `Text` (e.g. using our already defined `tocToMDText` function).
-2. This text is then parsed into a `MarkDown` data structure. 
+2. This text is then parsed into a `MarkDown` data structure.
 3. The `Markdown` document is rendered into an `HTML` data structure,
 4. which is then rendered to a `Text` containing html markup.
 
@@ -1133,18 +1218,18 @@ f >>> g = g . f
 So `>>>` is just left to right composition of functions which makes reading of longer composition chains much easier to read (at least for people trained to read from left to right).
 
 Please note that at this point we have not defined the types `HTML` and `Markdown`. They are just abstract placeholders and we just expect them to be provided externally.
-In the same way we just specified that there must be functions available that can be bound to the formal parameters 
+In the same way we just specified that there must be functions available that can be bound to the formal parameters
 `tocToText`, `textToMd`, `mdToHtml` and  `htmlToText`.
 
 If such functions are avaliable we can *inject* them (or rather bind them to the formal parameters) as in the following definition:
 
 ```haskell
 -- | a default implementation of a ToC to html Text renderer.
---   this function is constructed by partially applying `tocToHtmlText` to four functions 
+--   this function is constructed by partially applying `tocToHtmlText` to four functions
 --   matching the signature of `tocToHtmlText`.
 defaultTocToHtmlText :: TableOfContents -> T.Text
-defaultTocToHtmlText = 
-    tocToHtmlText 
+defaultTocToHtmlText =
+    tocToHtmlText
         tocToMDText         -- the ToC to markdown Text renderer as defined above
         textToMarkDown      -- a MarkDown parser, externally provided via import
         markDownToHtml      -- a MarkDown to HTML renderer, externally provided via import
@@ -1191,15 +1276,15 @@ Now let's try it out:
 ```haskell
 demoDI = do
     let toc = Section (Title "Chapter 1")
-                [ Sub $ Section (Title "Section a") 
-                    [Head $ Title "First Heading", 
+                [ Sub $ Section (Title "Section a")
+                    [Head $ Title "First Heading",
                      Head $ Url "Second Heading" "http://the.url"]
-                , Sub $ Section (Url "Section b" "http://the.section.b.url") 
-                    [ Sub $ Section (Title "UnderSection b1") 
+                , Sub $ Section (Url "Section b" "http://the.section.b.url")
+                    [ Sub $ Section (Title "UnderSection b1")
                         [Head $ Title "First", Head $ Title "Second"]]]
-                        
-    putStrLn $ T.unpack $ tocToMDText toc    
-                        
+
+    putStrLn $ T.unpack $ tocToMDText toc
+
     putStrLn $ T.unpack $ defaultTocToHtmlText toc  
 
 -- using this in ghci:
@@ -1243,7 +1328,7 @@ By inlining this output into the present Markdown document we can see that Markd
 >     * UnderSection b1
 >       * First
 >       * Second
-
+>
 > <ul>
 > <li>Chapter 1
 > <ul>
@@ -1593,8 +1678,8 @@ abstractFactoryDemo = do
     paint $ Button "Pi"                       -- paint a user-defined button
         (\btn -> putStrLn $ "raspberryButton: " ++ label btn)
 ```
-[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/AbstractFactory.hs)
 
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/AbstractFactory.hs)
 
 #### Builder → record syntax, smart constructor
 
@@ -1764,7 +1849,6 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 ```
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Builder.hs)
-
 
 ## Conclusions
 
