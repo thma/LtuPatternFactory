@@ -66,8 +66,6 @@ For each of the Typeclassopedia type classes (at least up to Traversable) I try 
 We are starting with a simplified example working on Numbers:
 
 ```haskell
--- first we define two simple strategies that map numbers to numbers:
--- first we define two simple strategies that work on numbers:
 strategyDouble :: Num a => a -> a
 strategyDouble n = 2*n
 

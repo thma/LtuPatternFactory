@@ -16,7 +16,7 @@ applyInContext :: Num a => (a -> b) -> Context a -> Context b
 applyInContext f (Context a) = Context (f a)
 
 instance Functor Context where
-    fmap f (Context a) = Context (f a) 
+    fmap f (Context a) = Context (f a)
 
 -- | applyInListContext applies a function of type Num a => a -> a to a list of a's:
 applyInListContext :: Num a => (a -> b) -> [a] -> [b]
@@ -31,11 +31,11 @@ applyInListContext = map
 
 
 strategyDemo = do
-    putStrLn "Strategy Pattern -> Functor (and Higher Order Functions in general)"  
-    
+    putStrLn "Strategy Pattern -> Functor (and Higher Order Functions in general)"
+
     print $ strategySquare 16
     print $ (strategyToString . strategySquare . strategyDouble) 4
-    
+
     print $ applyInContext (strategySquare . strategyDouble) (Context 7)
 
     print $ applyInListContext strategyDouble [1..10]
