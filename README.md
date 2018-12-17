@@ -179,6 +179,15 @@ instance Functor Context where
     fmap f (Context a) = Context (f a)
 ```
 
+As deriving of Functor instances can be done mechanically for any algebraic data type there is no need to define Functor instances explicitely.
+Instead of the the above `instance Functor` declaration we let the compiler do the work for us by using the `DeriveFunctor` pragma:
+
+```haskell
+{-# LANGUAGE DeriveFunctor #-}
+
+newtype Context a = Context a deriving (Functor, Show, Read)
+```
+
 #### composition of functors
 
 In the beginning of this section we have seen that composition of functions using the `(.)` operator is a very useful tool to construct complex functionality by chaining more simple functions.
@@ -205,9 +214,18 @@ ghci> fmap (strategyToString . strategySquare) [1..10]
 ["1","4","9","16","25","36","49","64","81","100"]
 ```
 
+But composition doesn't stop here:
+
+```haskell
+ghci> (fmap . fmap) (strategyToString . strategySquare) (Context [6,7])
+Context ["36","49"]
+```
+
+As we can see, The two functors `[]` and `Context` can be composed and this composition is a new Functor `Context []`. The composition `(fmap . fmap)` can be used to apply our strategy functions on the wrapped integers 6 and 7.
+
 #### conclusion
 
-Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern &ndash; namely the injecting of a function into and its execution in a computational context &ndash; the usage of higher order functionsis of course not limited to `Functors` &ndash; we could use just any higher order function fitting our purpose.
+Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern &ndash; namely the injecting of a function into a computational context and its execution in this context &ndash; the usage of higher order functions is of course not limited to `Functors` &ndash; we could use just any higher order function fitting our purpose.
 
 Other type classes like `Foldable` or `Traversable` (which is a `Foldable Functor`) can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context.
 

@@ -1,3 +1,4 @@
+{-#LANGUAGE DeriveFunctor #-}
 module Strategy where
 
 -- first we define two simple strategies that work on numbers:
@@ -10,13 +11,13 @@ strategySquare n = n*n
 strategyToString :: Show a => a -> String
 strategyToString = show
 
-newtype Context a = Context a deriving (Show, Read)
+newtype Context a = Context a deriving (Functor, Show, Read)
 
 applyInContext :: Num a => (a -> b) -> Context a -> Context b
 applyInContext f (Context a) = Context (f a)
 
-instance Functor Context where
-    fmap f (Context a) = Context (f a)
+--instance Functor Context where
+--    fmap f (Context a) = Context (f a)
 
 -- | applyInListContext applies a function of type Num a => a -> a to a list of a's:
 applyInListContext :: Num a => (a -> b) -> [a] -> [b]
