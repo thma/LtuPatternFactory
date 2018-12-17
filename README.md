@@ -61,13 +61,12 @@ For each of the Typeclassopedia type classes (at least up to Traversable) I try 
 
 * in C a strategy would be modelled as a function pointer that can be used to dispatch calls to different functions.
 * In an OO language like Java a strategy would be modelled as a single strategy-method interface that would be implemented by different strategy classes that provide implementations of the strategy method.
-* in functional programming a strategy is just a higher order function, that is a parameter of a function that has a function type.
+* in functional programming a strategy is just a function that is passed as a parameter to a [higher order function](https://en.wikipedia.org/wiki/Higher-order_function).
 
 We are starting with a simplified example working on Numbers:
 
 ```haskell
--- first we define two simple strategies that map numbers to numbers:
--- first we define two simple strategies that work on numbers:
+-- first we define simple strategies operating on numbers:
 strategyDouble :: Num a => a -> a
 strategyDouble n = 2*n
 
@@ -78,7 +77,7 @@ strategyToString :: Show a => a -> String
 strategyToString = show
 ```
 
-These *strategies* - or rather functions - can then be used to perform operations on numbers, as shown in the following GHCi (The Glasgow Haskell Compiler REPL) session:
+These *strategies* &ndash; or rather functions &ndash; can then be used to perform operations on numbers, as shown in the following GHCi (The Glasgow Haskell Compiler REPL) session:
 
 ```haskell
 ghci> strategySquare 15
@@ -112,8 +111,8 @@ applyInListContext :: Num a => (a -> b) -> [a] -> [b]
 -- applying f to an empty list returns the empty list
 applyInListContext f [] = []
 -- applying f to a list with head x returns (f x) 'consed' to a list
-resulting from applying applyInListContext f to the tail of the list
--- applyInListContext f (x:xs) = (f x) : applyInListContext f xs
+-- resulting from applying applyInListContext f to the tail of the list
+applyInListContext f (x:xs) = (f x) : applyInListContext f xs
 
 -- HLint, the Haskell linter advices us to use the predefined map function instead of our definition above:
 applyInListContext = map
@@ -127,9 +126,6 @@ ghci> applyInListContext strategyDouble [1..10]
 [2,4,6,8,10,12,14,16,18,20]
 ghci> applyInListContext strategySquare [1..10]
 [1,4,9,16,25,36,49,64,81,100]
--- and again we can use (.) for composing strategies:
-ghci> applyInListContext (strategyToString . strategySquare) [1..10]
-["1","4","9","16","25","36","49","64","81","100"]
 ```
 
 Using this approach is not limited to lists but we can apply it to any other parametric datatype.
@@ -149,7 +145,7 @@ Context "196"
 ```
 
 Now imagine we would be asked to implement this way to apply functions within a context for yet another data type.
-Wouldn't it be great to do this without reinventing the wheel each time?
+Wouldn't it be great to have a generic tool that would solve this problem for any context, thus avoiding to reinventing the wheel each time?
 
 In Functional Prigramming languages the application of a function in a computational context is generalized with the type class `Functor`:
 
@@ -183,7 +179,35 @@ instance Functor Context where
     fmap f (Context a) = Context (f a)
 ```
 
-Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern - namely the injecting into and the execution in a computational context of a function - the usage of higher order functions (or strategies) is of course not limited to `Functors` - we could use just any higher order function fitting our purpose.
+#### composition of functors
+
+In the beginning of this section we have seen that composition of functions using the `(.)` operator is a very useful tool to construct complex functionality by chaining more simple functions.
+
+As stated in the [Functor laws](https://wiki.haskell.org/Typeclassopedia#Laws) any Functor instance must ensure that:
+
+```haskell
+fmap (g . h) = (fmap g) . (fmap h)
+```
+
+Let's try to verify this with our two example Functors `Context` and `[]`:
+
+```haskell
+ghci> (fmap strategyToString . fmap strategySquare) (Context 7)
+Context "49"
+-- this version is more efficient as we have to pattern match and reconstruct the Context only once:
+ghci> fmap (strategyToString . strategySquare) (Context 7)
+Context "49"
+-- now with a list context:
+ghci> (fmap strategyToString . fmap strategySquare) [1..10]
+["1","4","9","16","25","36","49","64","81","100"]
+-- this version is more efficient as we iterate the list only once:
+ghci> fmap (strategyToString . strategySquare) [1..10]
+["1","4","9","16","25","36","49","64","81","100"]
+```
+
+#### conclusion
+
+Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern &ndash; namely the injecting of a function into and its execution in a computational context &ndash; the usage of higher order functionsis of course not limited to `Functors` &ndash; we could use just any higher order function fitting our purpose.
 
 Other type classes like `Foldable` or `Traversable` (which is a `Foldable Functor`) can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context.
 
