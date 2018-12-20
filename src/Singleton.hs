@@ -1,5 +1,6 @@
 module Singleton where
 import           IdiomBrackets
+import           Control.Monad.Reader
 
 data Exp a =
       Var String
@@ -26,7 +27,7 @@ s :: (env -> a -> b) -> (env -> a) -> env -> b
 s ef es e = ef e (es e)
 
 -- the SK combinator based implementation
--- the threading of the env into recursive calls is by the S combinator
+-- the threading of the env into recursive calls is done by the S combinator
 -- currying allows to omit the explicit parameter e
 eval1 :: (Num a) => Exp a -> Env a -> a
 eval1 (Var x)   = fetch x
@@ -54,6 +55,13 @@ eval3 (Val i)   = iI i Ii
 eval3 (Add p q) = iI (+) (eval3 p) (eval3 q) Ii
 eval3 (Mul p q) = iI (*) (eval3 p) (eval3 q) Ii
 
+-- using a Reader Monad to thread the environment. The Environment can be accessed by ask.
+eval4 :: Num a => Exp a -> Env a -> a
+eval4 (Var x)   = ask >>= return $ fetch x
+eval4 (Val i)   = return i
+eval4 (Add p q) = liftM2 (+) (eval p) (eval q)
+eval4 (Mul p q) = liftM2 (*) (eval p) (eval q)
+
 -- simple environment lookup
 fetch :: String -> Env a -> a
 fetch x []        = error $ "variable " ++ x ++ " is not defined"
@@ -71,4 +79,7 @@ singletonDemo = do
     print $ eval1 exp env
     print $ eval2 exp env
     print $ eval3 exp env
+
+    print $ eval4 exp env
+
     putStrLn ""
