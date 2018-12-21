@@ -1,9 +1,12 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Singleton where
 import           IdiomBrackets
 import           Control.Monad.Reader
+import           Control.Monad.State
 
 data Exp a =
       Var String
+    | Def String a
     | Val a
     | Add (Exp a) (Exp a)
     | Mul (Exp a) (Exp a) deriving (Show)
@@ -59,8 +62,21 @@ eval3 (Mul p q) = iI (*) (eval3 p) (eval3 q) Ii
 eval4 :: Num a => Exp a -> Env a -> a
 eval4 (Var x)   = ask >>= return $ fetch x
 eval4 (Val i)   = return i
-eval4 (Add p q) = liftM2 (+) (eval p) (eval q)
-eval4 (Mul p q) = liftM2 (*) (eval p) (eval q)
+eval4 (Add p q) = liftM2 (+) (eval4 p) (eval4 q)
+eval4 (Mul p q) = liftM2 (*) (eval4 p) (eval4 q)
+
+--eval5 :: Num a => Exp a -> Env a -> a
+eval5 :: (MonadState (Env a) m, Num a) => Exp a -> m a
+eval5 (Var x)   = do 
+    env <- get 
+    return $ fetch x env
+eval5 (Def k v) = do
+    env <- get
+    put ((k,v):env)
+    return v
+eval5 (Val i)   = return i
+eval5 (Add p q) = liftM2 (+) (eval5 p) (eval5 q)
+eval5 (Mul p q) = liftM2 (*) (eval5 p) (eval5 q)
 
 -- simple environment lookup
 fetch :: String -> Env a -> a
@@ -69,9 +85,12 @@ fetch x ((y,v):ys)
     | x == y    = v
     | otherwise = fetch x ys
 
+exp1 = Mul (Add (Def "pi" pi) (Val 1))
+    (Mul (Val 2) (Var "pi"))
+
 singletonDemo :: IO ()
 singletonDemo = do
-    putStrLn "Singleton -> Applicative Functor, Pointed (and let in general)"
+    putStrLn "Singleton -> Applicative Functor (and let in general)"
     let exp = Mul (Add (Val 3) (Val 1))
                   (Mul (Val 2) (Var "pi"))
         env = [("pi", pi)]
@@ -81,5 +100,9 @@ singletonDemo = do
     print $ eval3 exp env
 
     print $ eval4 exp env
+
+    let exp1 = Mul (Add (Def "pi" 4) (Val 1))
+                  (Mul (Val 2) (Var "pi"))
+   -- print $ eval5 exp (state env)
 
     putStrLn ""
