@@ -63,7 +63,55 @@ For each of the Typeclassopedia type classes (at least up to Traversable) I try 
 * In an OO language like Java a strategy would be modelled as a single strategy-method interface that would be implemented by different strategy classes that provide implementations of the strategy method.
 * in functional programming a strategy is just a function that is passed as a parameter to a [higher order function](https://en.wikipedia.org/wiki/Higher-order_function).
 
-We are starting with a simplified example working on Numbers:
+We are starting with a simplified example working on Numbers. I'm defining Java interfaces for three simple strategies:
+
+```java
+    public interface StrategySquare {
+        public double algorithm(double input);
+    }
+
+    public interface StrategyDouble {
+        public double algorithm(double input);
+    }
+
+    public interface StrategyToString {
+        public String algorithm(double input);
+    }
+```
+
+These interface can then be implemented by concrete classes. I'm using anonymous classes to implement the strategies:
+
+```java
+static StrategySquare strategySquare = new StrategySquare() {
+    @Override
+    public double algorithm(double input) {
+        return input * input;
+    }
+};
+```
+
+Once I've written this code my Java IDE tells me that this anonymous class could be replaced by a lambda expression. So I can simply implement the strategies as follows:
+
+```java
+static StrategySquare strategySquare = input -> input * input;
+
+static StrategyDouble strategyDouble = input -> 2 * input;
+
+static StrategyToString strategyToString = input -> String.valueOf(input);
+
+// now we can use the strategies as follows:
+public static void main(String[] args) {
+    System.out.println(strategySquare.algorithm(4.0));
+    System.out.println(strategyDouble.algorithm(4.0));
+    System.out.println(strategyToString.algorithm(strategySquare.algorithm(5)));
+}
+```
+
+The interesting point here is that in Java single method interfaces like `StrategySquare` can be implemented by lambda expressions, that is anonymous functions.
+
+So the conclusion is: a single method interface of a strategy is just the type signature of a function.
+
+That's why in functional programming strategies are just implemented as functions passed as arguments to higher order functions. In Haskell our three startegies would be implemented as follows:
 
 ```haskell
 -- first we define simple strategies operating on numbers:
@@ -101,7 +149,7 @@ ghci> (strategyToString . strategySquare ) 15
 
 So far we are using functions directly and not as a parameter to some *higher order* function, that is we are using them without a computational context referring to them.
 
-In the next step we will set up such a computaional context.
+In the next step we will set up such a computational context.
 
 Let's assume we want to be able to apply our strategies defined above not only to single values but to lists of values. We don't want to rewrite our code, but rather reuse the existing functions and use them in a list context.
 
@@ -145,7 +193,7 @@ Context "196"
 ```
 
 Now imagine we would be asked to implement this way to apply functions within a context for yet another data type.
-Wouldn't it be great to have a generic tool that would solve this problem for any context, thus avoiding to reinventing the wheel each time?
+Wouldn't it be great to have a generic tool that would solve this problem for any context, thus avoiding to reinvent the wheel each time?
 
 In Functional Prigramming languages the application of a function in a computational context is generalized with the type class `Functor`:
 
