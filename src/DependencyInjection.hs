@@ -1,7 +1,7 @@
 module DependencyInjection where
 import           CheapskateRenderer (HTML, MarkDown, htmlToText, markDownToHtml, textToMarkDown)
 --import           CMarkGFMRenderer   (HTML, MarkDown, textToMarkDown, markDownToHtml, htmlToText)
-import           Control.Category   ((>>>))
+import           Control.Category   ((>>>)) -- f >>> g = g . f
 import qualified Data.Text          as T
 
 
@@ -52,7 +52,8 @@ tocToHtmlText tocToMdText textToMd mdToHtml htmlToText =
 
 
 -- | a default implementation of a ToC to html Text renderer.
---   this function is constructed by partially applying `tocToHtmlText` to four functions matching the signature of `tocToHtmlText`.
+--   this function is constructed by partially applying `tocToHtmlText` 
+--   to four functions matching the signature of `tocToHtmlText`.
 defaultTocToHtmlText :: TableOfContents -> T.Text
 defaultTocToHtmlText =
     tocToHtmlText
