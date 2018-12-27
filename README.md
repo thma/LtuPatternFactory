@@ -111,7 +111,7 @@ The interesting point here is that in Java single method interfaces like `Strate
 
 So the conclusion is: a single method interface of a strategy is just the type signature of a function.
 
-That's why in functional programming strategies are just implemented as functions passed as arguments to higher order functions. In Haskell our three startegies would be implemented as follows:
+That's why in functional programming strategies are implemented as functions passed as arguments to *higher order* functions. In Haskell our three strategies would be implemented as follows:
 
 ```haskell
 -- first we define simple strategies operating on numbers:
@@ -136,7 +136,8 @@ ghci> strategyToString 4
 "4"
 ```
 
-We are using the functions directly by applying them to some numeric values.
+We are using the functions by applying them to some numeric values.
+
 One nice feature of functions is that they can be composed using the `(.)` operator:
 
 ```haskell
@@ -147,7 +148,7 @@ ghci> (strategyToString . strategySquare ) 15
 "225"
 ```
 
-So far we are using functions directly and not as a parameter to some *higher order* function, that is we are using them without a computational context referring to them.
+So far we have been using functions directly and not as a parameter to some *higher order* function, that is we are using them without a computational context referring to them.
 
 In the next step we will set up such a computational context.
 
