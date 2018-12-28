@@ -698,7 +698,7 @@ safeRootReciprocal :: Double -> Maybe Double
 safeRootReciprocal x = return x >>= safeReciprocal >>= safeRoot
 ```
 
-This can even written more terse as:
+This can be written even more terse as:
 
 ```haskell
 safeRootReciprocal :: Double -> Maybe Double
