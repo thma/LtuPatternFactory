@@ -705,7 +705,7 @@ safeRootReciprocal :: Double -> Maybe Double
 safeRootReciprocal = safeReciprocal >=> safeRoot
 ```
 
-The use of the Kleisli operator `>=>` makes it more evident that we are actually aiming at a composition of the monadic functions `safeReciprocal` and `safeRoot`.
+The use of the [Kleisli 'fish' operator `>=>`](https://www.stackage.org/haddock/lts-13.0/base-4.12.0.0/Control-Monad.html#v:-62--61--62-)  makes it more evident that we are actually aiming at a composition of the monadic functions `safeReciprocal` and `safeRoot`.
 
 There are many predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`. But that's a different story...
 
