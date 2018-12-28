@@ -674,10 +674,10 @@ instance  Monad Maybe  where
 
 This elegant feature of `(>>=)` in the `Maybe` Monad allows us to avoid ugly and repetetive coding.  
 
-#### Avoiding partial function by using Maybe
+#### Avoiding partial functions by using Maybe
 
-Maybe is often used to avoid any kind of partial functions. Take for example division by zero or computing the square root of negative numbers which are undefined (at least for real numbers).
-Here come safe definitions of these functions that return `Nothing` for undefined cases:
+Maybe is often used to avoid the exposure of partial functions to client code. Take for example division by zero or computing the square root of negative numbers which are undefined (at least for real numbers).
+Here come safe &ndash; that is total &ndash; definitions of these functions that return `Nothing` for undefined cases:
 
 ```haskell
 safeRoot :: Double -> Maybe Double
@@ -712,7 +712,7 @@ There are many predefined Monads available in the Haskell curated libraries and 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/NullObject.hs)
 
 <!-- 
-#### TBD: Reimplementing the Evaluator with Writer-Monad
+#### TBD: Reimplementing the Evaluator with Reader-Monad
 -->
 
 ### Composite → SemiGroup → Monoid
