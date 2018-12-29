@@ -785,6 +785,11 @@ eval (Let x e1 e2)    = eval e1 >>= \v -> local ((x,v):) (eval e2)
 
 [to be continued]
 
+This section was inspired by ideas presented in [Quick Interpreters with the Reader Monad](https://donsbot.wordpress.com/2006/12/11/quick-interpreters-with-the-reader-monad/).
+
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Interpreter.hs)
+
+
 ### Composite → SemiGroup → Monoid
 
 >In software engineering, the composite pattern is a partitioning design pattern. The composite pattern describes a group of objects that is treated the same way as a single instance of the same type of object. The intent of a composite is to "compose" objects into tree structures to represent part-whole hierarchies. Implementing the composite pattern lets clients treat individual objects and compositions uniformly.

@@ -13,6 +13,7 @@ import           Singleton
 import           Strategy
 import           TemplateMethod
 import           Visitor
+import           Interpreter
 
 main :: IO ()
 main = do
@@ -30,3 +31,4 @@ main = do
   abstractFactoryDemo
   jsonPersistenceDemo
   demoDI
+  interpreterDemo
