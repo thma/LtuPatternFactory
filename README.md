@@ -30,6 +30,7 @@ I think this kind of exposition could be helpful if you are either:
   * [Singleton → Applicative](#singleton--applicative)
   * [Pipeline → Monad](#pipeline--monad)
   * [NullObject → Maybe Monad](#nullobject--maybe-monad)
+  * [Interpreter → Reader Monad](#interpreter--reader-monad)
   * [Composite → SemiGroup -> Monoid](#composite--semigroup--monoid)
   * [Visitor → Foldable](#visitor--foldable)
   * [Iterator → Traversable](#iterator--traversable)
@@ -711,9 +712,78 @@ There are many predefined Monads available in the Haskell curated libraries and 
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/NullObject.hs)
 
-<!-- 
-#### TBD: Reimplementing the Evaluator with Reader-Monad
--->
+### Interpreter → Reader Monad
+
+In the section [Singleton → Applicative](#singleton--applicative) we have already written a simple expression evaluator. From that section it should be obvious how easy the definition of evaluators and interpreters is in functional programming languages.
+
+The main ingredients are:
+
+* Algebraic Data Types (ADT) used to define the expression data type which is to be evaluated
+* An evaluator function that uses pattern matching on the expression ADT
+* 'implicit' threading of an environment
+
+In the section on Singleton we have seen that some kind of 'implicit' threading of the environment can be already achieved with `Applicative Functors.
+We still had the environment as an explicit parameter of the eval function:
+
+```haskell
+eval :: Num e => Exp e -> Env e -> e
+```
+
+but we could omit it in the pattern matching equations:
+
+```haskell
+eval (Var x)   = fetch x
+eval (Val i)   = pure i
+eval (Add p q) = pure (+) <*> eval p  <*> eval q  
+eval (Mul p q) = pure (*) <*> eval p  <*> eval q
+```
+
+By using Monads the handling of the environment can be made even more implicit.
+
+I'll demonstrate this with a slightly extended version of the evaluator. In the first step we extend the expression syntax to also provide let expressions and generic support for binary operators:
+
+```haskell
+-- | a simple expression ADT
+data Exp a =
+      Var String                            -- a variable to be looked up
+    | BinOp (BinOperator a) (Exp a) (Exp a) -- a binary operator applied on two expressions
+    | Let String (Exp a) (Exp a)            -- a let expression
+    | Val a                                 -- an atomic value
+
+-- | a binary operator type
+type BinOperator a =  a -> a -> a
+
+-- | the environment is just a list of mappings from variable names to values
+type Env a = [(String, a)]
+```
+
+With this data type we can encode expressions like:
+
+```haskell
+let x = 4+5)
+in 2*x
+```
+
+as:
+
+```haskell
+Let "x" (BinOp (+) (Val 4) (Val 5))
+        (BinOp (*) (Val 2) (Var "x"))
+```
+
+In order to evaluate such expression we must be able to modify the environment at runtime to create a binding for the variable `x` which will be referred to in the `in` part of the expression.
+
+Next we define an evaluator function that pattern matches the above expression ADT:
+
+```haskell
+eval :: MonadReader (Env a) m => Exp a -> m a
+eval (Var x)          = asks (fetch x)
+eval (Val i)          = return i
+eval (BinOp op e1 e2) = liftM2 op (eval e1) (eval e2)
+eval (Let x e1 e2)    = eval e1 >>= \v -> local ((x,v):) (eval e2)
+```
+
+[to be continued]
 
 ### Composite → SemiGroup → Monoid
 
