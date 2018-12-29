@@ -14,9 +14,12 @@ type BinOperator a =  a -> a -> a
 type Env a = [(String, a)]
 
 -- using a Reader Monad to thread the environment. The Environment can be accessed by ask and asks.
---eval :: Exp a => Exp a -> Env a -> a
-eval :: MonadReader (Env a) m => Exp a -> m a
-eval (Var x)          = asks (fetch x)
+--eval :: Exp a -> Env a -> a
+eval :: Exp a -> ((->) (Env a)) a
+--eval :: MonadReader (Env a) m => Exp a -> m a
+--                                 Exp a -> ((->) Env a) a   
+--                                 Exp a -> Env a -> a                   
+eval (Var x)          = ask >>= return . (fetch x) --asks (fetch x)
 eval (Val i)          = return i
 eval (BinOp op e1 e2) = liftM2 op (eval e1) (eval e2)
 eval (Let x e1 e2)    = eval e1 >>= \v -> local ((x,v):) (eval e2)
@@ -46,7 +49,7 @@ interpreterDemo = do
                 (BinOp (*) (Var "pi") (Var "x"))
         env = [("pi", pi)]
     print $ eval exp env
-    print $ runReader (eval exp) env
+    --print $ runReader (eval exp) env
 
     print $ evalState (eval1 exp) env
 

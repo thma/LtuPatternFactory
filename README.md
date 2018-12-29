@@ -777,11 +777,45 @@ Next we define an evaluator function that pattern matches the above expression A
 
 ```haskell
 eval :: MonadReader (Env a) m => Exp a -> m a
-eval (Var x)          = asks (fetch x)
 eval (Val i)          = return i
+eval (Var x)          = asks (fetch x)
 eval (BinOp op e1 e2) = liftM2 op (eval e1) (eval e2)
 eval (Let x e1 e2)    = eval e1 >>= \v -> local ((x,v):) (eval e2)
 ```
+
+Let's explore this dense code line by line.
+
+```haskell
+eval :: MonadReader (Env a) m => Exp a -> m a
+```
+
+The most simple instance for `MonadReader` is the partially applied function type `((->) env)`.
+Let's assume the compiler will choose this type as the `MonadReader` instance. We can then rewrite the function signature as follows:
+
+```haskell
+eval :: Exp a -> ((->) (Env a)) a  -- expanding m to ((->) (Env a))
+eval :: Exp a -> Env a -> a        -- applying infix notation for (->)
+```
+
+This is exactly the signature we were using for the `Applicative` eval function which matches our original intent to eval an expression of type `Exp a` in an environment of type `Env a` to a result of type `a`.
+
+```haskell
+eval (Val i)          = return i
+```
+
+In this line we are pattern matching for a `(Val i)`. The atomic value `i` is `return`ed, that is lifted to a value of the type `Env a -> a`.
+
+```haskell
+eval (Var x)          = asks (fetch x)
+```
+
+`asks` is a helper function that applies its argument `f :: env -> a` (in our case `(fetch x)` that is lookup of variable `x`) to the environment. It's thus typically used to handle environment lookups:
+
+```haskell
+asks :: (MonadReader env m) => (env -> a) -> m a
+asks f = ask >>= return . f
+```
+
 
 [to be continued]
 
