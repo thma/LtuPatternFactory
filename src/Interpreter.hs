@@ -13,13 +13,18 @@ type BinOperator a =  a -> a -> a
 
 type Env a = [(String, a)]
 
+-- environment lookup
+fetch :: String -> Env a -> a
+fetch x []        = error $ "variable " ++ x ++ " is not defined"
+fetch x ((y,v):ys)
+    | x == y    = v
+    | otherwise = fetch x ys
+
 -- using a Reader Monad to thread the environment. The Environment can be accessed by ask and asks.
 --eval :: Exp a -> Env a -> a
-eval :: Exp a -> ((->) (Env a)) a
---eval :: MonadReader (Env a) m => Exp a -> m a
---                                 Exp a -> ((->) Env a) a   
---                                 Exp a -> Env a -> a                   
-eval (Var x)          = ask >>= return . (fetch x) --asks (fetch x)
+--eval :: Exp a -> ((->) (Env a)) a
+eval :: MonadReader (Env a) m => Exp a -> m a                 
+eval (Var x)          = asks (fetch x)
 eval (Val i)          = return i
 eval (BinOp op e1 e2) = liftM2 op (eval e1) (eval e2)
 eval (Let x e1 e2)    = eval e1 >>= \v -> local ((x,v):) (eval e2)
@@ -32,13 +37,6 @@ eval1 (BinOp op e1 e2) = liftM2 op (eval1 e1) (eval1 e2)
 eval1 (Let x e1 e2)    = eval1 e1 >>= \v -> modify ((x,v):) >> eval1 e2
 
 
--- environment lookup
-fetch :: String -> Env a -> a
-fetch x []        = error $ "variable " ++ x ++ " is not defined"
-fetch x ((y,v):ys)
-    | x == y    = v
-    | otherwise = fetch x ys
-
 interpreterDemo :: IO ()
 interpreterDemo = do
     putStrLn "Interpreter -> Reader Monad + ADTs + pattern matching"
@@ -49,8 +47,13 @@ interpreterDemo = do
                 (BinOp (*) (Var "pi") (Var "x"))
         env = [("pi", pi)]
     print $ eval exp env
-    --print $ runReader (eval exp) env
+    print $ runReader (eval exp) env
 
     print $ evalState (eval1 exp) env
+
+    let exp1 = Let "x"
+                (BinOp (+) (Val 4) (Val 5))
+                (BinOp (*) (Val 2) (Var "x"))
+    print $ eval exp1 []
 
     putStrLn ""

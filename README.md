@@ -746,7 +746,7 @@ I'll demonstrate this with a slightly extended version of the evaluator. In the 
 -- | a simple expression ADT
 data Exp a =
       Var String                            -- a variable to be looked up
-    | BinOp (BinOperator a) (Exp a) (Exp a) -- a binary operator applied on two expressions
+    | BinOp (BinOperator a) (Exp a) (Exp a) -- a binary operator applied to two expressions
     | Let String (Exp a) (Exp a)            -- a let expression
     | Val a                                 -- an atomic value
 
@@ -809,15 +809,71 @@ In this line we are pattern matching for a `(Val i)`. The atomic value `i` is `r
 eval (Var x)          = asks (fetch x)
 ```
 
-`asks` is a helper function that applies its argument `f :: env -> a` (in our case `(fetch x)` that is lookup of variable `x`) to the environment. It's thus typically used to handle environment lookups:
+`asks` is a helper function that applies its argument `f :: env -> a` (in our case `(fetch x)` which looks up variable `x`) to the environment. `asks` is thus typically used to handle environment lookups:
 
 ```haskell
 asks :: (MonadReader env m) => (env -> a) -> m a
 asks f = ask >>= return . f
 ```
 
+Now to the next line handling the application of a binary operator:
 
-[to be continued]
+```haskell
+eval (BinOp op e1 e2) = liftM2 op (eval e1) (eval e2)
+```
+
+`op` is a binary function of type `a -> a -> a` (typical examples are binary arithmetic functions like `+`, `-`, `*`, `/`).
+
+We want to apply this operation on the two expressions `(eval e1)` and `(eval e2)`.
+As these expressions both are to be executed within the same monadic context we have to use `liftM2` to lift `op` into this context:
+
+```haskell
+-- | Promote a function to a monad, scanning the monadic arguments from
+-- left to right.  For example,
+--
+-- > liftM2 (+) [0,1] [0,2] = [0,2,1,3]
+-- > liftM2 (+) (Just 1) Nothing = Nothing
+--
+liftM2  :: (Monad m) => (a1 -> a2 -> r) -> m a1 -> m a2 -> m r
+liftM2 f m1 m2 = do { x1 <- m1; x2 <- m2; return (f x1 x2) }
+```
+
+The last step is the evaluation of `Let x e1 e2` expressions like `Let "x" (Val 7) (BinOp (+) (Var "x") (Val 5))`. To make this work we have to evaluate `e1` and extend the environment by a binding of the variable `x` to the result of that evaluation.
+Then we have to evaluate `e2` in the context of the extended environment:
+
+```haskell
+eval (Let x e1 e2)    = eval e1 >>= \v ->           -- bind the result of (eval e1) to v
+                        local ((x,v):) (eval e2)    -- add (x,v) to the environment, eval e2 in the extended env
+```
+
+The interesting part here is the helper function `local f m` which applies `f` to the environment and then executes `m` against the (locally) changed environment:
+
+```haskell
+    -- | Executes a computation in a modified environment.
+    local :: (r -> r) -- ^ The function to modify the environment.
+          -> m a      -- ^ @Reader@ to run in the modified environment.
+          -> m a
+
+instance MonadReader r ((->) r) where
+    local f m = m . f
+```
+
+Now we can use `eval` to evaluate our example expression:
+
+```haskell
+interpreterDemo = do
+    putStrLn "Interpreter -> Reader Monad + ADTs + pattern matching"
+    let exp1 = Let "x"
+                (BinOp (+) (Val 4) (Val 5))
+                (BinOp (*) (Val 2) (Var "x"))
+    print $ runReader (eval exp1) env
+
+-- an the in GHCi:
+
+> interpreterDemo
+18
+18
+```
 
 This section was inspired by ideas presented in [Quick Interpreters with the Reader Monad](https://donsbot.wordpress.com/2006/12/11/quick-interpreters-with-the-reader-monad/).
 
