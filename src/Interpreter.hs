@@ -31,8 +31,8 @@ eval (Let x e1 e2)    = eval e1 >>= \v -> local ((x,v):) (eval e2)
 
 -- using a State Monad to thread the environment. The Environment can be accessed by get, gets, modify.
 eval1 :: (MonadState (Env a) m) => Exp a -> m a
-eval1 (Var x)          = gets (fetch x)
 eval1 (Val i)          = return i
+eval1 (Var x)          = gets (fetch x)
 eval1 (BinOp op e1 e2) = liftM2 op (eval1 e1) (eval1 e2)
 eval1 (Let x e1 e2)    = eval1 e1 >>= \v -> modify ((x,v):) >> eval1 e2
 
@@ -49,11 +49,9 @@ interpreterDemo = do
     print $ eval exp env
     print $ runReader (eval exp) env
 
-    print $ evalState (eval1 exp) env
+    print $ runState (eval1 exp) env
 
-    let exp1 = Let "x"
-                (BinOp (+) (Val 4) (Val 5))
-                (BinOp (*) (Val 2) (Var "x"))
+    let exp1 = Let "x" (BinOp (+) (Val 4) (Val 5)) (BinOp (*) (Val 2) (Var "x"))
     print $ eval exp1 []
 
     putStrLn ""

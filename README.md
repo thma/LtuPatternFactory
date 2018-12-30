@@ -850,12 +850,13 @@ eval (Let x e1 e2)    = eval e1 >>= \v ->           -- bind the result of (eval 
                         local ((x,v):) (eval e2)    -- add (x,v) to the env, eval e2 in the extended env
 ```
 
-The interesting part here is the helper function `local f m` which applies `f` to the environment and then executes `m` against the (locally) changed environment:
+The interesting part here is the helper function `local f m` which applies `f` to the environment and then executes `m` against the (locally) changed environment.
+Providing a locally modified environment as the scope of the evaluation of `e2` is exactly what the `let` binding intends:
 
 ```haskell
 -- | Executes a computation in a modified environment.
 local :: (r -> r) -- ^ The function to modify the environment.
-        -> m a      -- ^ @Reader@ to run in the modified environment.
+        -> m a    -- ^ @Reader@ to run in the modified environment.
         -> m a
 
 instance MonadReader r ((->) r) where
@@ -872,10 +873,24 @@ interpreterDemo = do
                 (BinOp (*) (Val 2) (Var "x"))
     print $ runReader (eval exp1) env
 
--- an the in GHCi:
+-- an then in GHCi:
 
 > interpreterDemo
 18
+```
+
+By virtue of the `local` function we used `MonadReader` as if it provided modifiable state. So for many use cases that require only *local* state modifications its not required to use the somewhat more tricky `MonadState`.
+
+Writing the interpreter function with a `MonadState` looks like follows:
+
+```haskell
+eval1 :: (MonadState (Env a) m) => Exp a -> m a
+eval1 (Val i)          = return i
+eval1 (Var x)          = gets (fetch x)
+eval1 (BinOp op e1 e2) = liftM2 op (eval1 e1) (eval1 e2)
+eval1 (Let x e1 e2)    = eval1 e1        >>= \v ->
+                         modify ((x,v):) >>
+                         eval1 e2
 ```
 
 This section was inspired by ideas presented in [Quick Interpreters with the Reader Monad](https://donsbot.wordpress.com/2006/12/11/quick-interpreters-with-the-reader-monad/).
