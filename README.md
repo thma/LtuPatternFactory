@@ -760,7 +760,7 @@ type Env a = [(String, a)]
 With this data type we can encode expressions like:
 
 ```haskell
-let x = 4+5)
+let x = 4+5
 in 2*x
 ```
 
@@ -843,16 +843,16 @@ Then we have to evaluate `e2` in the context of the extended environment:
 
 ```haskell
 eval (Let x e1 e2)    = eval e1 >>= \v ->           -- bind the result of (eval e1) to v
-                        local ((x,v):) (eval e2)    -- add (x,v) to the environment, eval e2 in the extended env
+                        local ((x,v):) (eval e2)    -- add (x,v) to the env, eval e2 in the extended env
 ```
 
 The interesting part here is the helper function `local f m` which applies `f` to the environment and then executes `m` against the (locally) changed environment:
 
 ```haskell
-    -- | Executes a computation in a modified environment.
-    local :: (r -> r) -- ^ The function to modify the environment.
-          -> m a      -- ^ @Reader@ to run in the modified environment.
-          -> m a
+-- | Executes a computation in a modified environment.
+local :: (r -> r) -- ^ The function to modify the environment.
+        -> m a      -- ^ @Reader@ to run in the modified environment.
+        -> m a
 
 instance MonadReader r ((->) r) where
     local f m = m . f
@@ -871,7 +871,6 @@ interpreterDemo = do
 -- an the in GHCi:
 
 > interpreterDemo
-18
 18
 ```
 
