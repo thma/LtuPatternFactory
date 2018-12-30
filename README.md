@@ -714,6 +714,10 @@ There are many predefined Monads available in the Haskell curated libraries and 
 
 ### Interpreter → Reader Monad
 
+> In computer programming, the interpreter pattern is a design pattern that specifies how to evaluate sentences in a language. The basic idea is to have a class for each symbol (terminal or nonterminal) in a specialized computer language. The syntax tree of a sentence in the language is an instance of the composite pattern and is used to evaluate (interpret) the sentence for a client.
+>
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Interpreter_pattern)
+
 In the section [Singleton → Applicative](#singleton--applicative) we have already written a simple expression evaluator. From that section it should be obvious how easy the definition of evaluators and interpreters is in functional programming languages.
 
 The main ingredients are:
