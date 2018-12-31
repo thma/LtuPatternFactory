@@ -36,7 +36,7 @@ I think this kind of exposition could be helpful if you are either:
   * [Iterator → Traversable](#iterator--traversable)
   * [The Pattern behind the Patterns → Category](#the-pattern-behind-the-patterns--category)
 * [Beyond type class patterns](#beyond-type-class-patterns)
-  * [Dependency Injection → Parameter Binding](#dependency-injection--parameter-binding)
+  * [Dependency Injection → Parameter Binding](#dependency-injection--parameter-binding--partial-application)
   * [Adapter → Function Composition](#adapter--function-composition)
   * [Template Method → type class default functions](#template-method--type-class-default-functions)
   * [Creational Patterns](#creational-patterns)
@@ -897,7 +897,6 @@ This section was inspired by ideas presented in [Quick Interpreters with the Rea
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Interpreter.hs)
 
-
 ### Composite → SemiGroup → Monoid
 
 >In software engineering, the composite pattern is a partitioning design pattern. The composite pattern describes a group of objects that is treated the same way as a single instance of the same type of object. The intent of a composite is to "compose" objects into tree structures to represent part-whole hierarchies. Implementing the composite pattern lets clients treat individual objects and compositions uniformly.
@@ -1383,7 +1382,7 @@ TBD:
 
 * Blockchain as Monadic chain of Actions
 
-### Dependency Injection → Parameter Binding
+### Dependency Injection → Parameter Binding, Partial Application
 
 > [...] Dependency injection is a technique whereby one object (or static method) supplies the dependencies of another object. A dependency is an object that can be used (a service). An injection is the passing of a dependency to a dependent object (a client) that would use it. The service is made part of the client's state. Passing the service to the client, rather than allowing a client to build or find the service, is the fundamental requirement of the pattern.
 >
@@ -2126,6 +2125,45 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 
 ## Conclusions
 
+### Design Patterns are not limited to object oriented programming
+
+> Christopher Alexander says, "Each pattern describes a problem which occurs over and
+> over again in our environment, and then describes the core of the solution to that
+> problem, in such a way that you can use this solution a million times over, without ever
+> doing it the same way twice" [AIS+77, page x]. Even though Alexander was talking
+> about patterns in buildings and towns, what he says is true about object-oriented design
+> patterns. Our solutions are expressed in terms of objects and interfaces instead of walls
+> and doors, but at the core of both kinds of patterns is a solution to a problem in a
+> context.
+> [Quoted from "Design Patterns Elements of Reusable Object-Oriented Software"](https://en.wikipedia.org/wiki/Design_Patterns)
+
+The GoF *Design Patterns Elements of Reusable Object-Oriented Software* was written to help software developers to think about software design problems in a different way:
+From just writing a minimum adhoc solution for the problem at hand to stepping back and to think about how to solve the problem in a way that improves longterm qualities like extensibilty, flexibility, maintenability, testability and comprehensibility of a solution.
+
+The GoF and other researches in the pattern area did "pattern mining": they examined code of experienced software developers and looked for recurring structures and solutions. The patterns they distilled by this process are thus reusable abstractions for structuring *object-oriented* software to achieve the above mentioned goals.
+
+So while the original design patterns are formulated with object oriented languages in mind, they still adress universal problems in software engineering: decoupling of layers, configuration, dependency management, data composition, data traversal, handling state, variation of behaviour, etc.
+
+So it comes with little surprise that we can map many of those patterns to commonly used structures in functional programming: The domain problems remain the same, yet the concrete implementations differ.
+
+### Design patterns reflect mathematical structures
+
+But what really struck me in the course of writing this study was that so many of the Typeclassopedia type classes could be related to Design Patterns.
+
+Most of these type classes stem from abstract algebra and category theory in particular.
+
+Take for instance the `Monoid` type class which is a 1:1 representation of the [monoid](https://en.wikipedia.org/wiki/Monoid) of abstract algebra.
+
+Identifying the [composite pattern](#composite--semigroup--monoid) as an application of a monoidal data structure was an eye opener for me:
+
+*Design patterns reflect abstract algebraic structures.*
+
+Rooting design patterns in abstract algebra brings another level of confidence to software design as we can move from 'hand waving' &ndash; painting UML diagrams, writing prose, building prototypes, etc. &ndash; to mathematical reasoning.
+
+Mark Seemann has written an instructive series of articles on the coincidence of design patterns to abstract algebra: [From Design Patterns to Category Theory](http://blog.ploeh.dk/2017/10/04/from-design-patterns-to-category-theory/).
+
+Jeremy Gibbons has also written several excellent papers on this subject:
+
 > Design patterns are reusable abstractions in object-oriented software.
 > However, using current mainstream programming languages, these elements can only be expressed extra-linguistically: as prose,pictures, and prototypes.
 > We believe that this is not inherent in the patterns themselves, but evidence of a lack of expressivity in the languages of today.
@@ -2134,10 +2172,12 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 > are higher-order and datatype-generic constructs;
 > these features are already or nearly available now.  
 > Quoted from [Design Patterns as Higher-Order Datatype-Generic Programs](http://www.cs.ox.ac.uk/jeremy.gibbons/publications/hodgp.pdf)
->
-> *Crystallizing design patterns*
->
-> To end with FP benefits, there is this curious thing called [Curry–Howard correspondence](https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence) which is a direct analogy between mathematical concepts and computational calculus (which is what we do, programmers).
+
+He also maintains a blog dedicated to [patterns in functional programming](https://patternsinfp.wordpress.com/welcome/).
+
+I'd like to conclude this section with a quote from Martin Menestrets FP blog:
+
+> [...] there is this curious thing called [Curry–Howard correspondence](https://en.wikipedia.org/wiki/Curry%E2%80%93Howard_correspondence) which is a direct analogy between mathematical concepts and computational calculus [...].
 >  
 > This correspondence means that a lot of useful stuff discovered and proven for decades in Math can then be transposed to programming, opening a way for a lot of extremely robust constructs for free.
 >  
@@ -2146,22 +2186,6 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 > Functional programming constructs, some directly coming from category theory (mathematics), solve directly what you would have tried to solve with design patterns.
 >
 > Quoted from [Geekocephale](http://geekocephale.com/blog/2018/10/08/fp)
-
-<!--
-## TBD: Conclusion
-> While we (me included) have been on an a thirty-odd year long detour around object-orientation, I don't think all is lost. 
-> [Quoted from blog.ploeh.dk](http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/)
-
->  In the functional-programming world, traditional design patterns generally manifest in one of three ways:
-> - The pattern is absorbed by the language.
-> - The pattern solution still exists in the functional paradigm, but the implementation details differ.
-> - The solution is implemented using capabilities other languages or paradigms lack. (For example, many solutions that use metaprogramming are clean and elegant — and they're not possible in Java.)
->
-> [Quoted from IBM developerworks](https://www.ibm.com/developerworks/library/j-ft10/index.html)
-
-http://blog.ploeh.dk/2018/03/05/some-design-patterns-as-universal-abstractions/
-http://blog.ploeh.dk/2017/10/04/from-design-patterns-to-category-theory/
--->
 
 ## some interesting links
 
