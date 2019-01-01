@@ -2139,13 +2139,25 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 > [Quoted from "Design Patterns Elements of Reusable Object-Oriented Software"](https://en.wikipedia.org/wiki/Design_Patterns)
 
 The GoF *Design Patterns Elements of Reusable Object-Oriented Software* was written to help software developers to think about software design problems in a different way:
-From just writing a minimum adhoc solution for the problem at hand to stepping back and to think about how to solve the problem in a way that improves longterm qualities like extensibilty, flexibility, maintenability, testability and comprehensibility of a solution.
+From just writing a minimum adhoc solution for the problem at hand to stepping back and to think about how to solve the problem in a way that improves longterm qualities like extensibilty, flexibility, maintenability, testability and comprehensibility of a software design.
 
-The GoF and other researches in the pattern area did "pattern mining": they examined code of experienced software developers and looked for recurring structures and solutions. The patterns they distilled by this process are thus reusable abstractions for structuring *object-oriented* software to achieve the above mentioned goals.
+The GoF and other researches in the pattern area did "pattern mining": they examined code of experienced software developers and looked for recurring structures and solutions. The patterns they distilled by this process are thus *reusable abstractions* for structuring object-oriented software to achieve the above mentioned goals.
 
 So while the original design patterns are formulated with object oriented languages in mind, they still adress universal problems in software engineering: decoupling of layers, configuration, dependency management, data composition, data traversal, handling state, variation of behaviour, etc.
 
-So it comes with little surprise that we can map many of those patterns to commonly used structures in functional programming: The domain problems remain the same, yet the concrete implementations differ.
+So it comes with little surprise that we can map many of those patterns to commonly used structures in functional programming: The domain problems remain the same, yet the concrete solutions differ:
+
+* Some patterns are absorbed by language features:
+    ** Template method and strategy pattern are no brainers in any functional language with functions as first class citizens and higher order functions.
+    ** Dependency Injection and Configuration is solved by by partial application of curried functions.
+    ** Adapter layers are replaced by function composition
+    ** Visitor pattern and Interpreters are self-evident with algebraic data types.
+* Other patterns are covered by libraries like the Haskell type classes:
+    ** Composite is reduced to a Monoid
+    ** Singleton, Pipeline, NullObject can be rooted in Functor, Applicative Functor and Monad
+    ** Visitor and Iterator are covered by Foldable and Traversable.
+* Yet another category of patterns is covered by specific language features like the Laziness of the Haskell language
+    ** Laziness allows to work with non-terminating compuations and data structures of infinite size.
 
 ### Design patterns reflect mathematical structures
 
