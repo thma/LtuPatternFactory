@@ -2148,16 +2148,16 @@ So while the original design patterns are formulated with object oriented langua
 So it comes with little surprise that we can map many of those patterns to commonly used structures in functional programming: The domain problems remain the same, yet the concrete solutions differ:
 
 * Some patterns are absorbed by language features:
-    ** Template method and strategy pattern are no brainers in any functional language with functions as first class citizens and higher order functions.
-    ** Dependency Injection and Configuration is solved by by partial application of curried functions.
-    ** Adapter layers are replaced by function composition
-    ** Visitor pattern and Interpreters are self-evident with algebraic data types.
+    * Template method and strategy pattern are no brainers in any functional language with functions as first class citizens and higher order functions.
+    * Dependency Injection and Configuration is solved by by partial application of curried functions.
+    * Adapter layers are replaced by function composition
+    * Visitor pattern and Interpreters are self-evident with algebraic data types.
 * Other patterns are covered by libraries like the Haskell type classes:
-    ** Composite is reduced to a Monoid
-    ** Singleton, Pipeline, NullObject can be rooted in Functor, Applicative Functor and Monad
-    ** Visitor and Iterator are covered by Foldable and Traversable.
+    * Composite is reduced to a Monoid
+    * Singleton, Pipeline, NullObject can be rooted in Functor, Applicative Functor and Monad
+    * Visitor and Iterator are covered by Foldable and Traversable.
 * Yet another category of patterns is covered by specific language features like the Laziness of the Haskell language
-    ** Laziness allows to work with non-terminating compuations and data structures of infinite size.
+    * Laziness allows to work with non-terminating compuations and data structures of infinite size.
 
 ### Design patterns reflect mathematical structures
 
