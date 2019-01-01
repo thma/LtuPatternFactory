@@ -36,12 +36,13 @@ I think this kind of exposition could be helpful if you are either:
   * [Iterator → Traversable](#iterator--traversable)
   * [The Pattern behind the Patterns → Category](#the-pattern-behind-the-patterns--category)
 * [Beyond type class patterns](#beyond-type-class-patterns)
-  * [Dependency Injection → Parameter Binding](#dependency-injection--parameter-binding--partial-application)
+  * [Dependency Injection → Parameter Binding](#dependency-injection--parameter-binding-partial-application)
   * [Adapter → Function Composition](#adapter--function-composition)
   * [Template Method → type class default functions](#template-method--type-class-default-functions)
   * [Creational Patterns](#creational-patterns)
     * [Abstract Factory → functions as data type values](#abstract-factory--functions-as-data-type-values)
     * [Builder → record syntax, smart constructor](#builder--record-syntax-smart-constructor)
+* [Conclusions](#conclusions)
 * [Some related links](#some-interesting-links)
 
 ## The Patternopedia
