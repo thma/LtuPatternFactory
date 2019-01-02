@@ -2147,26 +2147,25 @@ So while the original design patterns are formulated with object oriented langua
 
 So it comes with little surprise that we can map many of those patterns to commonly used structures in functional programming: The domain problems remain the same, yet the concrete solutions differ:
 
-* Some patterns are absorbed by language features:
+1. Some patterns are absorbed by language features:
     * Template method and strategy pattern are no brainers in any functional language with functions as first class citizens and higher order functions.
     * Dependency Injection and Configuration is solved by by partial application of curried functions.
     * Adapter layers are replaced by function composition
     * Visitor pattern and Interpreters are self-evident with algebraic data types.
-* Other patterns are covered by libraries like the Haskell type classes:
+2. Other patterns are covered by libraries like the Haskell type classes:
     * Composite is reduced to a Monoid
     * Singleton, Pipeline, NullObject can be rooted in Functor, Applicative Functor and Monad
     * Visitor and Iterator are covered by Foldable and Traversable.
-* Yet another category of patterns is covered by specific language features like the Laziness of the Haskell language
+3. Yet another category of patterns is covered by specific language features like the Laziness, Parallelism. These features may be specific to certain languages.
     * Laziness allows to work with non-terminating compuations and data structures of infinite size.
+    * Parallelism allows to scale the execution of a program transparently across CPU cores.
 
 ### Design patterns reflect mathematical structures
 
-But what really struck me in the course of writing this study was that so many of the Typeclassopedia type classes could be related to Design Patterns.
+What really struck me in the course of writing this study was that so many of the Typeclassopedia type classes could be related to Design Patterns.
 
 Most of these type classes stem from abstract algebra and category theory in particular.
-
 Take for instance the `Monoid` type class which is a 1:1 representation of the [monoid](https://en.wikipedia.org/wiki/Monoid) of abstract algebra.
-
 Identifying the [composite pattern](#composite--semigroup--monoid) as an application of a monoidal data structure was an eye opener for me:
 
 *Design patterns reflect abstract algebraic structures.*

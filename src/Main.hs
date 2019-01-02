@@ -14,6 +14,7 @@ import           Strategy
 import           TemplateMethod
 import           Visitor
 import           Interpreter
+import           Infinity
 
 main :: IO ()
 main = do
@@ -32,3 +33,4 @@ main = do
   jsonPersistenceDemo
   demoDI
   interpreterDemo
+  infinityDemo
