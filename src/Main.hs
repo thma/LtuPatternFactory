@@ -1,10 +1,13 @@
 module Main where
+
 import           AbstractFactory
 import           Adapter
 import           Builder
 import           Coerce
 import           Composite
 import           DependencyInjection
+import           Infinity
+import           Interpreter
 import           Iterator
 import           JsonPersistence
 import           NullObject
@@ -13,8 +16,6 @@ import           Singleton
 import           Strategy
 import           TemplateMethod
 import           Visitor
-import           Interpreter
-import           Infinity
 
 main :: IO ()
 main = do

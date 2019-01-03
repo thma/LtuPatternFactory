@@ -1375,14 +1375,6 @@ TBD
 
 ## Beyond type class patterns
 
-TBD:
-
-* Chain of Responsibility: ADT + pattern matching the ADT (at least the distpatch variant)
-
-* Partial application
-
-* Blockchain as Monadic chain of Actions
-
 ### Dependency Injection → Parameter Binding, Partial Application
 
 > [...] Dependency injection is a technique whereby one object (or static method) supplies the dependencies of another object. A dependency is an object that can be used (a service). An injection is the passing of a dependency to a dependent object (a client) that would use it. The service is made part of the client's state. Passing the service to the client, rather than allowing a client to build or find the service, is the fundamental requirement of the pattern.
@@ -2123,6 +2115,116 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 ```
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Builder.hs)
+
+## Specific functional programming patterns
+
+The patterns presented in this section all stem from functional languages.
+That is, they have been first developed in functional languages like Scheme or Haskell and have later been adopted from other languages.
+
+### Map Reduce
+
+### Continuations
+
+### Laziness
+
+Here comes a short snippet from a Java program:
+
+```java
+    // a non-terminating computation aka _|_ or bottom
+    private static Void bottom() {
+        return bottom();
+    }
+
+    // the K combinator, K x y returns x
+    private static <A, B> A k(A x ,B y ) {
+        return x;
+    }
+
+    public static void main(String[] args) {
+        // part 1
+        if (true) {
+            System.out.println("21 is only half the truth");
+        } else {
+            bottom();
+        }
+
+        // part 2
+        System.out.println(k (42, bottom()));
+    }
+```
+
+What is the expected output of running `main`?
+In part 1 we expect to see the text "21 is only half the truth" on the console. The else part of the `if` statement will never be executed (thus avoiding the endless loop of calling `bottom()`) as `true` is always true.
+
+But what will happen in part 2?
+If the Java compiler would be clever it could determine that `k (x, y)` will never need to evaluate `y` as is always returns just `x`. In this case we should see a 42 printed to the console.
+
+But Java being a strict language Method calls have eager evaluation semantics.
+So will just see a `StackOverflowError`...
+
+In a non-strict (or lazy) language like Haskell this will work out much smoother:
+
+```haskell
+-- | bottom, a computation which never completes successfully, aka as _|_
+bottom :: a
+bottom = bottom
+
+-- | the K combinator which drop its second argument (k x y = x)
+k :: a -> b -> a
+k x _ = x
+
+infinityDemo :: IO ()
+infinityDemo = do
+  print $ k 21 undefined -- evaluating undefined would result in a runtime error
+  print $ k 42 bottom    -- evaluating botoom would result in an endless loop
+  putStrLn ""
+```
+
+Haskell being a non-strict language the arguments of `k` are not evaluated when calling the function.
+thus in `k 21 undefined` and `k 42 bottom` the second arguments `undefined` and `bottom` are simply dropped and never evaluated.
+
+The Haskell laziness can sometimes be tricky to deal with but it has also some huge benefits when dealing with infinite data structures.
+
+```haskell
+-- | a list of *all* natural numbers
+ints :: Num a => [a]
+ints = from 1
+  where
+    from n = n : from (n + 1)
+```
+
+This is a recursive definition of a list of numbers starting with n=1 and adding a list starting at n+1.
+As this recursion has no termination criteria it will never terminate!
+
+What will happen when we start to use `ints` in our code?
+
+```haskell
+ghci> take 10 ints
+[1,2,3,4,5,6,7,8,9,10]
+```
+
+In this case we have not been greedy and just asked for finite subset of ints. The Haskell runtime does not fully evaluate ints but just as many elements as we aked for.
+
+These kind of generator functions (also known as [CAFs]((https://wiki.haskell.org/Constant_applicative_form)) or Constant Applicative Forms) can be very useful to define lazy streams of infinite data.
+
+Haskell even provides some more syntactic sugar to ease the definitions of such CAFs. So for instance our `ints` function could be written as:
+
+```haskell
+ghci> ints = [1..]
+ghci> take 10 ints
+[1,2,3,4,5,6,7,8,9,10]
+```
+
+This feature is called *arithmetic sequences* and allows also to define regions and stepwitdth:
+
+```haskell
+ghci> [2,4..20]
+[2,4,6,8,10,12,14,16,18,20]
+```
+
+Another useful feature are *list comprehensions*.
+
+### Function as a Service
 
 ## Conclusions
 
