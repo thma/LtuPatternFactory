@@ -2203,9 +2203,9 @@ ghci> take 10 ints
 [1,2,3,4,5,6,7,8,9,10]
 ```
 
-In this case we have not been greedy and just asked for finite subset of ints. The Haskell runtime does not fully evaluate ints but just as many elements as we aked for.
+In this case we have not been greedy and just asked for a finite subset of ints. The Haskell runtime thus does not fully evaluate `ints` but only as many elements as we aked for.
 
-These kind of generator functions (also known as [CAFs]((https://wiki.haskell.org/Constant_applicative_form)) or Constant Applicative Forms) can be very useful to define lazy streams of infinite data.
+These kind of generator functions (also known as [CAFs](https://wiki.haskell.org/Constant_applicative_form) for Constant Applicative Forms) can be very useful to define lazy streams of infinite data.
 
 Haskell even provides some more syntactic sugar to ease the definitions of such CAFs. So for instance our `ints` function could be written as:
 
@@ -2222,7 +2222,35 @@ ghci> [2,4..20]
 [2,4,6,8,10,12,14,16,18,20]
 ```
 
-Another useful feature are *list comprehensions*.
+Another useful feature in this area are *list comprehensions*. With list comprehensions its quite convenient to define infinite sets with specific properties:
+
+```haskell
+-- | infinite list of all odd numbers
+odds :: [Int]
+odds = [n | n <- [1 ..], n `mod` 2 /= 0] -- read as set builder notation: {n | n ∈ ℕ, n%2 ≠ 0}
+
+-- | infinite list of all integer pythagorean triples with a² + b² = c²
+pythagoreanTriples :: [(Int, Int, Int)]
+pythagoreanTriples =  [ (a, b, c)
+  | c <- [1 ..]
+  , b <- [1 .. c - 1]
+  , a <- [1 .. b - 1]
+  , a ^ 2 + b ^ 2 == c ^ 2
+  ]
+
+-- | infinite list of all prime numbers
+primes :: [Integer]
+primes = 2 : [i | i <- [3,5..],  
+              and [rem i p > 0 | p <- takeWhile (\p -> p^2 <= i) primes]]
+
+-- and the in GHCi:
+ghci> take 10 odds
+[1,3,5,7,9,11,13,15,17,19]
+ghci> take 10 pythagoreanTriples
+[(3,4,5),(6,8,10),(5,12,13),(9,12,15),(8,15,17),(12,16,20),(15,20,25),(7,24,25),(10,24,26),(20,21,29)]
+ghci> take 20 primes
+[2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71]
+```
 
 ### Function as a Service
 

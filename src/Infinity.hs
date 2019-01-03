@@ -1,13 +1,20 @@
 module Infinity where
 
--- | a list of all integer pythagorean triples with a² + b² = c² 
+odds :: [Int]
+odds = [n | n <- [1 ..], n `mod` 2 /= 0]
+
+-- | a list of all integer pythagorean triples with a² + b² = c²
 pythagoreanTriples :: [(Int, Int, Int)]
-pythagoreanTriples = [ (a, b, c)
+pythagoreanTriples =  [ (a, b, c)
   | c <- [1 ..]
-  , b <- [1 .. c-1]
-  , a <- [1 .. b-1]
-  , a^2 + b^2 == c^2
+  , b <- [1 .. c - 1]
+  , a <- [1 .. b - 1]
+  , a ^ 2 + b ^ 2 == c ^ 2
   ]
+
+primes :: [Integer] 
+primes = 2 : [i | i <- [3,5..],  
+              and [rem i p > 0 | p <- takeWhile (\p -> p^2 <= i) primes]]
 
 -- | bottom, a computation which never completes successfully, aka as _|_
 bottom :: a
