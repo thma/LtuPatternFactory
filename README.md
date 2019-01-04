@@ -42,6 +42,10 @@ I think this kind of exposition could be helpful if you are either:
   * [Creational Patterns](#creational-patterns)
     * [Abstract Factory → functions as data type values](#abstract-factory--functions-as-data-type-values)
     * [Builder → record syntax, smart constructor](#builder--record-syntax-smart-constructor)
+* [Functional Programming Patterns](#functional-programming-patterns)
+  * [Map Reduce](#map-reduce)
+  * [Continuation Passing](#continuation-passing)
+  * [Lazy Evaluation](#lazy-evaluation)
 * [Conclusions](#conclusions)
 * [Some related links](#some-interesting-links)
 
@@ -2281,18 +2285,18 @@ So while the original design patterns are formulated with object oriented langua
 
 So it comes with little surprise that we can map many of those patterns to commonly used structures in functional programming: The domain problems remain the same, yet the concrete solutions differ:
 
-1. Some patterns are absorbed by language features:
-    * Template method and strategy pattern are no brainers in any functional language with functions as first class citizens and higher order functions.
-    * Dependency Injection and Configuration is solved by by partial application of curried functions.
-    * Adapter layers are replaced by function composition
-    * Visitor pattern and Interpreters are self-evident with algebraic data types.
-2. Other patterns are covered by libraries like the Haskell type classes:
-    * Composite is reduced to a Monoid
-    * Singleton, Pipeline, NullObject can be rooted in Functor, Applicative Functor and Monad
-    * Visitor and Iterator are covered by Foldable and Traversable.
-3. Yet another category of patterns is covered by specific language features like the Laziness, Parallelism. These features may be specific to certain languages.
-    * Laziness allows to work with non-terminating compuations and data structures of infinite size.
-    * Parallelism allows to scale the execution of a program transparently across CPU cores.
+* Some patterns are absorbed by language features:
+  * Template method and strategy pattern are no brainers in any functional language with functions as first class citizens and higher order functions.
+  * Dependency Injection and Configuration is solved by by partial application of curried functions.
+  * Adapter layers are replaced by function composition
+  * Visitor pattern and Interpreters are self-evident with algebraic data types.
+* Other patterns are covered by libraries like the Haskell type classes:
+  * Composite is reduced to a Monoid
+  * Singleton, Pipeline, NullObject can be rooted in Functor, Applicative Functor and Monad
+  * Visitor and Iterator are covered by Foldable and Traversable.
+* Yet another category of patterns is covered by specific language features like the Laziness, Parallelism. These features may be specific to certain languages.
+  * Laziness allows to work with non-terminating compuations and data structures of infinite size.
+  * Parallelism allows to scale the execution of a program transparently across CPU cores.
 
 ### Design patterns reflect mathematical structures
 
