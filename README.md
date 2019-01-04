@@ -2116,18 +2116,22 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Builder.hs)
 
-## Specific functional programming patterns
+## Functional Programming Patterns
 
 The patterns presented in this section all stem from functional languages.
-That is, they have been first developed in functional languages like Scheme or Haskell and have later been adopted from other languages.
+That is, they have been first developed in functional languages like Scheme or Haskell and have later been adopted in other languages.
 
 ### Map Reduce
 
-### Continuations
+tbd.
 
-### Laziness
+### Continuation Passing
 
-Here comes a short snippet from a Java program:
+tbd.
+
+### Lazy Evaluation
+
+Let's start with a short snippet from a Java program:
 
 ```java
     // a non-terminating computation aka _|_ or bottom
@@ -2136,7 +2140,7 @@ Here comes a short snippet from a Java program:
     }
 
     // the K combinator, K x y returns x
-    private static <A, B> A k(A x ,B y ) {
+    private static <A, B> A k(A x, B y) {
         return x;
     }
 
@@ -2159,7 +2163,7 @@ In part 1 we expect to see the text "21 is only half the truth" on the console. 
 But what will happen in part 2?
 If the Java compiler would be clever it could determine that `k (x, y)` will never need to evaluate `y` as is always returns just `x`. In this case we should see a 42 printed to the console.
 
-But Java being a strict language Method calls have eager evaluation semantics.
+But Java Method calls have eager evaluation semantics.
 So will just see a `StackOverflowError`...
 
 In a non-strict (or lazy) language like Haskell this will work out much smoother:
@@ -2193,7 +2197,7 @@ ints = from 1
     from n = n : from (n + 1)
 ```
 
-This is a recursive definition of a list of numbers starting with n=1 and adding a list starting at n+1.
+This is a recursive definition of a list holding all natural numbers.
 As this recursion has no termination criteria it will never terminate!
 
 What will happen when we start to use `ints` in our code?
