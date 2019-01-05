@@ -16,6 +16,7 @@ import           Singleton
 import           Strategy
 import           TemplateMethod
 import           Visitor
+import           MapReduce
 
 main :: IO ()
 main = do
@@ -35,3 +36,4 @@ main = do
   demoDI
   interpreterDemo
   infinityDemo
+  mapReduceDemo
