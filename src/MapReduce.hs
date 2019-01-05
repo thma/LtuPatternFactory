@@ -5,14 +5,14 @@ import           Control.Category ((>>>))
 import           Data.Char        (toLower)
 import           Data.List        (group, sort)
 import           Data.Map         as Map hiding (filter, map, foldr)
-import           Data.Monoid
 import           Control.Parallel (pseq)
 import           Control.Parallel.Strategies (rseq, using, parMap)
+import           Data.Coerce
 
-newtype WordCountMap = WordCountMap { getMap :: Map.Map String Int} deriving (Show)
+newtype WordCountMap = WordCountMap (Map.Map String Int) deriving (Show)
 
 instance Semigroup WordCountMap where
-    a <> b = WordCountMap $ Map.unionWith (+) (getMap a) (getMap b)
+    WordCountMap a <> WordCountMap b = WordCountMap $ Map.unionWith (+) a b
 instance Monoid WordCountMap where
     mempty = WordCountMap Map.empty
 
@@ -26,7 +26,7 @@ stringToWordCountMap =
   WordCountMap               -- wrap as WordCountMap
 
 reduceWordCountMaps :: [WordCountMap] -> WordCountMap
-reduceWordCountMaps = WordCountMap . foldr (Map.unionWith (+) . getMap) empty 
+reduceWordCountMaps = WordCountMap . foldr (Map.unionWith (+) . coerce) empty 
 
 simpleMapReduce ::
      (a -> b)   -- map function
@@ -35,22 +35,24 @@ simpleMapReduce ::
   -> c          -- result
 simpleMapReduce mapFunc reduceFunc = reduceFunc . map mapFunc
 
-alphabetic :: Char -> Bool
-alphabetic char = char `elem` (" \t\n\r" ++ ['a'..'z'] ++ ['A'..'Z'])
-
 parMapReduce :: (a -> b) -> ([b] -> c) -> [a] -> c
 parMapReduce mapFunc reduceFunc input =
     mapResult `pseq` reduceResult
     where mapResult    = parMap rseq mapFunc input
           reduceResult = reduceFunc mapResult `using` rseq
 
+alphabetic :: Char -> Bool
+alphabetic char = char `elem` (" \t\n\r" ++ ['a'..'z'] ++ ['A'..'Z'])        
 
 mapReduceDemo = do
   contents <- readFile "LICENSE"
   let linesInFile = lines $ filter alphabetic contents
-  let result =
-        simpleMapReduce stringToWordCountMap reduceWordCountMaps linesInFile
-  putStrLn $ "The file has " ++ show (length linesInFile) ++ " lines"
-  putStrLn $ "result = " ++ show (getMap result)
-  print $ getMap $ foldMap stringToWordCountMap linesInFile
-  print $ getMap $ parMapReduce stringToWordCountMap reduceWordCountMaps linesInFile
+
+  -- simple map reduce, no parallelism
+  print $ simpleMapReduce stringToWordCountMap reduceWordCountMaps linesInFile
+  -- parallelized map reduce
+  print $ parMapReduce stringToWordCountMap reduceWordCountMaps linesInFile
+
+  -- the essence of map reduce: foldMap:
+  print $ foldMap stringToWordCountMap linesInFile
+
