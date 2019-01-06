@@ -2127,7 +2127,130 @@ That is, they have been first developed in functional languages like Scheme or H
 
 ### Map Reduce
 
-tbd.
+> MapReduce is a programming model and an associated implementation for processing and generating large data sets. Users specify a map function that processes a key/value pair to generate a set of intermediate key/value pairs, and a reduce function that merges all intermediate values associated with the same intermediate key.
+>
+> Our abstraction is inspired by the map and reduce primitives present in Lisp and many other functional languages.
+> [Quoted from Google Research](https://storage.googleapis.com/pub-tools-public-publication-data/pdf/16cb30b4b92fd4989b8619a61752a2387c6dd474.pdf)
+
+In this section I'm featuring one of the canonical examples for MapReduce: counting word frequencies in a large text.
+
+Let's start with a function `stringToWordCountMap` that takes a string as input and creates the respective word frequency map:
+
+```haskell
+-- | a key value map, mapping a word to a frequency
+newtype WordCountMap = WordCountMap (Map String Int) deriving (Show)
+
+-- | creating a word frequency map from a String.
+--   To ease readability I'm using the (>>>) operator, which is just an inverted (.): f >>> g == g . f
+stringToWordCountMap :: String -> WordCountMap
+stringToWordCountMap =
+  map toLower >>> words >>>  -- convert to lowercase and split into a list of words
+  sort >>> group >>>         -- sort the words alphabetically and group all equal words to sub-lists
+  map (head &&& length) >>>  -- for each of those list of grouped words: form a pair (word, frequency)
+  Map.fromList >>>           -- create a Map from the list of (word, frequency) pairs
+  WordCountMap               -- wrap as WordCountMap
+
+-- and then in GHCi:
+ghci> stringToWordCountMap "hello world World"
+WordCountMap (fromList [("hello",1),("world",2)])
+```
+
+In a MapReduce scenario we would have a huge text as input that would take age to process on a single core.
+So the idea is to split up the huge text into smaller chunks that can than be processed in parallel on multiple cores or even large machine clusters.
+
+Let's assume we have split a text into two chunks. we could then use `map` to create a `WordCountMap` for both chunks:
+
+```haskell
+ghci> map stringToWordCountMap ["hello world World", "out of this world"]
+[WordCountMap (fromList [("hello",1),("world",2)])
+,WordCountMap (fromList [("of",1),("out",1),("this",1),("world",1)])]
+```
+
+In Order to get a comprehensive word frequency map we than have to merge those two `WordCountMap`s into one.
+The merging must form a union of all entries from all individual maps. This union must also ensure that the frequencies from the indivual maps are added up properly in the resulting map. We will use the `Map.unionWith` function to achieve this:
+
+```haskell
+-- | merges a list of individual WordCountMap into single one.
+reduceWordCountMaps :: [WordCountMap] -> WordCountMap
+reduceWordCountMaps = WordCountMap . foldr (Map.unionWith (+) . coerce) empty
+
+-- and then in GHCi:
+ghci> reduceWordCountMaps it
+WordCountMap (fromList [("hello",1),("of",1),("out",1),("this",1),("world",3)])
+```
+
+We have just performed a manual map reduce operation! We can now take these ingredients to write a generic MapReduce function:
+
+```haskell
+simpleMapReduce ::
+     (a -> b)   -- map function
+  -> ([b] -> c) -- reduce function
+  -> [a]        -- list to map over
+  -> c          -- result
+simpleMapReduce mapFunc reduceFunc = reduceFunc . map mapFunc
+
+-- and then in GHCi
+ghci> simpleMapReduce stringToWordCountMap reduceWordCountMaps ["hello world World", "out of this world"]
+WordCountMap (fromList [("hello",1),("of",1),("out",1),("this",1),("world",3)])
+```
+
+What I have shown so far just demonstrates the general mechanism of chaining `map` and `reduce` functions without implying any parallel execution.
+Essentially we are chaining a `map` with a `fold` (i.e. reduction) function. In the Haskell base library there is a higher order function `foldMap` that covers exactly this pattern of chaining:
+
+```haskell
+-- | Map each element of the structure to a monoid,
+-- and combine the results.
+foldMap :: (Foldable t, Monoid m) => (a -> m) -> t a -> m
+foldMap f = foldr (mappend . f) mempty
+```
+
+This signature requires that our type `WordCountMap` must be a `Monoid` in order to allow merging of multiple `WordCountMaps` by using `mappend`.
+
+```haskell
+instance Semigroup WordCountMap where
+    WordCountMap a <> WordCountMap b = WordCountMap $ Map.unionWith (+) a b
+instance Monoid WordCountMap where
+    mempty = WordCountMap Map.empty
+```
+
+now we can simpl use `foldMap` to achieve a MapReduce:
+
+```haskell
+ghci> foldMap stringToWordCountMap ["hello world World", "out of this world"]
+WordCountMap (fromList [("hello",1),("of",1),("out",1),("this",1),("world",3)])
+```
+
+From what I have shown so far it's easy to see that the `map` and `reduce` phases of the word frequency computation are candidates for heavily parallelized processing:
+
+* The generation of word frequency maps for the text chunks can be done in parallel. There are no shared data or other dependencies between those executions.
+* The reduction of the maps can start in parallel (that is we don't have to wait to start reduction until all individual maps are computed) and the reduction itself can also be parallelized.
+
+The calculation of word frequencies is a candidate for a parallel MapReduce because the addition operation used to accumulate the word frequencies is *associatve* and *commutative*:
+*The order of execution doesn't affect the final result*.
+
+So actually our data type `WordCountMap` is not only a `Monoid` (which requires an *associative* binary operation) but even a [*commutative Monoid*](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid).
+
+So our conclusion: if your intermediary key value map for your data analytics forms a *commutaive monoid* than it is a candidate for parallel MapReduce. See also [An Algebra for Distributed Big Data Analytics](https://pdfs.semanticscholar.org/0498/3a1c0d6343e21129aaffca2a1b3eec419523.pdf).
+
+Haskell provides a package `parallel` for defining parallel executions in a rather declarative way.
+Here is what a parallelized MapReduce looks like when using this package:
+
+```haskell
+-- | a MapReduce using the Control.Parallel package to denote parallel execution
+parMapReduce :: (a -> b) -> ([b] -> c) -> [a] -> c
+parMapReduce mapFunc reduceFunc input =
+    mapResult `pseq` reduceResult
+    where mapResult    = parMap rseq mapFunc input
+          reduceResult = reduceFunc mapResult `using` rseq
+
+-- and then in GHCi:
+ghci> parMapReduce stringToWordCountMap reduceWordCountMaps ["hello world World", "out of this world"]
+WordCountMap (fromList [("hello",1),("of",1),("out",1),("this",1),("world",3)])
+```
+
+For more details see [Real World Haskell](http://book.realworldhaskell.org/read/concurrent-and-multicore-programming.html)
+
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/MapReduce.hs)
 
 ### Continuation Passing
 
@@ -2259,6 +2382,8 @@ ghci> take 10 pythagoreanTriples
 ghci> take 20 primes
 [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71]
 ```
+
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Infinity.hs)
 
 ### Function as a Service
 

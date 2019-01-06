@@ -5,11 +5,12 @@ import           Control.Category ((>>>))
 import           Data.Char        (toLower)
 import           Data.List        (group, sort)
 import           Data.Map         as Map hiding (filter, map, foldr)
+import           Data.Map         (Map)
 import           Control.Parallel (pseq)
 import           Control.Parallel.Strategies (rseq, using, parMap)
 import           Data.Coerce
 
-newtype WordCountMap = WordCountMap (Map.Map String Int) deriving (Show)
+newtype WordCountMap = WordCountMap (Map String Int) deriving (Show)
 
 instance Semigroup WordCountMap where
     WordCountMap a <> WordCountMap b = WordCountMap $ Map.unionWith (+) a b
