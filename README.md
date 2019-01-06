@@ -2167,7 +2167,7 @@ ghci> map stringToWordCountMap ["hello world World", "out of this world"]
 ```
 
 This was the *Map* part. Now to *Reduce*.
-In Order to get a comprehensive word frequency map we than have to merge those two `WordCountMap`s into one.
+In Order to get a comprehensive word frequency map we have to merge those individual `WordCountMap`s into one.
 The merging must form a union of all entries from all individual maps. This union must also ensure that the frequencies from the indivual maps are added up properly in the resulting map. We will use the `Map.unionWith` function to achieve this:
 
 ```haskell
