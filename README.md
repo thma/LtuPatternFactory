@@ -2155,10 +2155,10 @@ ghci> stringToWordCountMap "hello world World"
 WordCountMap (fromList [("hello",1),("world",2)])
 ```
 
-In a MapReduce scenario we would have a huge text as input that would take age to process on a single core.
+In a MapReduce scenario we would have a huge text as input that would take ages to process on a single core.
 So the idea is to split up the huge text into smaller chunks that can than be processed in parallel on multiple cores or even large machine clusters.
 
-Let's assume we have split a text into two chunks. we could then use `map` to create a `WordCountMap` for both chunks:
+Let's assume we have split a text into two chunks. We could then use `map` to create a `WordCountMap` for both chunks:
 
 ```haskell
 ghci> map stringToWordCountMap ["hello world World", "out of this world"]
@@ -2166,6 +2166,7 @@ ghci> map stringToWordCountMap ["hello world World", "out of this world"]
 ,WordCountMap (fromList [("of",1),("out",1),("this",1),("world",1)])]
 ```
 
+This was the *Map* part. Now to *Reduce*.
 In Order to get a comprehensive word frequency map we than have to merge those two `WordCountMap`s into one.
 The merging must form a union of all entries from all individual maps. This union must also ensure that the frequencies from the indivual maps are added up properly in the resulting map. We will use the `Map.unionWith` function to achieve this:
 
@@ -2213,7 +2214,7 @@ instance Monoid WordCountMap where
     mempty = WordCountMap Map.empty
 ```
 
-now we can simpl use `foldMap` to achieve a MapReduce:
+now we can simply use `foldMap` to achieve a MapReduce:
 
 ```haskell
 ghci> foldMap stringToWordCountMap ["hello world World", "out of this world"]
@@ -2230,7 +2231,7 @@ The calculation of word frequencies is a candidate for a parallel MapReduce beca
 
 So actually our data type `WordCountMap` is not only a `Monoid` (which requires an *associative* binary operation) but even a [*commutative Monoid*](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid).
 
-So our conclusion: if your intermediary key value map for your data analytics forms a *commutaive monoid* than it is a candidate for parallel MapReduce. See also [An Algebra for Distributed Big Data Analytics](https://pdfs.semanticscholar.org/0498/3a1c0d6343e21129aaffca2a1b3eec419523.pdf).
+So our conclusion: if the intermediary key/value map for the data analytics task at hand forms a *commutative monoid* then it is a candidate for parallel MapReduce. See also [An Algebra for Distributed Big Data Analytics](https://pdfs.semanticscholar.org/0498/3a1c0d6343e21129aaffca2a1b3eec419523.pdf).
 
 Haskell provides a package `parallel` for defining parallel executions in a rather declarative way.
 Here is what a parallelized MapReduce looks like when using this package:
