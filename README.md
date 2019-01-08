@@ -31,10 +31,17 @@ I think this kind of exposition could be helpful if you are either:
   * [Pipeline → Monad](#pipeline--monad)
   * [NullObject → Maybe Monad](#nullobject--maybe-monad)
   * [Interpreter → Reader Monad](#interpreter--reader-monad)
-  * [Composite → SemiGroup -> Monoid](#composite--semigroup--monoid)
+  * [? → MonadFail](#?--monadfail)
+  * [Aspect Weaving → Monad Transformers](#aspect-weaving--monad-transformers)
+  * [? → MonadFix](#?--monadfix)
+  * [Composite → SemiGroup → Monoid](#composite--semigroup--monoid)
+  * [? → Alternative, MonadPlus, ArrowPlus](?--alternative-monadplus-arrowplus)
   * [Visitor → Foldable](#visitor--foldable)
   * [Iterator → Traversable](#iterator--traversable)
+  * [? → Bifunctor](#?--bifunctor)
   * [The Pattern behind the Patterns → Category](#the-pattern-behind-the-patterns--category)
+  * [? → Arrow](#?--arrow)
+  * [? → Comonad](#?--comonad)
 * [Beyond type class patterns](#beyond-type-class-patterns)
   * [Dependency Injection → Parameter Binding](#dependency-injection--parameter-binding-partial-application)
   * [Adapter → Function Composition](#adapter--function-composition)
@@ -902,6 +909,20 @@ This section was inspired by ideas presented in [Quick Interpreters with the Rea
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Interpreter.hs)
 
+### ? → MonadFail
+
+tbd.
+
+### Aspect Weaving → Monad Transformers
+
+tbd.
+
+### ? → MonadFix
+
+tbd.
+
+
+
 ### Composite → SemiGroup → Monoid
 
 >In software engineering, the composite pattern is a partitioning design pattern. The composite pattern describes a group of objects that is treated the same way as a single instance of the same type of object. The intent of a composite is to "compose" objects into tree structures to represent part-whole hierarchies. Implementing the composite pattern lets clients treat individual objects and compositions uniformly.
@@ -1106,6 +1127,8 @@ For more details on Composite as a Monoid please refer to the following blog:
 [Composite as Monoid](http://blog.ploeh.dk/2018/03/12/composite-as-a-monoid/)
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Composite.hs)
+
+### ? → Alternative, MonadPlus, ArrowPlus
 
 ### Visitor → Foldable
 
@@ -1369,13 +1392,19 @@ This example has been implemented according to ideas presented in the paper
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
 
+### ? → Bifunctor
+
+tbd.
+
 ### The Pattern behind the Patterns → Category
 
-TBD
+tbd.
 
-### Arrow & Co
+### ? → Arrow
 
-TBD
+tbd.
+
+### ? → Comonad
 
 ## Beyond type class patterns
 
@@ -2196,7 +2225,7 @@ WordCountMap (fromList [("hello",1),("of",1),("out",1),("this",1),("world",3)])
 ```
 
 What I have shown so far just demonstrates the general mechanism of chaining `map` and `reduce` functions without implying any parallel execution.
-Essentially we are chaining a `map` with a `fold` (i.e. reduction) function. In the Haskell base library there is a higher order function `foldMap` that covers exactly this pattern of chaining:
+Essentially we are chaining a `map` with a `fold` (i.e. reduction) function. In the Haskell base library there is a higher order function `foldMap` that covers exactly this pattern of chaining. Please note that `foldMap`does only a single traversal of the foldable data structure. It fuses the `map` and `reduce` phase into a single one by function composition of `mappend` and the mapping function `f`:
 
 ```haskell
 -- | Map each element of the structure to a monoid,
@@ -2214,7 +2243,7 @@ instance Monoid WordCountMap where
     mempty = WordCountMap Map.empty
 ```
 
-now we can simply use `foldMap` to achieve a MapReduce:
+That's all we need to use `foldMap` to achieve a MapReduce:
 
 ```haskell
 ghci> foldMap stringToWordCountMap ["hello world World", "out of this world"]
