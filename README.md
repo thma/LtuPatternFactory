@@ -63,9 +63,14 @@ The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) 
 In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
 For each of the Typeclassopedia type classes I try to explain how it corresponds to structures applied in software design patterns.
 
-As a reference map I have included the following chart that depicts the Relationships between type classes covered in the Typeclassopedia
+As a reference map I have included the following chart that depicts the Relationships between type classes covered in the Typeclassopedia:
 
 ![The Haskell type classes covered by the Typeclassopedia](https://wiki.haskell.org/wikiupload/c/c7/Typeclassopedia-diagram.svg)
+
+* Solid arrows point from the general to the specific; that is, if there is an arrow from Foo to Bar it means that every Bar is (or should be, or can be made into) a Foo.
+* Dotted lines indicate some other sort of relationship.
+* Monad and ArrowApply are equivalent.
+* Apply and Comonad are greyed out since they are not actually (yet?) in the standard Haskell libraries ∗.
 
 ### Strategy → Functor
 
