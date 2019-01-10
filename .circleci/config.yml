@@ -10,6 +10,9 @@ jobs:
           keys:
             - cci-demo-haskell-v1-{{ checksum "LtuPatternFactory.cabal" }}
       - run:
+          name: Init Stack.yaml
+          command: stack init
+      - run:
           name: Resolve/Update Dependencies
           command: stack setup
       - run:
