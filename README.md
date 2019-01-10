@@ -31,17 +31,17 @@ I think this kind of exposition could be helpful if you are either:
   * [Pipeline → Monad](#pipeline--monad)
   * [NullObject → Maybe Monad](#nullobject--maybe-monad)
   * [Interpreter → Reader Monad](#interpreter--reader-monad)
-  * [? → MonadFail](#?--monadfail)
+  * [? → MonadFail](#--monadfail)
   * [Aspect Weaving → Monad Transformers](#aspect-weaving--monad-transformers)
-  * [? → MonadFix](#?--monadfix)
+  * [? → MonadFix](#--monadfix)
   * [Composite → SemiGroup → Monoid](#composite--semigroup--monoid)
-  * [? → Alternative, MonadPlus, ArrowPlus](?--alternative-monadplus-arrowplus)
+  * [? → Alternative, MonadPlus, ArrowPlus](--alternative-monadplus-arrowplus)
   * [Visitor → Foldable](#visitor--foldable)
   * [Iterator → Traversable](#iterator--traversable)
-  * [? → Bifunctor](#?--bifunctor)
+  * [? → Bifunctor](#--bifunctor)
   * [The Pattern behind the Patterns → Category](#the-pattern-behind-the-patterns--category)
-  * [? → Arrow](#?--arrow)
-  * [? → Comonad](#?--comonad)
+  * [? → Arrow](#--arrow)
+  * [? → Comonad](#--comonad)
 * [Beyond type class patterns](#beyond-type-class-patterns)
   * [Dependency Injection → Parameter Binding](#dependency-injection--parameter-binding-partial-application)
   * [Adapter → Function Composition](#adapter--function-composition)
@@ -61,7 +61,11 @@ I think this kind of exposition could be helpful if you are either:
 The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) is a now classic paper that introduces the Haskell type classes by clarifying their algebraic and category-theoretic background. In particular it explains the relationships among those type classes.
 
 In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
-For each of the Typeclassopedia type classes (at least up to Traversable) I try to explain how it corresponds to structures applied in design patterns.
+For each of the Typeclassopedia type classes I try to explain how it corresponds to structures applied in software design patterns.
+
+As a reference map I have included the following chart that depicts the Relationships between type classes covered in the Typeclassopedia
+
+![The Haskell type classes covered by the Typeclassopedia](https://wiki.haskell.org/wikiupload/c/c7/Typeclassopedia-diagram.svg)
 
 ### Strategy → Functor
 
@@ -920,8 +924,6 @@ tbd.
 ### ? → MonadFix
 
 tbd.
-
-
 
 ### Composite → SemiGroup → Monoid
 
