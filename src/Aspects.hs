@@ -1,6 +1,59 @@
 {-# LANGUAGE DeriveFunctor #-}
 module Aspects where
 
+--import           Prelude hiding (div)
+import           Control.Monad.Reader
+import           Control.Monad.State
+import           Control.Monad.Writer
+
+data Exp a =
+      Var String
+    | BinOp String (BinOperator a) (Exp a) (Exp a)
+    | Let String (Exp a) (Exp a)
+    | Val a
+
+type BinOperator a =  a -> a -> a
+
+type Env a = [(String, a)]
+
+plus = BinOp "+" (+)
+mul  = BinOp "*" (*)
+divBy  = BinOp "/" (/)
+
+-- environment lookup
+fetch :: String -> Env a -> a
+fetch x []        = error $ "variable " ++ x ++ " is not defined"
+fetch x ((y,v):ys)
+    | x == y    = v
+    | otherwise = fetch x ys
+
+eval :: Show a => Exp a -> WriterT [String] (Reader (Env a)) a           
+eval (Var x)          = tell ["lookup " ++ x] >> asks (fetch x)
+eval (Val i)          = tell [show i] >> return i
+eval (BinOp n op e1 e2) = tell [n] >> liftM2 op (eval e1) (eval e2)
+eval (Let x e1 e2)    = do 
+    tell ["let " ++ x]
+    v <- eval e1
+    tell ["in"] 
+    local ((x,v):) (eval e2)
+
+aspectsDemo :: IO ()
+aspectsDemo = do
+    putStrLn "Interpreter -> Reader Monad + ADTs + pattern matching"
+    let exp = Let "x" 
+                (Let "y" 
+                    (plus (Val 5) (Val 7))
+                    (divBy  (Var "y") (Val 6)))
+                (mul (Var "pi") (Var "x"))
+        env = [("pi", pi)]
+    print $ runReader (runWriterT (eval exp)) env
+
+    --
+    demo (run program)
+    
+    putStrLn ""
+
+---------------------------
 type Id = String 
 
 data IExp = Lit Int
@@ -8,7 +61,7 @@ data IExp = Lit Int
     | IExp :*: IExp
     | IExp :-: IExp
     | IExp :/: IExp
-    | Var Id deriving (Show)
+    | IVar Id deriving (Show)
 
 data BExp = T
     | F
@@ -28,10 +81,10 @@ program =
     Begin [
         "total" := Lit 0,
         "count" := Lit 0,
-        While (Var "count" :<: Lit 10)
+        While (IVar "count" :<: Lit 10)
             (Begin [
-                "count" := (Var "count" :+: Lit 1),
-                "total" := (Var "total" :+: Var "count")
+                "count" := (IVar "count" :+: Lit 1),
+                "total" := (IVar "total" :+: IVar "count")
             ])
     ]    
 
@@ -47,7 +100,7 @@ iexp (e1 :+: e2) = \s -> iexp e1 s + iexp e2 s
 iexp (e1 :*: e2) = \s -> iexp e1 s * iexp e2 s
 iexp (e1 :-: e2) = \s -> iexp e1 s - iexp e2 s
 iexp (e1 :/: e2) = \s -> iexp e1 s `div` iexp e2 s
-iexp (Var i)     = \s -> s i
+iexp (IVar i)     = \s -> s i
 
 bexp :: BExp -> (Store -> Bool )
 bexp T           = const True
@@ -79,14 +132,12 @@ data M r = ST (Store -> (r, Store))
 instance Applicative M where
     pure = return
     a <*> b = fmap f r
-
 instance (Functor m, Monad m) => Applicative (StateT s m) where
     pure a = StateT $ \ s -> return (a, s)
     StateT mf <*> StateT mx = StateT $ \ s -> do
         ~(f, s') <- mf s
         ~(x, s'') <- mx s'
         return (f x, s'')    
-
 instance Monad M where
     return x = ST (\s -> (x , s))
     c >>= g  = ST (\s -> let ST f     = c
@@ -100,8 +151,6 @@ setVar i v = ST (\s -> ((), \j -> if i == j then v else s j ))
 
 getVar :: Id -> M Int
 getVar i = ST (\s -> (s i, s))
-
-
 
 -- demo (run program)
 demo :: Store -> IO () 
