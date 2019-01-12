@@ -1,7 +1,4 @@
-{-# LANGUAGE DeriveFunctor #-}
 module Aspects where
-
---import           Prelude hiding (div)
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Control.Monad.Writer
@@ -39,7 +36,7 @@ eval (Let x e1 e2)    = do
 
 aspectsDemo :: IO ()
 aspectsDemo = do
-    putStrLn "Interpreter -> Reader Monad + ADTs + pattern matching"
+    putStrLn "Aspect Weaving -> Monad Transformers"
     let exp = Let "x" 
                 (Let "y" 
                     (plus (Val 5) (Val 7))
@@ -89,72 +86,53 @@ program =
     ]    
 
 
-type Store = Id -> Int
+type Store = [(Id,Int)]
 
 extend :: Store -> Id -> Int -> Store
-extend s i v = \j -> if i == j then v else s j    
+extend s i v = (i,v):s
 
-iexp :: IExp -> (Store -> Int)
-iexp (Lit n) = const n
-iexp (e1 :+: e2) = \s -> iexp e1 s + iexp e2 s
-iexp (e1 :*: e2) = \s -> iexp e1 s * iexp e2 s
-iexp (e1 :-: e2) = \s -> iexp e1 s - iexp e2 s
-iexp (e1 :/: e2) = \s -> iexp e1 s `div` iexp e2 s
-iexp (IVar i)     = \s -> s i
+find :: Store -> Id -> Int
+find ((k,v):xs) i = if k == i then v else find xs i
 
-bexp :: BExp -> (Store -> Bool )
-bexp T           = const True
-bexp F           = const False
-bexp (Not b)     = \s -> not (bexp b s)
-bexp (b1 :&: b2) = \s -> bexp b1 s && bexp b2 s
-bexp (b1 :|: b2) = \s -> bexp b1 s || bexp b2 s
-bexp (e1 :=: e2) = \s -> iexp e1 s == iexp e2 s
-bexp (e1 :<: e2) = \s -> iexp e1 s < iexp e2 s
+iexp :: IExp -> State Store Int
+iexp (Lit n) = return n
+iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
+iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
+iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
+iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
+iexp (IVar i)    = do
+                        s <- get
+                        return $ find s i
 
-stmt :: Stmt -> (Store -> Store)
-stmt Skip       = \s -> s
-stmt (i := e)   = \s -> extend s i (iexp e s)
-stmt (Begin ss) = foldr (\s ss -> ss . stmt s) id ss
-stmt (If b t e) = \s -> if bexp b s
-                            then stmt t s
-                            else stmt e s
+bexp :: BExp -> State Store Bool
+bexp T           = return True
+bexp F           = return False
+bexp (Not b)     = fmap not (bexp b)
+bexp (b1 :&: b2) = liftM2 (&&) (bexp b1) (bexp b2)
+bexp (b1 :|: b2) = liftM2 (||) (bexp b1) (bexp b2)
+bexp (e1 :=: e2) = liftM2 (==) (iexp e1) (iexp e2)
+bexp (e1 :<: e2) = liftM2 (<)  (iexp e1) (iexp e2)
+
+stmt :: Stmt -> State Store ()
+stmt Skip       = return ()
+stmt (i := e)   = do x <- iexp e; s <- get; put (extend s i x)
+stmt (Begin ss) = mapM_ stmt ss
+stmt (If b t e) = do 
+    x <- bexp b
+    if x then stmt t
+         else stmt e
 stmt (While b t) = loop
-    where loop s = if bexp b s
-                    then loop (stmt t s)
-                    else s
+    where loop = do 
+            x <- bexp b
+            when x $ stmt t >> loop
 
 run :: Stmt -> Store
-run s = stmt s (const 0)
+run s = execState (stmt s) []
 
-data M r = ST (Store -> (r, Store))
-
-{-
-instance Applicative M where
-    pure = return
-    a <*> b = fmap f r
-instance (Functor m, Monad m) => Applicative (StateT s m) where
-    pure a = StateT $ \ s -> return (a, s)
-    StateT mf <*> StateT mx = StateT $ \ s -> do
-        ~(f, s') <- mf s
-        ~(x, s'') <- mx s'
-        return (f x, s'')    
-instance Monad M where
-    return x = ST (\s -> (x , s))
-    c >>= g  = ST (\s -> let ST f     = c
-                             (x , s') = f s
-                             ST f'    = g x
-                         in f' s')
--}
-
-setVar :: Id -> Int -> M ()
-setVar i v = ST (\s -> ((), \j -> if i == j then v else s j ))
-
-getVar :: Id -> M Int
-getVar i = ST (\s -> (s i, s))
 
 -- demo (run program)
 demo :: Store -> IO () 
 demo store = do
-    putStrLn $ "count = " ++ show (store "count")
-    putStrLn $ "total = " ++ show (store "total")
-    putStrLn $ "other = " ++ show (store "other")
+    putStrLn $ "count = " ++ show (find store "count")
+    putStrLn $ "total = " ++ show (find store "total")
+--    putStrLn $ "other = " ++ show (find store "other")
