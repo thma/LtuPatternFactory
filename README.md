@@ -924,9 +924,54 @@ tbd.
 
 ### Aspect Weaving → Monad Transformers
 
-tbd.
+> In computing, aspect-oriented programming (AOP) is a programming paradigm that aims to increase modularity by allowing the separation of cross-cutting concerns. It does so by adding additional behavior to existing code (an advice) without modifying the code itself, instead separately specifying which code is modified via a "pointcut" specification, such as "log all function calls when the function's name begins with 'set'". This allows behaviors that are not central to the business logic (such as logging) to be added to a program without cluttering the code, core to the functionality.
+>
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Aspect-oriented_programming)
+
+In section
+[Interpreter -> Reader Monad](#interpreter--reader-monad)
+we specified an Interpreter of a simple expression language by defining a monadic `eval` function:
+
+```haskell
+eval :: MonadReader (Env a) m => Exp a -> m a
+eval (Var x)          = asks (fetch x)
+eval (Val i)          = return i
+eval (BinOp op e1 e2) = liftM2 op (eval e1) (eval e2)
+eval (Let x e1 e2) = eval e1 >>= \v -> local ((x,v):) (eval e2)
+```
+
+Using the `Reader` Monad allows to thread an environment through all recursive calls of `eval`.
+
+A typical extension to such an interpreter would be to provide a log mechanism that allows tracing of the actual sequence of all performed evaluation steps.
+
+In Haskell the typical way to provide such a log is by means of the `Writer Monad`.
+
+But how to combine the capabilities of the `Reader` monad code with those of the `Writer` monad?
+
+The answer is: `MonadTransformer`: specialized types that allow us to stack two monads into a single one that shares the behavior of both.
+
+In order to stack the `Writer` monad on to of the `Reader` we use the transformer type `WriterT`:
+
+```haskell
+- adding a logging capability to the expression evaluator
+eval :: Show a => Exp a -> WriterT [String] (Reader (Env a)) a
+eval (Var x)          = tell ["lookup " ++ x] >> asks (fetch x)
+eval (Val i)          = tell [show i] >> return i
+eval (BinOp op e1 e2) = tell ["Op"] >> liftM2 op (eval e1) (eval e2)
+eval (Let x e1 e2)    = do
+    tell ["let " ++ x]
+    v <- eval e1
+    tell ["in"]
+local ((x,v):) (eval e2)
+```
+
+[MonadTransformers Wikibook](https://en.wikibooks.org/wiki/Haskell/Monad_transformers)
 
 [Monad Transformers step by step](https://page.mi.fu-berlin.de/scravy/realworldhaskell/materialien/monad-transformers-step-by-step.pdf)
+
+[The Essence of AspectJ](https://pdfs.semanticscholar.org/c4ce/14364d88d533fac6aa53481b719aa661ce73.pdf)
+
+to be continued...
 
 ### ? → MonadFix
 
