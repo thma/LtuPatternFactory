@@ -1,56 +1,23 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Aspects where
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Control.Monad.Writer
-
-data Exp a =
-      Var String
-    | BinOp String (BinOperator a) (Exp a) (Exp a)
-    | Let String (Exp a) (Exp a)
-    | Val a
-
-type BinOperator a =  a -> a -> a
-
-type Env a = [(String, a)]
-
-plus = BinOp "+" (+)
-mul  = BinOp "*" (*)
-divBy  = BinOp "/" (/)
-
--- environment lookup
-fetch :: String -> Env a -> a
-fetch x []        = error $ "variable " ++ x ++ " is not defined"
-fetch x ((y,v):ys)
-    | x == y    = v
-    | otherwise = fetch x ys
+import           Data.Map    (Map, fromList, assocs)
+import qualified Data.Map    as Map (lookup, insert)
+import           Interpreter hiding (eval)
 
 eval :: Show a => Exp a -> WriterT [String] (Reader (Env a)) a           
 eval (Var x)          = tell ["lookup " ++ x] >> asks (fetch x)
 eval (Val i)          = tell [show i] >> return i
-eval (BinOp n op e1 e2) = tell [n] >> liftM2 op (eval e1) (eval e2)
+eval (BinOp op e1 e2) = tell ["Op"] >> liftM2 op (eval e1) (eval e2)
 eval (Let x e1 e2)    = do 
     tell ["let " ++ x]
     v <- eval e1
     tell ["in"] 
     local ((x,v):) (eval e2)
 
-aspectsDemo :: IO ()
-aspectsDemo = do
-    putStrLn "Aspect Weaving -> Monad Transformers"
-    let exp = Let "x" 
-                (Let "y" 
-                    (plus (Val 5) (Val 7))
-                    (divBy  (Var "y") (Val 6)))
-                (mul (Var "pi") (Var "x"))
-        env = [("pi", pi)]
-    print $ runReader (runWriterT (eval exp)) env
-
-    --
-    demo (run program)
-    
-    putStrLn ""
-
----------------------------
+-- Mini Pascal --
 type Id = String 
 
 data IExp = Lit Int
@@ -85,14 +52,10 @@ program =
             ])
     ]    
 
+type Store = Map Id Int
 
-type Store = [(Id,Int)]
-
-extend :: Store -> Id -> Int -> Store
-extend s i v = (i,v):s
-
-find :: Store -> Id -> Int
-find ((k,v):xs) i = if k == i then v else find xs i
+lookup' :: Ord a => Map a b -> a -> Maybe b
+lookup' = flip Map.lookup
 
 iexp :: IExp -> State Store Int
 iexp (Lit n) = return n
@@ -100,9 +63,7 @@ iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
 iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
 iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
 iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
-iexp (IVar i)    = do
-                        s <- get
-                        return $ find s i
+iexp (IVar i)    = getVar i
 
 bexp :: BExp -> State Store Bool
 bexp T           = return True
@@ -115,7 +76,7 @@ bexp (e1 :<: e2) = liftM2 (<)  (iexp e1) (iexp e2)
 
 stmt :: Stmt -> State Store ()
 stmt Skip       = return ()
-stmt (i := e)   = do x <- iexp e; s <- get; put (extend s i x)
+stmt (i := e)   = do x <- iexp e; setVar i x
 stmt (Begin ss) = mapM_ stmt ss
 stmt (If b t e) = do 
     x <- bexp b
@@ -126,13 +87,31 @@ stmt (While b t) = loop
             x <- bexp b
             when x $ stmt t >> loop
 
+setVar :: (MonadState (Map k a) m, Ord k) => k -> a -> m ()
+setVar i x = do
+    store <- get 
+    put (Map.insert i x store)       
+
+getVar :: MonadState Store m => Id -> m Int
+getVar i = do
+    s <- get
+    case lookup' s i of
+        Nothing  -> return 0
+        (Just v) -> return v
+        
+
 run :: Stmt -> Store
-run s = execState (stmt s) []
+run s = execState (stmt s) (fromList [])
 
-
--- demo (run program)
 demo :: Store -> IO () 
-demo store = do
-    putStrLn $ "count = " ++ show (find store "count")
-    putStrLn $ "total = " ++ show (find store "total")
---    putStrLn $ "other = " ++ show (find store "other")
+demo store = print (assocs store)
+
+aspectsDemo :: IO ()
+aspectsDemo = do
+    putStrLn "Aspect Weaving -> Monad Transformers"
+    let env = [("pi", pi)]
+    print $ runReader (runWriterT (eval letExp)) env
+
+    demo (run program)
+    
+    putStrLn ""

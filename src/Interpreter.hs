@@ -36,20 +36,20 @@ eval1 (Var x)          = gets (fetch x)
 eval1 (BinOp op e1 e2) = liftM2 op (eval1 e1) (eval1 e2)
 eval1 (Let x e1 e2)    = eval1 e1 >>= \v -> modify ((x,v):) >> eval1 e2
 
+letExp = Let "x" 
+            (Let "y" 
+                (BinOp (+) (Val 5) (Val 7))
+                (BinOp (/) (Var "y") (Val 6)))
+            (BinOp (*) (Var "pi") (Var "x"))
 
 interpreterDemo :: IO ()
 interpreterDemo = do
     putStrLn "Interpreter -> Reader Monad + ADTs + pattern matching"
-    let exp = Let "x" 
-                (Let "y" 
-                    (BinOp (+) (Val 5) (Val 7))
-                    (BinOp (/) (Var "y") (Val 6)))
-                (BinOp (*) (Var "pi") (Var "x"))
-        env = [("pi", pi)]
-    print $ eval exp env
-    print $ runReader (eval exp) env
+    let env = [("pi", pi)]
+    print $ eval letExp env
+    print $ runReader (eval letExp) env
 
-    print $ runState (eval1 exp) env
+    print $ runState (eval1 letExp) env
 
     let exp1 = Let "x" (BinOp (+) (Val 4) (Val 5)) (BinOp (*) (Val 2) (Var "x"))
     print $ eval exp1 []
