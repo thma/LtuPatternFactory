@@ -17,6 +17,8 @@ import           Strategy
 import           TemplateMethod
 import           Visitor
 import           MapReduce
+import           MiniPascal
+import           AspectPascal
 
 main :: IO ()
 main = do
@@ -37,3 +39,5 @@ main = do
   interpreterDemo
   infinityDemo
   mapReduceDemo
+  miniPascalDemo
+  aspectPascalDemo

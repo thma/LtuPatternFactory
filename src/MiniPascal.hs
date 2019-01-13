@@ -1,12 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
-module Aspects where
+module MiniPascal where
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Control.Monad.Writer
-import           Data.Map    (Map, fromList, assocs)
-import qualified Data.Map    as Map (lookup, insert)
-import           Interpreter hiding (eval)
+import           Data.Map    (Map)
+import qualified Data.Map    as Map (lookup, insert, fromList, assocs)
+import           Interpreter (Exp (..), Env (..), letExp, fetch)
 
+-- adding a logging capability to the expression evaluator
 eval :: Show a => Exp a -> WriterT [String] (Reader (Env a)) a           
 eval (Var x)          = tell ["lookup " ++ x] >> asks (fetch x)
 eval (Val i)          = tell [show i] >> return i
@@ -41,6 +42,8 @@ data Stmt = Skip
     | If BExp Stmt Stmt
     | While BExp Stmt deriving (Show)
 
+-- an example program: the MiniPascal equivalent of `sum [1..10]`
+program :: Stmt
 program =
     Begin [
         "total" := Lit 0,
@@ -53,9 +56,6 @@ program =
     ]    
 
 type Store = Map Id Int
-
-lookup' :: Ord a => Map a b -> a -> Maybe b
-lookup' = flip Map.lookup
 
 iexp :: IExp -> State Store Int
 iexp (Lit n) = return n
@@ -95,19 +95,19 @@ setVar i x = do
 getVar :: MonadState Store m => Id -> m Int
 getVar i = do
     s <- get
-    case lookup' s i of
+    case Map.lookup i s of
         Nothing  -> return 0
         (Just v) -> return v
         
 
 run :: Stmt -> Store
-run s = execState (stmt s) (fromList [])
+run s = execState (stmt s) (Map.fromList [])
 
 demo :: Store -> IO () 
-demo store = print (assocs store)
+demo store = print (Map.assocs store)
 
-aspectsDemo :: IO ()
-aspectsDemo = do
+miniPascalDemo :: IO ()
+miniPascalDemo = do
     putStrLn "Aspect Weaving -> Monad Transformers"
     let env = [("pi", pi)]
     print $ runReader (runWriterT (eval letExp)) env

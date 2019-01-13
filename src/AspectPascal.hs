@@ -1,11 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
-module Aspects1 where
+module AspectPascal where
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Control.Monad.Writer
-import           Data.Map    (Map, fromList)
-import qualified Data.Map    as Map (lookup, insert)
-import           Aspects (Id, IExp (..), BExp (..), Stmt (..), Store (..), program, lookup', demo, getVar, setVar)
+import           Data.Map   (Map)
+import qualified Data.Map   as Map (lookup, insert, fromList)
+import           MiniPascal (Id, IExp (..), BExp (..), Stmt (..), Store (..)
+                            , program, demo, getVar, setVar)
 
 data JoinPointDesc = Get Id | Set Id
 
@@ -29,14 +30,15 @@ includes _ _               = False
 data Advice = Before PointCut Stmt
             | After  PointCut Stmt
 
+-- the countSets Advice traces each setting of a variable and increments the counter "setters"            
 countSets = After ((Setter :&&: (NotAt (AtVar "setters"))) :&&: (NotAt (AtVar "getters")))
                   ("setters" := (IVar "setters" :+: Lit 1))
 
+-- the countGets Advice traces each lookup of a variable and increments the counter "getters"            
 countGets = After ((Getter :&&: (NotAt (AtVar "setters"))) :&&: (NotAt (AtVar "getters")))
                   ("getters" := (IVar "getters" :+: Lit 1))
 
 type Aspects = [Advice]
-
 
 iexp :: IExp -> ReaderT Aspects (State Store) Int
 iexp (Lit n) = return n
@@ -68,6 +70,7 @@ stmt (While b t) = loop
             x <- bexp b
             when x $ stmt t >> loop
 
+withAdvice :: JoinPointDesc -> ReaderT Aspects (State Store) b -> ReaderT Aspects (State Store) b
 withAdvice d c = do
     aspects <- ask
     mapM_ stmt (before d aspects)
@@ -79,12 +82,11 @@ before, after :: JoinPointDesc -> Aspects -> [Stmt]
 before d as = [s | Before c s <- as, includes c d] 
 after  d as = [s | After  c s <- as, includes c d] 
 
-
 run :: Aspects -> Stmt -> Store
-run a s = execState (runReaderT (stmt s) a) (fromList [])
+run a s = execState (runReaderT (stmt s) a) (Map.fromList [])
 
-aspects1Demo :: IO ()
-aspects1Demo = do
+aspectPascalDemo :: IO ()
+aspectPascalDemo = do
     putStrLn "Aspect Weaving -> Monad Transformers"
     demo (run [countSets] program)
     demo (run [countGets] program)
