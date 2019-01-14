@@ -29,6 +29,12 @@ eval (Val i)          = return i
 eval (BinOp op e1 e2) = liftM2 op (eval e1) (eval e2)
 eval (Let x e1 e2)    = eval e1 >>= \v -> local ((x,v):) (eval e2)
 
+eval' :: Exp a -> Reader (Env a) a               
+eval' (Var x)          = asks (fetch x)
+eval' (Val i)          = return i
+eval' (BinOp op e1 e2) = liftM2 op (eval' e1) (eval' e2)
+eval' (Let x e1 e2)    = eval' e1 >>= \v -> local ((x,v):) (eval' e2)
+
 -- using a State Monad to thread the environment. The Environment can be accessed by get, gets, modify.
 eval1 :: (MonadState (Env a) m) => Exp a -> m a
 eval1 (Val i)          = return i

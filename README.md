@@ -933,7 +933,7 @@ In section
 we specified an Interpreter of a simple expression language by defining a monadic `eval` function:
 
 ```haskell
-eval :: MonadReader (Env a) m => Exp a -> m a
+eval :: Exp a -> Reader (Env a) a  
 eval (Var x)          = asks (fetch x)
 eval (Val i)          = return i
 eval (BinOp op e1 e2) = liftM2 op (eval e1) (eval e2)
