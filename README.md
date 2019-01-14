@@ -948,7 +948,7 @@ In Haskell the typical way to provide such a log is by means of the `Writer Mona
 
 But how to combine the capabilities of the `Reader` monad code with those of the `Writer` monad?
 
-The answer is: `MonadTransformer`: specialized types that allow us to stack two monads into a single one that shares the behavior of both.
+The answer is: `MonadTransformer`s: specialized types that allow us to stack two monads into a single one that shares the behavior of both.
 
 In order to stack the `Writer` monad on to of the `Reader` we use the transformer type `WriterT`:
 
@@ -965,11 +965,32 @@ eval (Let x e1 e2)    = do
 local ((x,v):) (eval e2)
 ```
 
+The signature of `eval` has been extended by Wrapping `WriterT [String]` around `(Reader (Env a))`. This denotes a Monad that combines a `Reader (Env a)` with a `Writer [String]`.  `Writer [String]` is a `Writer` that maintains a list of strings as log.
+
+The resulting Monad supports function of both `MonadReader` and `MonadWriter` typeclasses. As you can see in the equation for `eval (Var x)` we are using `MonadWriter.tell` for logging and `MonadReader.asks` for obtaining the environment and compose both monadic actions by `>>`:
+
+```haskell
+eval (Var x)          = tell ["lookup " ++ x] >> asks (fetch x)
+```
+
+In order to execute this stacked up monads we have to apply the `run` functions of `WriterT` and `Reader`:
+
+```haskell
+ghci> runReader (runWriterT (eval letExp)) [("pi",pi)]
+(6.283185307179586,["let x","let y","Op","5.0","7.0","in","Op","lookup y","6.0","in","Op","lookup pi","lookup x"])
+````
+
+For more details on MonadTransformers please have a look at the following pages:
+
 [MonadTransformers Wikibook](https://en.wikibooks.org/wiki/Haskell/Monad_transformers)
 
 [Monad Transformers step by step](https://page.mi.fu-berlin.de/scravy/realworldhaskell/materialien/monad-transformers-step-by-step.pdf)
 
-[The Essence of AspectJ](https://pdfs.semanticscholar.org/c4ce/14364d88d533fac6aa53481b719aa661ce73.pdf)
+What we have seen so far is that it possible to form Monad stacks that compine the functionality of the Monads involved.
+So in a way we could argue that a MonadTransformer adds capabilities that are cross-cutting those of the underlying Monad.
+
+In the following lines I want to show how MonadTransformers can be used to specify a formal semantics of Aspect Oriented Programming. I have taken the example from Mark P. Jones paper 
+[The Essence of AspectJ](https://pdfs.semanticscholar.org/c4ce/14364d88d533fac6aa53481b719aa661ce73.pdf).
 
 to be continued...
 
