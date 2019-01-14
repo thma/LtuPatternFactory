@@ -962,7 +962,7 @@ eval (Let x e1 e2)    = do
     tell ["let " ++ x]
     v <- eval e1
     tell ["in"]
-local ((x,v):) (eval e2)
+    local ((x,v):) (eval e2)
 ```
 
 The signature of `eval` has been extended by Wrapping `WriterT [String]` around `(Reader (Env a))`. This denotes a Monad that combines a `Reader (Env a)` with a `Writer [String]`.  `Writer [String]` is a `Writer` that maintains a list of strings as log.
