@@ -928,6 +928,8 @@ tbd.
 >
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Aspect-oriented_programming)
 
+### Stacking Monads
+
 In section
 [Interpreter -> Reader Monad](#interpreter--reader-monad)
 we specified an Interpreter of a simple expression language by defining a monadic `eval` function:
@@ -948,12 +950,12 @@ In Haskell the typical way to provide such a log is by means of the `Writer Mona
 
 But how to combine the capabilities of the `Reader` monad code with those of the `Writer` monad?
 
-The answer is: `MonadTransformer`s: specialized types that allow us to stack two monads into a single one that shares the behavior of both.
+The answer is `MonadTransformer`s: specialized types that allow us to stack two monads into a single one that shares the behavior of both.
 
-In order to stack the `Writer` monad on to of the `Reader` we use the transformer type `WriterT`:
+In order to stack the `Writer` monad on top of the `Reader` we use the transformer type `WriterT`:
 
 ```haskell
-- adding a logging capability to the expression evaluator
+-- adding a logging capability to the expression evaluator
 eval :: Show a => Exp a -> WriterT [String] (Reader (Env a)) a
 eval (Var x)          = tell ["lookup " ++ x] >> asks (fetch x)
 eval (Val i)          = tell [show i] >> return i
@@ -980,17 +982,129 @@ ghci> runReader (runWriterT (eval letExp)) [("pi",pi)]
 (6.283185307179586,["let x","let y","Op","5.0","7.0","in","Op","lookup y","6.0","in","Op","lookup pi","lookup x"])
 ````
 
-For more details on MonadTransformers please have a look at the following pages:
+For more details on MonadTransformers please have a look at the following tutorials:
 
 [MonadTransformers Wikibook](https://en.wikibooks.org/wiki/Haskell/Monad_transformers)
 
 [Monad Transformers step by step](https://page.mi.fu-berlin.de/scravy/realworldhaskell/materialien/monad-transformers-step-by-step.pdf)
 
-What we have seen so far is that it possible to form Monad stacks that compine the functionality of the Monads involved.
-So in a way we could argue that a MonadTransformer adds capabilities that are cross-cutting those of the underlying Monad.
+### Specifying AOP semantics with MonadTransformers
 
-In the following lines I want to show how MonadTransformers can be used to specify a formal semantics of Aspect Oriented Programming. I have taken the example from Mark P. Jones paper 
+What we have seen so far is that it possible to form Monad stacks that combine the functionality of the Monads involved: In a way a MonadTransformer adds capabilities that are cross-cutting to those of the underlying Monad.
+
+In the following lines I want to show how MonadTransformers can be used to specify the formal semantics of Aspect Oriented Programming. I have taken the example from Mark P. Jones paper
 [The Essence of AspectJ](https://pdfs.semanticscholar.org/c4ce/14364d88d533fac6aa53481b719aa661ce73.pdf).
+
+We start by defining a simple imperative language &ndash; MiniPascal:
+
+```haskell
+-- | an identifier type
+type Id = String
+
+-- | Integer expressions
+data IExp = Lit Int
+    | IExp :+: IExp
+    | IExp :*: IExp
+    | IExp :-: IExp
+    | IExp :/: IExp
+    | IVar Id deriving (Show)
+
+-- | Boolean expressions
+data BExp = T
+    | F
+    | Not BExp
+    | BExp :&: BExp
+    | BExp :|: BExp
+    | IExp :=: IExp
+    | IExp :<: IExp deriving (Show)
+
+-- | Staments
+data Stmt = Skip        -- no op
+    | Id := IExp        -- variable assignment
+    | Begin [Stmt]      -- a sequence of statements
+    | If BExp Stmt Stmt -- an if statement
+    | While BExp Stmt   -- a while loop
+    deriving (Show)
+```
+
+With this igredients its possible to write imperative programs like the following `while` loop that add the numbers from 1 to 10:
+
+```haskell
+-- an example program: the MiniPascal equivalent of `sum [1..10]`
+program :: Stmt
+program =
+    Begin [
+        "total" := Lit 0,
+        "count" := Lit 0,
+        While (IVar "count" :<: Lit 10)
+            (Begin [
+                "count" := (IVar "count" :+: Lit 1),
+                "total" := (IVar "total" :+: IVar "count")
+            ])
+    ]
+```
+
+We define the semantics of this language with an interpreter:
+
+```haskell
+-- | the store used for variable assignments
+type Store = Map Id Int
+
+-- | evaluate numeric expression.
+iexp :: IExp -> State Store Int
+iexp (Lit n) = return n
+iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
+iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
+iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
+iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
+iexp (IVar i)    = getVar i
+
+-- | evaluate logic expressions
+bexp :: BExp -> State Store Bool
+bexp T           = return True
+bexp F           = return False
+bexp (Not b)     = fmap not (bexp b)
+bexp (b1 :&: b2) = liftM2 (&&) (bexp b1) (bexp b2)
+bexp (b1 :|: b2) = liftM2 (||) (bexp b1) (bexp b2)
+bexp (e1 :=: e2) = liftM2 (==) (iexp e1) (iexp e2)
+bexp (e1 :<: e2) = liftM2 (<)  (iexp e1) (iexp e2)
+
+-- | evaluate statements
+stmt :: Stmt -> State Store ()
+stmt Skip       = return ()
+stmt (i := e)   = do x <- iexp e; setVar i x
+stmt (Begin ss) = mapM_ stmt ss
+stmt (If b t e) = do 
+    x <- bexp b
+    if x then stmt t
+         else stmt e
+stmt (While b t) = loop
+    where loop = do
+            x <- bexp b
+            when x $ stmt t >> loop
+
+-- | a variable assignments updates the store (which is maintained in the state)
+setVar :: (MonadState (Map k a) m, Ord k) => k -> a -> m ()
+setVar i x = do
+    store <- get
+    put (Map.insert i x store)
+
+-- | lookup a variable in the store. return 0 if no value is found
+getVar :: MonadState Store m => Id -> m Int
+getVar i = do
+    s <- get
+    case Map.lookup i s of
+        Nothing  -> return 0
+        (Just v) -> return v
+
+-- | evaluate a statement
+run :: Stmt -> Store
+run s = execState (stmt s) (Map.fromList [])
+
+-- and then in GHCi:
+ghci> run program
+fromList [("count",10),("total",55)]
+```
 
 to be continued...
 
