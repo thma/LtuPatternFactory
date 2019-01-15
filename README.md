@@ -1027,7 +1027,7 @@ data Stmt = Skip        -- no op
     deriving (Show)
 ```
 
-With this igredients its possible to write imperative programs like the following `while` loop that add the numbers from 1 to 10:
+With this igredients its possible to write imperative programs like the following `while` loop that sums up the natural numbers from 1 to 10:
 
 ```haskell
 -- an example program: the MiniPascal equivalent of `sum [1..10]`
@@ -1074,7 +1074,7 @@ stmt :: Stmt -> State Store ()
 stmt Skip       = return ()
 stmt (i := e)   = do x <- iexp e; setVar i x
 stmt (Begin ss) = mapM_ stmt ss
-stmt (If b t e) = do 
+stmt (If b t e) = do
     x <- bexp b
     if x then stmt t
          else stmt e
@@ -1104,6 +1104,133 @@ run s = execState (stmt s) (Map.fromList [])
 -- and then in GHCi:
 ghci> run program
 fromList [("count",10),("total",55)]
+```
+
+So far this is nothing special, just a minimal interpreter for an imerative language. Side effects in form of variable assignments are modelled with an environment that is maintained in a state monad.
+
+In the next step we want to extend this language with features of aspect oriented programming in the style of *AspectJ*: join points, point cuts, and advices.
+
+To keep things simple we will specify only two types joint points: variable assignment and variable reading:
+
+```haskell
+data JoinPointDesc = Get Id | Set Id
+```
+
+`Get i` describes a join point at which the variable `i` is read, while `Set i` described a join point at which
+a value is assigned to the variable `i`.
+
+Following AspectJ pointcut expressions are used to describe sets of join points.
+The abstract syntax for pointcuts is as follows:
+
+```haskell
+data PointCut = Setter                  -- the pointcut of all join points at which the value of a variable is being set
+              | Getter                  -- the pointcut of all join points at which the value of a variable is being read
+              | AtVar Id                -- the point cut of all join points at which the value of a the variable is being set or read
+              | NotAt PointCut          -- not a
+              | PointCut :||: PointCut  -- a or b
+              | PointCut :&&: PointCut  -- a and b
+```
+
+For example this syntax can be used to specify the pointcut of
+all join points at which the variable `x` is set:
+
+```haskell
+(Setter :&&: AtVar "x")
+```
+
+The following function computes whether a `PointCut` contains a given `JoinPoint`:
+
+```haskell
+includes :: PointCut -> (JoinPointDesc -> Bool)
+includes Setter     (Set i) = True
+includes Getter     (Get i) = True
+includes (AtVar i)  (Get j) = i == j
+includes (AtVar i)  (Set j) = i == j
+includes (NotAt p)  d       = not (includes p d)
+includes (p :||: q) d       = includes p d || includes q d
+includes (p :&&: q) d       = includes p d && includes q d
+includes _ _                = False
+```
+
+In AspectJ modifications to a program are described using a notion of advice.
+We follow the same design here: each advice includes a pointcut to specify the join points at which the
+advice should be used, and a statement, to specify
+the action that should be performed.
+
+In AspectPascal we only support two kinds of advice: `Before`, which will be executed on entry to a join point, and
+`After` which will be executed on the exit from a join point:
+
+```haskell
+data Advice = Before PointCut Stmt
+            | After  PointCut Stmt
+```
+
+This allows to define `Advice`s like the following:
+
+```haskell
+-- the countSets Advice traces each setting of a variable and increments the counter "countSet"
+countSets = After (Setter :&&: NotAt (AtVar "countSet") :&&: NotAt (AtVar "countGet"))
+                  ("countSet" := (IVar "countSet" :+: Lit 1))
+
+-- the countGets Advice traces each lookup of a variable and increments the counter "countGet"
+countGets = After (Getter :&&: NotAt (AtVar "countSet") :&&: NotAt (AtVar "countGet"))
+                  ("countGet" := (IVar "countGet" :+: Lit 1))
+```
+
+The rather laborious PointCut definition is used to select access to all variable apart from `countGet` and `countSet`.
+This is required as the action part of the `Advices` are normal MiniPascal statements that are executed by the same interpreter as the main program which is to be extended by advices. If those filters were not present execution of those advices would result in non-terminating loops.
+
+Now we just have to tweak our interpreter to handle `Advices`.
+
+```haskell
+-- | Aspects are just a list of Advices
+type Aspects = [Advice]
+
+iexp :: IExp -> ReaderT Aspects (State Store) Int
+iexp (Lit n) = return n
+iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
+iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
+iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
+iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
+iexp (IVar i)    = withAdvice (Get i) (getVar i)
+
+bexp :: BExp -> ReaderT Aspects (State Store) Bool
+bexp T           = return True
+bexp F           = return False
+bexp (Not b)     = fmap not (bexp b)
+bexp (b1 :&: b2) = liftM2 (&&) (bexp b1) (bexp b2)
+bexp (b1 :|: b2) = liftM2 (||) (bexp b1) (bexp b2)
+bexp (e1 :=: e2) = liftM2 (==) (iexp e1) (iexp e2)
+bexp (e1 :<: e2) = liftM2 (<)  (iexp e1) (iexp e2)
+
+stmt :: Stmt -> ReaderT Aspects (State Store) ()
+stmt Skip       = return ()
+stmt (i := e)   = do x <- iexp e; withAdvice (Set i) (setVar i x)
+stmt (Begin ss) = mapM_ stmt ss
+stmt (If b t e) = do
+    x <- bexp b
+    if x then stmt t
+         else stmt e
+stmt (While b t) = loop
+    where loop = do
+            x <- bexp b
+            when x $ stmt t >> loop
+
+withAdvice :: JoinPointDesc -> ReaderT Aspects (State Store) b -> ReaderT Aspects (State Store) b
+withAdvice d c = do
+    aspects <- ask
+    mapM_ stmt (before d aspects)
+    x <- c
+    mapM_ stmt (after d aspects)
+    return x
+
+before, after :: JoinPointDesc -> Aspects -> [Stmt]
+before d as = [s | Before c s <- as, includes c d]
+after  d as = [s | After  c s <- as, includes c d]
+
+run :: Aspects -> Stmt -> Store
+run a s = execState (runReaderT (stmt s) a) (Map.fromList [])
+
 ```
 
 to be continued...

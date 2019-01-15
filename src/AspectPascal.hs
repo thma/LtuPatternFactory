@@ -30,13 +30,13 @@ includes _ _               = False
 data Advice = Before PointCut Stmt
             | After  PointCut Stmt
 
--- the countSets Advice traces each setting of a variable and increments the counter "setters"            
-countSets = After ((Setter :&&: (NotAt (AtVar "setters"))) :&&: (NotAt (AtVar "getters")))
-                  ("setters" := (IVar "setters" :+: Lit 1))
+-- the countSets Advice traces each setting of a variable and increments the counter "countSet"            
+countSets = After (Setter :&&: NotAt (AtVar "countSet") :&&: NotAt (AtVar "countGet"))
+                  ("countSet" := (IVar "countSet" :+: Lit 1))
 
--- the countGets Advice traces each lookup of a variable and increments the counter "getters"            
-countGets = After ((Getter :&&: (NotAt (AtVar "setters"))) :&&: (NotAt (AtVar "getters")))
-                  ("getters" := (IVar "getters" :+: Lit 1))
+-- the countGets Advice traces each lookup of a variable and increments the counter "countGet"            
+countGets = After (Getter :&&: NotAt (AtVar "countSet") :&&: NotAt (AtVar "countGet"))
+                  ("countGet" := (IVar "countGet" :+: Lit 1))
 
 type Aspects = [Advice]
 
