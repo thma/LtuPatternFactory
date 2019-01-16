@@ -57,7 +57,7 @@ program =
 
 type Store = Map Id Int
 
-iexp :: IExp -> State Store Int
+iexp :: MonadState Store m => IExp -> m Int
 iexp (Lit n) = return n
 iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
 iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
@@ -65,7 +65,7 @@ iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
 iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
 iexp (IVar i)    = getVar i
 
-bexp :: BExp -> State Store Bool
+bexp :: MonadState Store m => BExp -> m Bool
 bexp T           = return True
 bexp F           = return False
 bexp (Not b)     = fmap not (bexp b)
@@ -74,7 +74,7 @@ bexp (b1 :|: b2) = liftM2 (||) (bexp b1) (bexp b2)
 bexp (e1 :=: e2) = liftM2 (==) (iexp e1) (iexp e2)
 bexp (e1 :<: e2) = liftM2 (<)  (iexp e1) (iexp e2)
 
-stmt :: Stmt -> State Store ()
+stmt :: MonadState Store m => Stmt -> m ()
 stmt Skip       = return ()
 stmt (i := e)   = do x <- iexp e; setVar i x
 stmt (Begin ss) = mapM_ stmt ss

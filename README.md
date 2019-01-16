@@ -1051,7 +1051,7 @@ We define the semantics of this language with an interpreter:
 type Store = Map Id Int
 
 -- | evaluate numeric expression.
-iexp :: IExp -> State Store Int
+iexp :: MonadState Store m => IExp -> m Int
 iexp (Lit n) = return n
 iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
 iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
@@ -1060,7 +1060,7 @@ iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
 iexp (IVar i)    = getVar i
 
 -- | evaluate logic expressions
-bexp :: BExp -> State Store Bool
+bexp :: MonadState Store m => BExp -> m Bool
 bexp T           = return True
 bexp F           = return False
 bexp (Not b)     = fmap not (bexp b)
@@ -1070,7 +1070,7 @@ bexp (e1 :=: e2) = liftM2 (==) (iexp e1) (iexp e2)
 bexp (e1 :<: e2) = liftM2 (<)  (iexp e1) (iexp e2)
 
 -- | evaluate statements
-stmt :: Stmt -> State Store ()
+stmt :: MonadState Store m => Stmt -> m ()
 stmt Skip       = return ()
 stmt (i := e)   = do x <- iexp e; setVar i x
 stmt (Begin ss) = mapM_ stmt ss
@@ -1106,11 +1106,11 @@ ghci> run program
 fromList [("count",10),("total",55)]
 ```
 
-So far this is nothing special, just a minimal interpreter for an imerative language. Side effects in form of variable assignments are modelled with an environment that is maintained in a state monad.
+So far this is nothing special, just a minimal interpreter for an imperative language. Side effects in form of variable assignments are modelled with an environment that is maintained in a state monad.
 
 In the next step we want to extend this language with features of aspect oriented programming in the style of *AspectJ*: join points, point cuts, and advices.
 
-To keep things simple we will specify only two types joint points: variable assignment and variable reading:
+To keep things simple we will specify only two types of joint points: variable assignment and variable reading:
 
 ```haskell
 data JoinPointDesc = Get Id | Set Id
@@ -1119,13 +1119,13 @@ data JoinPointDesc = Get Id | Set Id
 `Get i` describes a join point at which the variable `i` is read, while `Set i` described a join point at which
 a value is assigned to the variable `i`.
 
-Following AspectJ pointcut expressions are used to describe sets of join points.
+Following the concepts of ApectJ pointcut expressions are used to describe sets of join points.
 The abstract syntax for pointcuts is as follows:
 
 ```haskell
-data PointCut = Setter                  -- the pointcut of all join points at which the value of a variable is being set
-              | Getter                  -- the pointcut of all join points at which the value of a variable is being read
-              | AtVar Id                -- the point cut of all join points at which the value of a the variable is being set or read
+data PointCut = Setter                  -- the pointcut of all join points at which a variable is being set
+              | Getter                  -- the pointcut of all join points at which a variable is being read
+              | AtVar Id                -- the point cut of all join points at which a the variable is being set or read
               | NotAt PointCut          -- not a
               | PointCut :||: PointCut  -- a or b
               | PointCut :&&: PointCut  -- a and b
@@ -1152,10 +1152,9 @@ includes (p :&&: q) d       = includes p d && includes q d
 includes _ _                = False
 ```
 
-In AspectJ modifications to a program are described using a notion of advice.
+In AspectJ aspect oriented extensions to a program are described using the notion of advices.
 We follow the same design here: each advice includes a pointcut to specify the join points at which the
-advice should be used, and a statement, to specify
-the action that should be performed.
+advice should be used, and a statement to specify the action that should be performed at each matching join point.
 
 In AspectPascal we only support two kinds of advice: `Before`, which will be executed on entry to a join point, and
 `After` which will be executed on the exit from a join point:
@@ -1178,45 +1177,37 @@ countGets = After (Getter :&&: NotAt (AtVar "countSet") :&&: NotAt (AtVar "count
 ```
 
 The rather laborious PointCut definition is used to select access to all variable apart from `countGet` and `countSet`.
-This is required as the action part of the `Advices` are normal MiniPascal statements that are executed by the same interpreter as the main program which is to be extended by advices. If those filters were not present execution of those advices would result in non-terminating loops.
+This is required as the action part of the `Advices` are normal MiniPascal statements that are executed by the same interpreter as the main program which is to be extended by advices. If those filters were not present execution of those advices would result in non-terminating loops, as the action statements also access variables.
 
-Now we just have to tweak our interpreter to handle `Advices`.
+A complete AspectPascal program will now consist of a `stmt` (the original program) plus a list of `advices` that should be executed to implement the cross-cutting aspects:
 
 ```haskell
 -- | Aspects are just a list of Advices
 type Aspects = [Advice]
+```
 
-iexp :: IExp -> ReaderT Aspects (State Store) Int
-iexp (Lit n) = return n
-iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
-iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
-iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
-iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
+In order to extend our interpreter to execute additional behaviour decribed in `advices` we will have to provide all evaluating functions with access to the `Aspects`.
+As the `Aspects` will not be modified at runtime the typical solution would be to provide them by a `Reader Aspects` monad.
+We already have learnt that we can use a MonadTransformer to stack our existing `State` monad with a `Reader` monad. The respective Transformer is `ReaderT`.
+We thus extend the signature of the evaluation functions accordingly, eg:
+
+```haskell
+-- from:
+iexp :: MonadState Store m => IExp -> m Int
+
+-- to:
+iexp :: MonadState Store m => IExp -> ReaderT Aspects m Int
+```
+
+Apart from extendig the signatures we have to modify all places where variables are accessed to apply the matching advices.
+So for instance in the equation for `iexp (IVar i)` we specify that `(getVar i)` should be executed with applying all advices that match the read access to variable `i` (`Get i`) by writing:
+
+```haskell
 iexp (IVar i)    = withAdvice (Get i) (getVar i)
+```
 
-bexp :: BExp -> ReaderT Aspects (State Store) Bool
-bexp T           = return True
-bexp F           = return False
-bexp (Not b)     = fmap not (bexp b)
-bexp (b1 :&: b2) = liftM2 (&&) (bexp b1) (bexp b2)
-bexp (b1 :|: b2) = liftM2 (||) (bexp b1) (bexp b2)
-bexp (e1 :=: e2) = liftM2 (==) (iexp e1) (iexp e2)
-bexp (e1 :<: e2) = liftM2 (<)  (iexp e1) (iexp e2)
-
-stmt :: Stmt -> ReaderT Aspects (State Store) ()
-stmt Skip       = return ()
-stmt (i := e)   = do x <- iexp e; withAdvice (Set i) (setVar i x)
-stmt (Begin ss) = mapM_ stmt ss
-stmt (If b t e) = do
-    x <- bexp b
-    if x then stmt t
-         else stmt e
-stmt (While b t) = loop
-    where loop = do
-            x <- bexp b
-            when x $ stmt t >> loop
-
-withAdvice :: JoinPointDesc -> ReaderT Aspects (State Store) b -> ReaderT Aspects (State Store) b
+```haskell
+withAdvice :: MonadState Store m => JoinPointDesc -> ReaderT Aspects m a -> ReaderT Aspects m a
 withAdvice d c = do
     aspects <- ask
     mapM_ stmt (before d aspects)
@@ -1227,10 +1218,32 @@ withAdvice d c = do
 before, after :: JoinPointDesc -> Aspects -> [Stmt]
 before d as = [s | Before c s <- as, includes c d]
 after  d as = [s | After  c s <- as, includes c d]
+```
+
+```haskell
+iexp :: MonadState Store m => IExp -> ReaderT Aspects m Int
+iexp (Lit n) = return n
+iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
+iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
+iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
+iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
+iexp (IVar i)    = withAdvice (Get i) (getVar i)
+
+stmt :: MonadState Store m => Stmt -> ReaderT Aspects m ()
+stmt Skip       = return ()
+stmt (i := e)   = do x <- iexp e; withAdvice (Set i) (setVar i x)
+stmt (Begin ss) = mapM_ stmt ss
+stmt (If b t e) = do 
+    x <- bexp b
+    if x then stmt t
+         else stmt e
+stmt (While b t) = loop
+    where loop = do
+            x <- bexp b
+            when x $ stmt t >> loop
 
 run :: Aspects -> Stmt -> Store
 run a s = execState (runReaderT (stmt s) a) (Map.fromList [])
-
 ```
 
 to be continued...

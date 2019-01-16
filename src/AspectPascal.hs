@@ -40,7 +40,7 @@ countGets = After (Getter :&&: NotAt (AtVar "countSet") :&&: NotAt (AtVar "count
 
 type Aspects = [Advice]
 
-iexp :: IExp -> ReaderT Aspects (State Store) Int
+iexp :: MonadState Store m => IExp -> ReaderT Aspects m Int
 iexp (Lit n) = return n
 iexp (e1 :+: e2) = liftM2 (+) (iexp e1) (iexp e2)
 iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
@@ -48,7 +48,7 @@ iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
 iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
 iexp (IVar i)    = withAdvice (Get i) (getVar i)
 
-bexp :: BExp -> ReaderT Aspects (State Store) Bool
+bexp :: MonadState Store m => BExp -> ReaderT Aspects m Bool
 bexp T           = return True
 bexp F           = return False
 bexp (Not b)     = fmap not (bexp b)
@@ -57,7 +57,7 @@ bexp (b1 :|: b2) = liftM2 (||) (bexp b1) (bexp b2)
 bexp (e1 :=: e2) = liftM2 (==) (iexp e1) (iexp e2)
 bexp (e1 :<: e2) = liftM2 (<)  (iexp e1) (iexp e2)
 
-stmt :: Stmt -> ReaderT Aspects (State Store) ()
+stmt :: MonadState Store m => Stmt -> ReaderT Aspects m ()
 stmt Skip       = return ()
 stmt (i := e)   = do x <- iexp e; withAdvice (Set i) (setVar i x)
 stmt (Begin ss) = mapM_ stmt ss
@@ -70,17 +70,17 @@ stmt (While b t) = loop
             x <- bexp b
             when x $ stmt t >> loop
 
-withAdvice :: JoinPointDesc -> ReaderT Aspects (State Store) b -> ReaderT Aspects (State Store) b
-withAdvice d c = do
+withAdvice :: MonadState Store m => JoinPointDesc -> ReaderT Aspects m a -> ReaderT Aspects m a
+withAdvice joinPoint action = do
     aspects <- ask
-    mapM_ stmt (before d aspects)
-    x <- c
-    mapM_ stmt (after d aspects)
+    mapM_ stmt (before joinPoint aspects)
+    x <- action
+    mapM_ stmt (after joinPoint aspects)
     return x
 
 before, after :: JoinPointDesc -> Aspects -> [Stmt]
-before d as = [s | Before c s <- as, includes c d] 
-after  d as = [s | After  c s <- as, includes c d] 
+before joinPoint aspects = [s | Before pointCut s <- aspects, includes pointCut joinPoint] 
+after  joinPoint aspects = [s | After  pointCut s <- aspects, includes pointCut joinPoint] 
 
 run :: Aspects -> Stmt -> Store
 run a s = execState (runReaderT (stmt s) a) (Map.fromList [])
