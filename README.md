@@ -729,7 +729,7 @@ safeRootReciprocal = safeReciprocal >=> safeRoot
 
 The use of the [Kleisli 'fish' operator `>=>`](https://www.stackage.org/haddock/lts-13.0/base-4.12.0.0/Control-Monad.html#v:-62--61--62-)  makes it more evident that we are actually aiming at a composition of the monadic functions `safeReciprocal` and `safeRoot`.
 
-There are many predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`. But that's a different story...
+There are many predefined Monads available in the Haskell curated libraries and it's also possible to combine their effects by making use of `MonadTransformers`. But that's a [different story...](#aspect-weaving--monad-transformers)
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/NullObject.hs)
 
@@ -995,6 +995,8 @@ What we have seen so far is that it possible to form Monad stacks that combine t
 In the following lines I want to show how MonadTransformers can be used to specify the formal semantics of Aspect Oriented Programming. I have taken the example from Mark P. Jones paper
 [The Essence of AspectJ](https://pdfs.semanticscholar.org/c4ce/14364d88d533fac6aa53481b719aa661ce73.pdf).
 
+#### An interpreter for MiniPascal
+
 We start by defining a simple imperative language &ndash; MiniPascal:
 
 ```haskell
@@ -1110,6 +1112,8 @@ So far this is nothing special, just a minimal interpreter for an imperative lan
 
 In the next step we want to extend this language with features of aspect oriented programming in the style of *AspectJ*: join points, point cuts, and advices.
 
+#### An Interpreter for AspectPascal
+
 To keep things simple we will specify only two types of joint points: variable assignment and variable reading:
 
 ```haskell
@@ -1154,7 +1158,7 @@ includes _ _                = False
 
 In AspectJ aspect oriented extensions to a program are described using the notion of advices.
 We follow the same design here: each advice includes a pointcut to specify the join points at which the
-advice should be used, and a statement to specify the action that should be performed at each matching join point.
+advice should be used, and a statement (in MiniPascal syntax) to specify the action that should be performed at each matching join point.
 
 In AspectPascal we only support two kinds of advice: `Before`, which will be executed on entry to a join point, and
 `After` which will be executed on the exit from a join point:
@@ -1200,25 +1204,13 @@ iexp :: MonadState Store m => IExp -> ReaderT Aspects m Int
 ```
 
 Apart from extendig the signatures we have to modify all places where variables are accessed to apply the matching advices.
-So for instance in the equation for `iexp (IVar i)` we specify that `(getVar i)` should be executed with applying all advices that match the read access to variable `i` (`Get i`) by writing:
+So for instance in the equation for `iexp (IVar i)` we specify that `(getVar i)` should be executed with applying all advices that match the read access to variable `i` &ndash; that is `(Get i)` by writing:
 
 ```haskell
 iexp (IVar i)    = withAdvice (Get i) (getVar i)
 ```
 
-```haskell
-withAdvice :: MonadState Store m => JoinPointDesc -> ReaderT Aspects m a -> ReaderT Aspects m a
-withAdvice d c = do
-    aspects <- ask
-    mapM_ stmt (before d aspects)
-    x <- c
-    mapM_ stmt (after d aspects)
-    return x
-
-before, after :: JoinPointDesc -> Aspects -> [Stmt]
-before d as = [s | Before c s <- as, includes c d]
-after  d as = [s | After  c s <- as, includes c d]
-```
+So the complete definition of `iexp` is:
 
 ```haskell
 iexp :: MonadState Store m => IExp -> ReaderT Aspects m Int
@@ -1228,12 +1220,40 @@ iexp (e1 :*: e2) = liftM2 (*) (iexp e1) (iexp e2)
 iexp (e1 :-: e2) = liftM2 (-) (iexp e1) (iexp e2)
 iexp (e1 :/: e2) = liftM2 div (iexp e1) (iexp e2)
 iexp (IVar i)    = withAdvice (Get i) (getVar i)
+```
 
+> [...] if `c` is a computation corresponding to some join point with description `d`, then `withAdvice d c` wraps the
+execution of `c` with the execution of the appropriate Before and After advice, if any:
+
+```haskell
+withAdvice :: MonadState Store m => JoinPointDesc -> ReaderT Aspects m a -> ReaderT Aspects m a
+withAdvice d c = do
+    aspects <- ask                -- obtaining the Aspects from the Reader monad
+    mapM_ stmt (before d aspects) -- execute the statements of all Before advices
+    x <- c                        -- execute the actual business logic
+    mapM_ stmt (after d aspects)  -- execute the statements of all After advices
+    return x
+
+-- collect the statements of Before and After advices matching the join point
+before, after :: JoinPointDesc -> Aspects -> [Stmt]
+before d as = [s | Before c s <- as, includes c d]
+after  d as = [s | After  c s <- as, includes c d]
+```
+
+In the same way the equation for variable assignment `stmt (i := e)` we specify that `(setVar i x)` should be executed with applying all advices that match the write access to variable `i` &ndash; that is `(Set i)` by noting:
+
+```haskell
+stmt (i := e)   = do x <- iexp e; withAdvice (Set i) (setVar i x)
+```
+
+The complete implementation for `stmt` then looks like follows:
+
+```haskell
 stmt :: MonadState Store m => Stmt -> ReaderT Aspects m ()
 stmt Skip       = return ()
 stmt (i := e)   = do x <- iexp e; withAdvice (Set i) (setVar i x)
 stmt (Begin ss) = mapM_ stmt ss
-stmt (If b t e) = do 
+stmt (If b t e) = do
     x <- bexp b
     if x then stmt t
          else stmt e
@@ -1241,12 +1261,28 @@ stmt (While b t) = loop
     where loop = do
             x <- bexp b
             when x $ stmt t >> loop
-
-run :: Aspects -> Stmt -> Store
-run a s = execState (runReaderT (stmt s) a) (Map.fromList [])
 ```
 
-to be continued...
+Finally we have to extend `run` function to properly handle the monad stack:
+
+```haskell
+run :: Aspects -> Stmt -> Store
+run a s = execState (runReaderT (stmt s) a) (Map.fromList [])
+
+-- and then in GHCi:
+ghci> run [] program
+fromList [("count",10),("total",55)]
+
+ghci> run [countSets] program
+fromList [("count",10),("countSet",22),("total",55)]
+
+ghci> run [countSets, countGets] program
+fromList [("count",10),("countGet",41),("countSet",22),("total",55)]
+```
+
+So executing the program with an empty list of advices yields the same result as executing the program with initial interpreter. Once we execute the program with the advices `countGets` and `countSets` the resulting map contains values for the variables `countGet` and `countSet` which have been incremented by the statements of both advices.
+
+We have utilized Monad Transformers to extend our original interpreter in a minamally invasive way, to provide a formal and executable semantics for a simple aspect-oriented language in the style of AspectJ.
 
 ### ? → MonadFix
 
