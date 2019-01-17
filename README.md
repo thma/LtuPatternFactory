@@ -1233,7 +1233,7 @@ stmt :: MonadState Store m => Stmt -> ReaderT Aspects m ()
 stmt Skip       = return ()
 stmt (i := e)   = do x <- iexp e; withAdvice (Set i) (setVar i x)
 stmt (Begin ss) = mapM_ stmt ss
-stmt (If b t e) = do 
+stmt (If b t e) = do
     x <- bexp b
     if x then stmt t
          else stmt e
@@ -1727,7 +1727,14 @@ tbd.
 
 ### The Pattern behind the Patterns → Category
 
-tbd.
+> If you've ever used Unix pipes, you'll understand the importance and flexibility of composing small reusable programs to get powerful and emergent behaviors. Similarly, if you program functionally, you'll know how cool it is to compose a bunch of small reusable functions into a fully featured program.
+>
+>Category theory codifies this compositional style into a design pattern, the category.
+> [Quoted from HaskellForAll](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
+
+In most of the patterns and type classes discussed so far we have seen a common pattern: providing means to compose behaviour and structure is one of the most important tools to support building of complex software out of simpler components.
+
+to be continued
 
 ### ? → Arrow
 
