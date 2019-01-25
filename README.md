@@ -1768,7 +1768,41 @@ tbd.
 >Category theory codifies this compositional style into a design pattern, the category.
 > [Quoted from HaskellForAll](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
 
-In most of the patterns and type classes discussed so far we have seen a common pattern: providing means to compose behaviour and structure is one of the most important tools to support building of complex software out of simpler components.
+In most of the patterns and type classes discussed so far we have seen a common pattern: providing means to compose behaviour and structure is one of the most important tools to design complex software as a composition of simpler components.
+
+#### Function Composition
+
+We have seen several examples of function compositions in the course of this study. Functions can be composed by using the binary `(.)` operator:
+
+```haskell
+ghci> :type (.)
+(.) :: (b -> c) -> (a -> b) -> a -> c
+ghci> (length . words) "hello world"
+2
+```
+
+Function composition is associative `(f . g) . h = f . (g . h)`:
+
+```haskell
+ghci> (((^2) . length) . words) "hello world"
+4
+ghci> ((^2) . (length . words)) "hello world"
+4
+```
+
+And composition has neutral element `id` so that `f . id = id . f`:
+
+```haskell
+ghci> (length . id) [1,2,3]
+3
+ghci> (id . length) [1,2,3]
+3
+```
+
+
+#### Monadic Composition
+
+#### Functor Composition
 
 to be continued
 
