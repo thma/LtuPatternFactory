@@ -53,6 +53,7 @@ executable LtuPatternFactory
                      , cheapskate
                      , blaze-html
                      , parallel
+                     , comonad
 
 test-suite LtuPatternFactory-Demo
     type:             exitcode-stdio-1.0
@@ -94,4 +95,5 @@ test-suite LtuPatternFactory-Demo
                      , cheapskate
                      , blaze-html
                      , parallel
+                     , comonad
     default-language:     Haskell2010
