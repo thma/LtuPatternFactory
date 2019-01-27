@@ -1,59 +1,65 @@
-{-# LANGUAGE TypeSynonymInstances, DeriveFunctor #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, InstanceSigs #-}
 module Objects where
-import Control.Comonad
+--import Control.Comonad
+import Data.Char
 
 type Option = String
-type Builder a = [Option] -> a
 
-newtype Config = MakeConfig [Option] deriving (Show)
+newtype Config = Conf [Option] deriving (Show)
 
-configBuilder :: Builder Config
-configBuilder = MakeConfig
+configBuilder :: [Option] -> Config
+configBuilder = Conf
 
-defaultConfig :: Builder Config
-defaultConfig options = MakeConfig ("-Wall" : options)
+defaultConfig :: [Option] -> Config
+defaultConfig options = Conf ("-Wall" : options)
 
-profile :: Builder Config -> Config
+profile :: ([Option] -> Config) -> Config
 profile builder = builder ["-prof", "-auto-all"]
 
-goFaster :: Builder Config -> Config
-goFaster builder = builder ["-O2"]
+optimize :: ([Option] -> Config) -> Config
+optimize builder = builder ["-O2"]
 
---instance Functor Builder where
---    fmap = undefined
+logall :: ([Option] -> Config) -> Config
+logall builder = builder ["-logall"]
 
-{--
-instance Comonad (Builder a ) b where
-    extract = undefined
-    extend = undefined
+toUpper' :: ([Option] -> Config) -> Config
+toUpper' builder = 
+    let Conf options = builder []
+    in Conf (map (map toUpper) options)
 
---}
-extract' :: Builder a -> a
-extract' builder = builder mempty
 
-extend' :: (Builder a -> a) ->  Builder a -> Builder a
-extend' setter builder opts2 = setter (\opts1 -> builder (opts1 ++ opts2))
+class Functor w => Comonad w where
+    extract :: w a -> a
+    duplicate :: w a -> w (w a)
+    duplicate = extend id
+  
+    extend :: (w a -> b) -> w a -> w b
+    extend f = fmap f . duplicate
+
+
+instance Comonad ((->) [Option]) where
+    extract :: ([Option] -> a) -> a
+    extract builder = builder mempty
+    extend :: (([Option] -> a) -> b ) ->  ([Option] -> a) -> ([Option] -> b)
+    extend setter builder o2 = setter (\o1 -> builder (o1 ++ o2))
 
 
 (#) :: a -> (a -> b) -> b
 x # f = f x
 infixl 0 #
 
--- 
-(°) :: a -> (a -> b) -> b
-x ° f = f x
-infixl 0 °
 
-(°!) :: Comonad w => w a -> (w a -> b) -> w b
-x °! f = extend f x
-infixl 0 °!
+(#>) :: Comonad w => w a -> (w a -> b) -> w b
+x #> f = extend f x
+infixl 0 #>
 
+fluentApiDemo :: IO ()
 fluentApiDemo = do 
-    putStrLn "Objects -> Comonads"
+    putStrLn "FluentApi> Comonads"
     defaultConfig
-        °! profile 
-        °! goFaster
-        ° extract 
-        ° print
-
---}
+        #> profile 
+        #> optimize
+        #> toUpper'
+        #> logall
+        # extract 
+        # print
