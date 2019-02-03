@@ -2,6 +2,7 @@
 module Objects where
 --import Control.Comonad
 import Data.Char
+import Builder
 
 type Option = String
 
@@ -53,6 +54,12 @@ infixl 0 #
 x #> f = extend f x
 infixl 0 #>
 
+setName :: String -> BankAccount -> BankAccount
+setName name account = account {name=name}
+
+setBranch :: String -> BankAccount -> BankAccount
+setBranch branch account = account {branch=branch}
+
 fluentApiDemo :: IO ()
 fluentApiDemo = do 
     putStrLn "FluentApi> Comonads"
@@ -63,3 +70,10 @@ fluentApiDemo = do
         #> logall
         # extract 
         # print
+{--    (buildAccount 7)
+        #> \x -> setName "Test Account"
+        #> \y -> setName "Real Name"
+        #> \z -> setBranch "my bank"
+        # extract
+        # print
+--}

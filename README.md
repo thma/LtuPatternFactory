@@ -31,6 +31,7 @@ I think this kind of exposition could be helpful if you are either:
   * [Pipeline → Monad](#pipeline--monad)
   * [NullObject → Maybe Monad](#nullobject--maybe-monad)
   * [Interpreter → Reader Monad](#interpreter--reader-monad)
+  * [Command → Continuation Monad](#command--continuation-monad)
   * [? → MonadFail](#--monadfail)
   * [Aspect Weaving → Monad Transformers](#aspect-weaving--monad-transformers)
   * [? → MonadFix](#--monadfix)
@@ -918,6 +919,142 @@ eval1 (Let x e1 e2)    = eval1 e1        >>= \v ->
 This section was inspired by ideas presented in [Quick Interpreters with the Reader Monad](https://donsbot.wordpress.com/2006/12/11/quick-interpreters-with-the-reader-monad/).
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Interpreter.hs)
+
+### Command → Continuation Monad
+
+> In object-oriented programming, the command pattern is a behavioral design pattern in which an object is used to encapsulate all information needed to perform an action or trigger an event at a later time. This information includes the method name, the object that owns the method and values for the method parameters.
+>
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Command_pattern)
+
+The Wikipedia article features implementation of a simple example in several languages. I'm quoting the Java version here:
+
+```java
+import java.util.ArrayList;
+
+/** The Command interface */
+public interface Command {
+   void execute();
+}
+
+/** The Invoker class */
+public class Switch {
+   private final ArrayList<Command> history = new ArrayList<>();
+
+   public void storeAndExecute(Command cmd) {
+      this.history.add(cmd);
+      cmd.execute();
+   }
+}
+
+/** The Receiver class */
+public class Light {
+   public void turnOn() {
+      System.out.println("The light is on");
+   }
+
+   public void turnOff() {
+      System.out.println("The light is off");
+   }
+}
+
+/** The Command for turning on the light - ConcreteCommand #1 */
+public class FlipUpCommand implements Command {
+   private final Light light;
+
+   public FlipUpCommand(Light light) {
+      this.light = light;
+   }
+
+   @Override    // Command
+   public void execute() {
+      light.turnOn();
+   }
+}
+
+/** The Command for turning off the light - ConcreteCommand #2 */
+public class FlipDownCommand implements Command {
+   private final Light light;
+
+   public FlipDownCommand(Light light) {
+      this.light = light;
+   }
+
+   @Override    // Command
+   public void execute() {
+      light.turnOff();
+   }
+}
+
+/* The test class or client */
+public class PressSwitch {
+   public static void main(final String[] arguments){
+      // Check number of arguments
+      if (arguments.length != 1) {
+         System.err.println("Argument \"ON\" or \"OFF\" is required!");
+         System.exit(-1);
+      }
+
+      Light lamp = new Light();
+
+      Command switchUp = new FlipUpCommand(lamp);
+      Command switchDown = new FlipDownCommand(lamp);
+
+      Switch mySwitch = new Switch();
+
+      switch(arguments[0]) {
+         case "ON":
+            mySwitch.storeAndExecute(switchUp);
+            break;
+         case "OFF":
+            mySwitch.storeAndExecute(switchDown);
+            break;
+         default:
+            System.err.println("Argument \"ON\" or \"OFF\" is required.");
+            System.exit(-1);
+      }
+   }
+}
+```
+
+Rewriting this in Haskell is much denser:
+
+```haskell
+import           Control.Monad.Writer  -- the writer monad is used to implement the history
+
+-- The Light data type with two nullary operations to turn the light on or off 
+data Light = Light {
+      turnOn  :: String
+    , turnOff :: String
+}
+
+-- our defalt instance of a Light
+simpleLamp = Light { 
+      turnOn  = "The Light is on"
+    , turnOff = "The Light is off"
+}
+
+-- a command to flip on a Light
+flipUpCommand :: Light -> String
+flipUpCommand = turnOn
+
+-- a command to flipDown a Light
+flipDownCommand :: Light -> String
+flipDownCommand = turnOff
+
+-- execute a command and log it
+storeAndExecute :: String -> Writer[String] ()
+storeAndExecute command = do
+    let logEntry = command
+    tell [logEntry]
+  
+commandDemo :: IO ()
+commandDemo = do
+    let lamp = simpleLamp
+    print $ execWriter $
+        storeAndExecute (flipUpCommand lamp)   >>
+        storeAndExecute (flipDownCommand lamp) >>
+        storeAndExecute (flipUpCommand lamp)
+```
 
 ### ? → MonadFail
 
