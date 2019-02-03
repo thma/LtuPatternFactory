@@ -1,5 +1,8 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Command where
 import           Control.Monad.Writer
+import           Control.Monad.Cont
+import           Control.Monad.Identity
 
 data Light = Light {
       turnOn  :: IO String
@@ -21,13 +24,40 @@ storeAndExecute :: IO String -> WriterT[String] IO ()
 storeAndExecute command = do
     logEntry <- liftIO command
     tell [logEntry]
- 
+
+storeAndExecute' :: Light -> (Light -> IO String) -> WriterT[String] IO ()
+storeAndExecute' light command = do
+    logEntry <- liftIO (command light)
+    tell [logEntry]   
+
+{--   
+--storeAndExecute'' :: Light -> (Light -> IO String) -> WriterT[String] IO ()
+--storeAndExecute'' :: Light -> Cont (WriterT[String] IO ()) Light 
+--storeAndExecute'' :: MonadWriter a m => ContT () (m) String
+storeAndExecute'' light = ContT $ \command -> do
+    logEntry <- liftIO ((command light) :: IO String)
+    tell [logEntry]
+    --return ""
+--}
+
+funA :: String -> Int
+funA = length
+
+funB :: String -> Int
+funB = const 5
+
+applyCommand :: String -> (String -> Int) -> Int
+applyCommand x f = f x
+
+applyCommand' :: String -> Cont Int String
+applyCommand' x = ContT $ \f -> f x
 
 commandDemo :: IO ()
 commandDemo = do
     let lamp = simpleLamp
     result <- execWriterT $ 
-        storeAndExecute (flipUpCommand lamp)   >>
-        storeAndExecute (flipDownCommand lamp) >>
-        storeAndExecute (flipUpCommand lamp)
+        storeAndExecute' lamp flipUpCommand   >>
+        storeAndExecute' lamp flipDownCommand >>
+        storeAndExecute' lamp flipUpCommand
     putStrLn $ "switch history: " ++ show result
+    
