@@ -30,9 +30,16 @@ storeAndExecute' light command = do
     logEntry <- liftIO (command light)
     tell [logEntry]   
 
-storeAndExecute'' :: Light -> ContT (String) IO Light
+{--
+storeAndExecute'' :: Light -> (ContT String IO) Light
 storeAndExecute'' light = ContT $ \command -> do
-    liftIO (command light)
+    logEntry <- liftIO (command light)
+    tell [logEntry]  
+--}
+
+storeAndExecute''' :: Light -> ContT String IO Light
+storeAndExecute''' light = ContT $ \command -> do
+    liftIO (command light)    
 
 funA :: String -> Int
 funA = length
@@ -54,6 +61,6 @@ commandDemo = do
         storeAndExecute' lamp flipDownCommand >>
         storeAndExecute' lamp flipUpCommand
     putStrLn $ "switch history: " ++ show result
-    r <- runContT (storeAndExecute'' lamp) flipUpCommand
+    r <- runContT (storeAndExecute''' lamp) flipUpCommand
     print r
     
