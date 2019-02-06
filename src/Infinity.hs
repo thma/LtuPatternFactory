@@ -30,6 +30,18 @@ ints = from 1
 k :: a -> b -> a
 k x _ = x
 
+next n x = (x + n/x)/2
+
+-- same as iterate !
+repeatF f a = a : repeatF f (f a)
+
+within eps (a:b:rest) = 
+  if abs(a/b - 1) <= eps 
+    then b
+    else within eps (b:rest)
+
+root n eps = within eps $ iterate (next n) 1    
+
 infinityDemo :: IO ()
 infinityDemo = do
   putStrLn
@@ -39,4 +51,5 @@ infinityDemo = do
   print $ take 10 pythagoreanTriples
   print $ k "21 is just half the truth" undefined
   print $ k 42 bottom
+  print ("square root of 2: " ++ show (root 2 0.000001))
   putStrLn ""
