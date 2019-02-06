@@ -30,17 +30,18 @@ ints = from 1
 k :: a -> b -> a
 k x _ = x
 
-next n x = (x + n/x)/2
+-- a_i+1 = (a_i + n/a_i)/2
+next :: Fractional a => a -> a -> a
+next n a_i = (a_i + n/a_i)/2
 
--- same as iterate !
-repeatF f a = a : repeatF f (f a)
-
+within :: (Ord a, Fractional a) => a -> [a] -> a
 within eps (a:b:rest) = 
   if abs(a/b - 1) <= eps 
     then b
     else within eps (b:rest)
 
-root n eps = within eps $ iterate (next n) 1    
+root :: (Ord a, Fractional a) => a -> a -> a
+root n eps = within eps (iterate (next n) 1)  
 
 infinityDemo :: IO ()
 infinityDemo = do

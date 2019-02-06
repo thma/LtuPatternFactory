@@ -2961,7 +2961,67 @@ ghci> take 20 primes
 [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71]
 ```
 
-The classic paper [Why Functional Programming Matters](https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf) by John Hughes highlights higher order functions and lazy evaluation as the two most outstanding contributions of functional programming. The paper features several very instructive examples for both concepts.
+Another classic example in this area is the Newton-Raphson algorithm that approximates the square roots of a number *n* by starting from an initial value *a_0* and computing the approximation *a_i+1* as follows:
+
+> *a_i+1 = (a_i + n/a_i)/2*
+
+For *n >= 0* and *a_0 > 0* this series converges quite quickly towards the sqare root of *n*
+(See [Newton's method on Wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method) for details).
+
+The Haskell implementations makes full usage of lazy evaluation. The first step is to define a function `next` that computes *a_i+1* based on *n* and *a_i*:
+
+```haskell
+next :: Fractional a => a -> a -> a
+next n a_i = (a_i + n/a_i)/2
+```
+
+Now we use `next` to define an infinite set of approximizations:
+
+```haskell
+ghci> root_of_16 = iterate (next 16) 1
+ghci> take 10 root_of_16
+[1.0,8.5,5.1911764705882355,4.136664722546242,4.002257524798522,4.000000636692939,4.000000000000051,4.0,4.0,4.0]
+```
+
+The function `iterate` is a standard library function in Haskell. `iterate f x` returns an infinite list of repeated applications of `f` to `x`:
+
+```haskell
+iterate f x == [x, f x, f (f x), ...]
+```
+
+It is defined as:
+
+```haskell
+iterate :: (a -> a) -> a -> [a]
+iterate f x =  x : iterate f (f x)
+```
+
+As lazy evaluation is the default in Haskell it's totally safe to define infinite structures like `root_of_16` as long as we make sure that not all elements of the list are required by subsequent computations.
+
+As `root_of_16` represents a converging series of approximisations we'll have to search this list for the firt element that matches our desired precision, specified by a tolerance `eps`.
+
+We define a function `within` which takes a tolerance `eps` and a list of approximations and looks down the list for two successive approximations `a` and `b` that differ by no more than the given tolerance `eps`:
+
+```haskell
+within :: (Ord a, Fractional a) => a -> [a] -> a
+within eps (a:b:rest) =
+  if abs(a/b - 1) <= eps
+    then b
+    else within eps (b:rest)
+```
+
+The actual function `root n eps` can then be defined as:
+
+```haskell
+root :: (Ord a, Fractional a) => a -> a -> a
+root n eps = within eps (iterate (next n) 1)```
+
+-- and then in GHCI:
+ghci> root 2 0.000001
+1.414213562373095
+```
+
+This example has been taken from The classic paper [Why Functional Programming Matters](https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf). In this paper John Hughes highlights higher order functions and lazy evaluation as the two most outstanding contributions of functional programming. The paper features several very instructive examples for both concepts.
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Infinity.hs)
 
