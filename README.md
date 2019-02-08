@@ -2961,14 +2961,14 @@ ghci> take 20 primes
 [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71]
 ```
 
-Another classic example in this area is the Newton-Raphson algorithm that approximates the square roots of a number *n* by starting from an initial value *a_0* and computing the approximation *a_i+1* as follows:
+Another classic example in this area is the Newton-Raphson algorithm that approximates the square roots of a number *n* by starting from an initial value *a<sub>0</sub>* and computing the approximation *a<sub>i+1</sub>* as follows:
 
-> *a_i+1 = (a_i + n/a_i)/2*
+> *a<sub>i+1</sub> = (a<sub>i</sub> + n/a<sub>i</sub>)/2*
 
-For *n >= 0* and *a_0 > 0* this series converges quite quickly towards the sqare root of *n*
+For *n >= 0* and *a<sub>0</sub> > 0* this series converges quickly towards the square root of *n*
 (See [Newton's method on Wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method) for details).
 
-The Haskell implementations makes full usage of lazy evaluation. The first step is to define a function `next` that computes *a_i+1* based on *n* and *a_i*:
+The Haskell implementations makes full usage of lazy evaluation. The first step is to define a function `next` that computes *a<sub>i+1</sub>* based on *n* and *a<sub>i</sub>*:
 
 ```haskell
 next :: Fractional a => a -> a -> a
@@ -2998,9 +2998,9 @@ iterate f x =  x : iterate f (f x)
 
 As lazy evaluation is the default in Haskell it's totally safe to define infinite structures like `root_of_16` as long as we make sure that not all elements of the list are required by subsequent computations.
 
-As `root_of_16` represents a converging series of approximisations we'll have to search this list for the firt element that matches our desired precision, specified by a tolerance `eps`.
+As `root_of_16` represents a converging series of approximisations we'll have to search this list for the first element that matches our desired precision, specified by a maximum tolerance `eps`.
 
-We define a function `within` which takes a tolerance `eps` and a list of approximations and looks down the list for two successive approximations `a` and `b` that differ by no more than the given tolerance `eps`:
+We define a function `within` which takes the tolerance `eps` and a list of approximations and looks down the list for two successive approximations `a` and `b` that differ by no more than the given tolerance `eps`:
 
 ```haskell
 within :: (Ord a, Fractional a) => a -> [a] -> a
@@ -3021,7 +3021,7 @@ ghci> root 2 0.000001
 1.414213562373095
 ```
 
-This example has been taken from The classic paper [Why Functional Programming Matters](https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf). In this paper John Hughes highlights higher order functions and lazy evaluation as the two most outstanding contributions of functional programming. The paper features several very instructive examples for both concepts.
+This example has been taken from The classic paper [Why Functional Programming Matters](https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf). In this paper John Hughes highlights higher order functions and lazy evaluation as two outstanding contributions of functional programming. The paper features several very instructive examples for both concepts.
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Infinity.hs)
 
