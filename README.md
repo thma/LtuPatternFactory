@@ -2836,6 +2836,16 @@ tbd.
 
 ### Lazy Evaluation
 
+> In programming language theory, lazy evaluation, or call-by-need is an evaluation strategy which delays the evaluation of an expression until its value is needed (non-strict evaluation) and which also avoids repeated evaluations (sharing). The sharing can reduce the running time of certain functions by an exponential factor over other non-strict evaluation strategies, such as call-by-name.
+>
+> The benefits of lazy evaluation include:
+>
+> * The ability to define control flow (structures) as abstractions instead of primitives.
+> * The ability to define potentially infinite data structures. This allows for more straightforward implementation of some algorithms.
+>* Performance increases by avoiding needless calculations, and avoiding error conditions when evaluating compound expressions.
+> 
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Lazy_evaluation)
+
 Let's start with a short snippet from a Java program:
 
 ```java
