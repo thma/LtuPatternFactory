@@ -2961,9 +2961,9 @@ ghci> take 20 primes
 [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71]
 ```
 
-Another classic example in this area is the Newton-Raphson algorithm that approximates the square roots of a number *n* by starting from an initial value *a<sub>0</sub>* and computing the approximation *a<sub>i+1</sub>* as follows:
+Another classic example in this area is the Newton-Raphson algorithm that approximates the square roots of a number *n* by starting from an initial value *a<sub>0</sub>* and computing the approximation *a<sub>i+1</sub>* as:
 
-> *a<sub>i+1</sub> = (a<sub>i</sub> + n/a<sub>i</sub>)/2*
+*a<sub>i+1</sub> = (a<sub>i</sub> + n/a<sub>i</sub>)/2*
 
 For *n >= 0* and *a<sub>0</sub> > 0* this series converges quickly towards the square root of *n*
 (See [Newton's method on Wikipedia](https://en.wikipedia.org/wiki/Newton%27s_method) for details).
