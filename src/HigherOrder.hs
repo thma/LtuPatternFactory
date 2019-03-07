@@ -2,7 +2,6 @@ module HigherOrder where
 
 import Data.Ord
 import Data.List
-import GHC.Exts
 
 type Rect = (Double, Double)
 
@@ -41,6 +40,9 @@ totalWidth = foldr ((+) . width) 0
 totalLength :: [Rect] -> Double
 totalLength = foldr ((+) . len) 0
 
+maxLength :: [Rect] -> Double
+maxLength = maximum . map len
+
 rects :: [Rect]
 rects = [(100,60),(120,60),(80,40),(120,40)]
 
@@ -53,7 +55,9 @@ arrangeWith weightFun maxWidth rects =
 
 weightFunctions = [len,width,size,weightedLength,weightedWidth]
 
---arrangeWithAll :: [WeightFunction] -> Double -> [Rect] -> [[Rect]]   
+arrangeWithAll :: [WeightFunction] -> Double -> [Rect] -> [[Rect]]   
 arrangeWithAll allFuns maxWidth rects =
-    let allTrials = map (\f -> arrangeWith f maxWidth rects) allFuns 
-     in map (maximum . map totalLength) allTrials
+    let allTrials      = map (\f -> arrangeWith f maxWidth rects) allFuns 
+        weightedTrials = map (\l -> (l, sum (map maxLength l))) allTrials
+        sortedTrials   = sortOn snd weightedTrials
+     in fst $ head sortedTrials
