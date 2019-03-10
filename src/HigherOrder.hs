@@ -1,63 +1,65 @@
 module HigherOrder where
 
-import Data.Ord
-import Data.List
+import Prelude hiding (sum, product, foldr, map, filter)    
 
-type Rect = (Double, Double)
+type Lookup key value = key -> Maybe value
 
-len :: Rect -> Double
-len = fst
+get :: Lookup k v
+get _ = Nothing
 
-width :: Rect -> Double
-width = snd
+put :: Eq k => k -> v -> Lookup k v -> Lookup k v
+put k v lookup = 
+    \key -> if key == k 
+            then Just v 
+            else lookup key
 
-size :: Rect -> Double
-size rect = width rect * len rect
+--
+sum :: [Int] -> Int
+sum []     = 0
+sum (x:xs) = x + sum xs
 
-weightedLength :: Rect -> Double
-weightedLength (len, wid) = len^2 * wid
+product :: [Int] -> Int
+product []     = 1
+product (x:xs) = x * product xs
 
-weightedWidth :: Rect -> Double
-weightedWidth  (len, wid) = len * wid^2
+map :: (a -> b) -> [a] -> [b]
+map _ []     = []
+map f (x:xs) = f x : map f xs 
 
-arrange :: Double -> [Rect] -> [[Rect]]
-arrange _        []    = [[]]
-arrange maxWidth rects = let (rest, row) = fillRow maxWidth (rects, [])
-                          in if null rest 
-                                then [row]
-                                else row : arrange maxWidth rest
+filter :: (a -> Bool) -> [a] -> [a]
+filter _ [] = []
+filter p (x:xs) = if p x then x : filter p xs else filter p xs
 
-fillRow :: Double -> ([Rect], [Rect]) -> ([Rect], [Rect])
-fillRow _ current@([], _) = current
-fillRow maxWidth current@(x:xs, row) = 
-    if (width x) + (totalWidth row) <= maxWidth
-    then fillRow maxWidth (xs, row ++ [x])
-    else current
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr f z []     = z
+foldr f z (x:xs) = f x (foldr f z xs)
 
-totalWidth :: [Rect] -> Double
-totalWidth = foldr ((+) . width) 0
+sum' :: [Int] -> Int
+sum' = foldr (+) 0
 
-totalLength :: [Rect] -> Double
-totalLength = foldr ((+) . len) 0
+product' :: [Int] -> Int
+product' = foldr (*) 1
 
-maxLength :: [Rect] -> Double
-maxLength = maximum . map len
+map' :: (a -> b) -> [a] -> [b]
+map' f = foldr ((:) . f) []
 
-rects :: [Rect]
-rects = [(100,60),(120,60),(80,40),(120,40)]
+filter' :: (a -> Bool) -> [a] -> [a]
+filter' p = foldr (\x xs -> if p x then x : xs else xs) []
 
-type WeightFunction = Rect -> Double
+higherOrderDemo :: IO ()
+higherOrderDemo = do
+    putStrLn "higher order functions"
+    let get   = put "a" 1 (const Nothing)
+        get'  = put "b" 2 get
+        get'' = put "c" 3 get'
+    print $ get'' "a"
+    print $ get'' "b"
+    print $ get'' "c"
+    print $ get'' "d"
 
-arrangeWith :: WeightFunction -> Double-> [Rect] -> [[Rect]]
-arrangeWith weightFun maxWidth rects =
-    let preorderedRects = sortOn (Down . weightFun) rects
-     in arrange maxWidth preorderedRects
+    print $ sum' [1..10]
+    print $ product' [1..10]
+    print $ map' (*2) [1..10]
+    print $ filter' even [1..10]
 
-weightFunctions = [len,width,size,weightedLength,weightedWidth]
 
-arrangeWithAll :: [WeightFunction] -> Double -> [Rect] -> [[Rect]]   
-arrangeWithAll allFuns maxWidth rects =
-    let allTrials      = map (\f -> arrangeWith f maxWidth rects) allFuns 
-        weightedTrials = map (\l -> (l, sum (map maxLength l))) allTrials
-        sortedTrials   = sortOn snd weightedTrials
-     in fst $ head sortedTrials
