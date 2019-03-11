@@ -51,6 +51,7 @@ I think this kind of exposition could be helpful if you are either:
     * [Abstract Factory → functions as data type values](#abstract-factory--functions-as-data-type-values)
     * [Builder → record syntax, smart constructor](#builder--record-syntax-smart-constructor)
 * [Functional Programming Patterns](#functional-programming-patterns)
+  * [Higher Order Functions] (#higher-order-functions)
   * [Map Reduce](#map-reduce)
   * [Continuation Passing](#continuation-passing)
   * [Lazy Evaluation](#lazy-evaluation)
@@ -2701,6 +2702,20 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 
 The patterns presented in this section all stem from functional languages.
 That is, they have been first developed in functional languages like Scheme or Haskell and have later been adopted in other languages.
+
+### Higher Order Functions
+
+> In mathematics and computer science, a higher-order function is a function that does at least one of the following:
+>
+> * takes one or more functions as arguments (i.e. procedural parameters),
+> * returns a function as its result.
+>
+>All other functions are first-order functions. In mathematics higher-order functions are also termed operators or functionals. The differential operator in calculus is a common example since it maps a function to its derivative, also a function.
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Higher-order_function)
+
+We have already talked about higher order functions throughout this study &ndash; in particular in the section on the [Strategy Pattern](#strategy--functor). But as higher order functions are such a central pillar of the strength of functional languages I'd like to cover them in some more depths.
+
+
 
 ### Map Reduce
 
