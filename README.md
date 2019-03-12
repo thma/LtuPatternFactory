@@ -51,7 +51,7 @@ I think this kind of exposition could be helpful if you are either:
     * [Abstract Factory → functions as data type values](#abstract-factory--functions-as-data-type-values)
     * [Builder → record syntax, smart constructor](#builder--record-syntax-smart-constructor)
 * [Functional Programming Patterns](#functional-programming-patterns)
-  * [Higher Order Functions] (#higher-order-functions)
+  * [Higher Order Functions](#higher-order-functions)
   * [Map Reduce](#map-reduce)
   * [Continuation Passing](#continuation-passing)
   * [Lazy Evaluation](#lazy-evaluation)
@@ -2715,7 +2715,7 @@ That is, they have been first developed in functional languages like Scheme or H
 
 We have already talked about higher order functions throughout this study &ndash; in particular in the section on the [Strategy Pattern](#strategy--functor). But as higher order functions are such a central pillar of the strength of functional languages I'd like to cover them in some more depths.
 
-
+to be continued
 
 ### Map Reduce
 
