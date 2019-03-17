@@ -6,6 +6,7 @@ import           Builder
 import           Coerce
 import           Composite
 import           DependencyInjection
+import           HigherOrder
 import           Infinity
 import           Interpreter
 import           Iterator
@@ -41,3 +42,4 @@ main = do
   mapReduceDemo
   miniPascalDemo
   aspectPascalDemo
+  higherOrderDemo

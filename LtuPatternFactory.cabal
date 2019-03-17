@@ -37,6 +37,7 @@ executable LtuPatternFactory
                      , CMarkGFMRenderer
                      , AspectPascal
                      , MiniPascal
+                     , HigherOrder
 
   main-is:             Main.hs
   default-language:    Haskell2010
@@ -79,6 +80,7 @@ test-suite LtuPatternFactory-Demo
                     , CMarkGFMRenderer
                     , AspectPascal
                     , MiniPascal
+                    , HigherOrder
 
     hs-source-dirs: src
     main-is:        Main.hs

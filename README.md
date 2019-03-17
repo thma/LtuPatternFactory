@@ -2715,6 +2715,141 @@ That is, they have been first developed in functional languages like Scheme or H
 
 We have already talked about higher order functions throughout this study &ndash; in particular in the section on the [Strategy Pattern](#strategy--functor). But as higher order functions are such a central pillar of the strength of functional languages I'd like to cover them in some more depths.
 
+#### Higher Order Functions taking functions as arguments
+
+Let's have a look at two typical functions that work on lists; `sum` is calculating the sum of all values in a list, `product` likewise is computing the product of all values in the list:
+
+```haskell
+sum :: Num a => [a] -> a
+sum []     = 0
+sum (x:xs) = x + sum xs
+
+product :: Num a => [a] -> a
+product []     = 1
+product (x:xs) = x * product xs
+
+-- and then in GHCi:
+ghci> sum [1..10]
+55
+ghci> product [1..10]
+3628800
+```
+
+These two functions `sum` and `product` have exactly the same structure. They both apply a mathematical operation `(+)` or `(*)` on a list by handling two cases:
+
+* providing a neutral (or unit) value in the empty list `[]` case and
+* applying the mathematical operation and recursing into the tail of the list in the `(x:xs)` case.
+
+The two functions differ only in the concrete value for the empty list `[]` and the concrete mathematical operation to be applied in the `(x:xs)` case.
+
+In order to avoid repetetive code when writing functions that work on lists, wise functional programmers have invented `fold` functions:
+
+```haskell
+foldr :: (a -> b -> b) -> b -> [a] -> b
+foldr fn z []     = z
+foldr fn z (x:xs) = fn x y
+    where y = foldr fn z xs
+```
+
+This *higher order function* takes a function `fn` of type `(a -> b -> b)`, a value `z` for the `[]` case and the actual list as parameters.
+
+* in the `[]` the value `z` is returned
+* in the `(x:xs)` case the  function `fn` is applied to `x` and `y`, where `y` is computed by recursively applying `foldr fn z` on the tail of the list `xs`.
+
+We can use `foldr` to define functions like `sum` and `product` much more terse:
+
+```haskell
+sum' :: Num a => [a] -> a
+sum' = foldr (+) 0
+
+product' :: Num a => [a] -> a
+product' = foldr (*) 1
+```
+
+`foldr` can also be used to define *higher order functions* on lists like `map` and `filter` much denser than with the naive approach of writing pattern matching equations for `[]` and `(x:xs)`:
+
+```haskell
+-- naive approach:
+map :: (a -> b) -> [a] -> [b]
+map _ []     = []
+map f (x:xs) = f x : map f xs
+
+filter :: (a -> Bool) -> [a] -> [a]
+filter _ []     = []
+filter p (x:xs) = if p x then x : filter p xs else filter p xs
+
+-- wise functional programmers approach:
+map' :: (a -> b) -> [a] -> [b]
+map' f = foldr ((:) . f) []
+
+filter' :: (a -> Bool) -> [a] -> [a]
+filter' p = foldr (\x xs -> if p x then x : xs else xs) []
+
+-- and then in GHCi:
+ghci> map (*2) [1..10]
+[2,4,6,8,10,12,14,16,18,20]
+ghci> filter even [1..10]
+[2,4,6,8,10]
+```
+
+The idea to use `fold` operations to provide a generic mechanism to iterate over lists can be extented to cover other algebraic data types as well. Let's take a binary tree as an example:
+
+```haskell
+data Tree a = Leaf
+            | Node a (Tree a) (Tree a)
+
+sumTree :: Num a => Tree a -> a
+sumTree Leaf = 0
+sumTree (Node x l r) = x + sumTree l + sumTree r
+
+productTree :: Num a => Tree a -> a
+productTree Leaf = 1
+productTree (Node x l r) = x * sumTree l * sumTree r
+
+-- and then in GHCi:
+> sumTree tree
+9
+*HigherOrder> productTree tree
+24
+```
+
+The higher order `foldTree` operation takes a function `fn` of type `(a -> b -> b)`, a value `z` for the `Leaf` case and the actual `Tree a` as parameters:
+
+```haskell
+foldTree :: (a -> b -> b) -> b -> Tree a -> b
+foldTree fn z Leaf = z
+foldTree fn z (Node a left right) = foldTree fn z' left where
+   z'  = fn a z''
+   z'' = foldTree fn z right
+```
+
+The sum and product functions can now elegantly defined by making use of `foldTree`:
+
+```haskell
+sumTree' = foldTree (+) 0
+
+productTree' = foldTree (*) 1
+```
+
+As the family of `fold` operation can be usefully applied for many data types the GHC compiler even provides a special pragma that allows automatic provisioning of this functionality by declaring the data type as an instance of the type class `Foldable`:
+
+```haskell
+{-# LANGUAGE DeriveFoldable #-}
+
+data Tree a = Leaf
+            | Node a (Tree a) (Tree a) deriving (Foldable)
+
+-- and then in GHCi:
+> foldr (+) 0 tree
+9
+```
+
+Apart from several `fold` operations the `Foldable` type class also provides useful functions like `maximum` and `minimum`: [Foldable documentation on hackage](https://hackage.haskell.org/package/base-4.12.0.0/docs/Prelude.html#t:Foldable)
+
+In this section we have seen how higher order functions that take functions as parameters can be very useful tools to provide generic algorithmic templates that can be applied in a wide range of computational contexts.
+
+#### Higher Order Functions returning functions
+
 to be continued
 
 ### Map Reduce
