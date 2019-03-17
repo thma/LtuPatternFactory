@@ -2753,7 +2753,7 @@ foldr fn z (x:xs) = fn x y
 
 This *higher order function* takes a function `fn` of type `(a -> b -> b)`, a value `z` for the `[]` case and the actual list as parameters.
 
-* in the `[]` the value `z` is returned
+* in the `[]` case the value `z` is returned
 * in the `(x:xs)` case the  function `fn` is applied to `x` and `y`, where `y` is computed by recursively applying `foldr fn z` on the tail of the list `xs`.
 
 We can use `foldr` to define functions like `sum` and `product` much more terse:
@@ -2792,7 +2792,7 @@ ghci> filter even [1..10]
 [2,4,6,8,10]
 ```
 
-The idea to use `fold` operations to provide a generic mechanism to iterate over lists can be extented to cover other algebraic data types as well. Let's take a binary tree as an example:
+The idea to use `fold` operations to provide a generic mechanism to fold lists can be extented to cover other algebraic data types as well. Let's take a binary tree as an example:
 
 ```haskell
 data Tree a = Leaf
@@ -2807,9 +2807,9 @@ productTree Leaf = 1
 productTree (Node x l r) = x * sumTree l * sumTree r
 
 -- and then in GHCi:
-> sumTree tree
+ghci> sumTree tree
 9
-*HigherOrder> productTree tree
+ghci> productTree tree
 24
 ```
 
@@ -2823,7 +2823,7 @@ foldTree fn z (Node a left right) = foldTree fn z' left where
    z'' = foldTree fn z right
 ```
 
-The sum and product functions can now elegantly defined by making use of `foldTree`:
+The sum and product functions can now elegantly be defined by making use of `foldTree`:
 
 ```haskell
 sumTree' = foldTree (+) 0
@@ -2831,7 +2831,7 @@ sumTree' = foldTree (+) 0
 productTree' = foldTree (*) 1
 ```
 
-As the family of `fold` operation can be usefully applied for many data types the GHC compiler even provides a special pragma that allows automatic provisioning of this functionality by declaring the data type as an instance of the type class `Foldable`:
+As the family of `fold` operation is useful for many data types the GHC compiler even provides a special pragma that allows automatic provisioning of this functionality by declaring the data type as an instance of the type class `Foldable`:
 
 ```haskell
 {-# LANGUAGE DeriveFoldable #-}
@@ -2846,7 +2846,7 @@ data Tree a = Leaf
 
 Apart from several `fold` operations the `Foldable` type class also provides useful functions like `maximum` and `minimum`: [Foldable documentation on hackage](https://hackage.haskell.org/package/base-4.12.0.0/docs/Prelude.html#t:Foldable)
 
-In this section we have seen how higher order functions that take functions as parameters can be very useful tools to provide generic algorithmic templates that can be applied in a wide range of computational contexts.
+In this section we have seen how higher order functions that take functions as parameters can be very useful tools to provide generic algorithmic templates that can be applied in a wide range of situations.
 
 #### Higher Order Functions returning functions
 
