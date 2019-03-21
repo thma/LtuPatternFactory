@@ -56,6 +56,7 @@ I think this kind of exposition could be helpful if you are either:
   * [Continuation Passing](#continuation-passing)
   * [Lazy Evaluation](#lazy-evaluation)
   * [Functional Reactive Programming](#functional-reactive-programming)
+  * [Reflection](#reflection)
 * [Conclusions](#conclusions)
 * [Some related links](#some-interesting-links)
 
@@ -2850,7 +2851,22 @@ In this section we have seen how higher order functions that take functions as p
 
 #### Higher Order Functions returning functions
 
+```haskell
+type Lookup key value = key -> Maybe value
+
+get :: Lookup k v
+get _ = Nothing
+
+put :: Eq k => k -> v -> Lookup k v -> Lookup k v
+put k v lookup =
+    \key -> if key == k
+            then Just v
+            else lookup key
+```
+
 to be continued
+
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/HigherOrder.hs)
 
 ### Map Reduce
 
@@ -3186,6 +3202,8 @@ This example has been taken from The classic paper [Why Functional Programming M
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Infinity.hs)
 
 ### Functional Reactive Programming
+
+### Reflection
 
 tbd.
 
