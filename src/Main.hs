@@ -20,6 +20,7 @@ import           Visitor
 import           MapReduce
 import           MiniPascal
 import           AspectPascal
+import           Reflection
 
 main :: IO ()
 main = do
@@ -35,7 +36,7 @@ main = do
   nullObjectDemo
   iteratorDemo
   abstractFactoryDemo
-  jsonPersistenceDemo
+  reflectionDemo
   demoDI
   interpreterDemo
   infinityDemo

@@ -38,6 +38,7 @@ executable LtuPatternFactory
                      , AspectPascal
                      , MiniPascal
                      , HigherOrder
+                     , Reflection
 
   main-is:             Main.hs
   default-language:    Haskell2010
@@ -81,6 +82,7 @@ test-suite LtuPatternFactory-Demo
                     , AspectPascal
                     , MiniPascal
                     , HigherOrder
+                    , Reflection
 
     hs-source-dirs: src
     main-is:        Main.hs
