@@ -3203,9 +3203,21 @@ This example has been taken from The classic paper [Why Functional Programming M
 
 ### Functional Reactive Programming
 
+tbd.
+
 ### Reflection
 
-tbd.
+> In computer science, reflection is the ability of a computer program to examine, introspect, and modify its own structure and behavior at runtime.
+>
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Reflection_(computer_programming))
+
+Reflection is one of those programming language features that were introduced first in Lisp but became popular in many mainstream programming languages as it proved to be very useful in writing generic frameworks for persistence, serialization etc.
+
+I'll demonstrate this with simple persistence library.
+
+
+
+to be continued
 
 ## Conclusions
 
