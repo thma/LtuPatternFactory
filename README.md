@@ -2851,20 +2851,87 @@ In this section we have seen how higher order functions that take functions as p
 
 #### Higher Order Functions returning functions
 
+Functions returning new functions are ubiqituous in functional programming as well.
+If we look at a simple binary arithmetic functions like `(+)` or `(*)` it would be quite natural to think that they have a type signature like follows:
+
 ```haskell
+(+) :: Num => (a, a) -> a
+```
+
+But by inspecting the signature in GHCi (with `:t (+)`) we see that the actual signature is
+
+```haskell
+(+) :: Num a => a -> a -> a
+```
+
+This is because in Haskell all functions are considered curried: That is, all functions in Haskell take just one argument. The curried form is usually more convenient because it allows [partial application](https://github.com/thma/LtuPatternFactory#dependency-injection--parameter-binding-partial-application). It allows us to create new functions by applying the original function to a subset of the formal parameters:
+
+```haskell
+ghci> double = (*) 2
+ghci> :t double
+double :: Num a => a -> a
+ghci> double 7
+14
+```
+
+So even if we read a signature like `Int -> Int -> Int` informally as "takes two `Int`s and returns an `Int`", It actually should be understood as `Int -> (Int -> Int)` which really says "takes an `Int` and returns a function of type `Int -> Int`".
+
+Apart from this implicit occurrence of "functions returning functions" there are also more explicit use cases of this pattern. I'll illustrate this with a simple generator for key/value mapping functions.
+
+We start by defing a function type `Lookup` that can be used to define functions mapping keys to values:
+
+```haskell
+-- | Lookup is a function type from a key to a Maybe value:
 type Lookup key value = key -> Maybe value
 
-get :: Lookup k v
-get _ = Nothing
+-- | a lookup function that always returns Nothing
+nada :: Lookup k v
+nada _ = Nothing
 
+-- | a function that knows it's abc...
+abc :: Num v => Lookup String v
+abc "a" = Just 1
+abc "b" = Just 2
+abc "c" = Just 3
+abc _   = Nothing
+```
+
+Now we write a `Lookup` function generator `put` that adds a new key to value mapping to an existing lookup function:
+
+```haskell
+-- | put returns a new Lookup function based on a key, a value and an existing lookup function:
 put :: Eq k => k -> v -> Lookup k v -> Lookup k v
 put k v lookup =
     \key -> if key == k
             then Just v
             else lookup key
+
+-- and then in GHCi:
+ghci> get = put "a" 1 nada
+
+ghci> :t get
+get :: Num v => Lookup String v
+
+ghci> get "a"
+Just 1
+
+ghci> get "b"
+Nothing
 ```
 
-to be continued
+We can now use `put` to stack more key value mappings onto the `get` function:
+
+```haskell
+ghci> get' = put "b" 2 get
+ghci> get' "a"
+Just 1
+ghci> get' "b"
+Just 2
+ghci> get' "c"
+Nothing
+```
+
+A framework for symbolic derivation of functions in calculus would be another possible application of this approach, but as it involves several more advanced features (like Template Haskell and tagged types) I won't cover it here but just point the fearless reader directly to the sourcecode: [A symbolic differentiator for a subset of Haskell functions](http://hackage.haskell.org/package/liboleg-2010.1.10.0/docs/src/Data-Symbolic-Diff.html)
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/HigherOrder.hs)
 

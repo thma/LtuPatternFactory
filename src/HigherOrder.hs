@@ -5,8 +5,15 @@ import Prelude hiding (sum, product, map, filter)
 
 type Lookup key value = key -> Maybe value
 
-get :: Lookup k v
-get _ = Nothing
+nada :: Lookup k v
+nada _ = Nothing
+
+abc :: Num v => Lookup String v
+abc "a" = Just 1
+abc "b" = Just 2
+abc "c" = Just 3
+abc _   = Nothing
+
 
 put :: Eq k => k -> v -> Lookup k v -> Lookup k v
 put k v lookup = 
