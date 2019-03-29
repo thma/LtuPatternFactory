@@ -69,16 +69,7 @@ For each of the Typeclassopedia type classes I try to explain how it corresponds
 
 As a reference map I have included the following chart that depicts the Relationships between type classes covered in the Typeclassopedia:
 
-<!--
 ![The Haskell type classes covered by the Typeclassopedia](https://wiki.haskell.org/wikiupload/c/c7/Typeclassopedia-diagram.svg)
--->
-
-<img src="https://wiki.haskell.org/wikiupload/c/c7/Typeclassopedia-diagram.svg" usemap="#image-map">
-
-<map name="image-map">
-    <area target="" alt="Comonad" title="Comonad" href="#--comonad" coords="100,148,3,101" shape="rect">
-    <area target="" alt="Functor" title="Functor" href="#strategy--functor" coords="179,55,97,7" shape="rect">
-</map>
 
 * Solid arrows point from the general to the specific; that is, if there is an arrow from Foo to Bar it means that every Bar is (or should be, or can be made into) a Foo.
 * Dotted lines indicate some other sort of relationship.
