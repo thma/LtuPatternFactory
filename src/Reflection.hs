@@ -1,16 +1,11 @@
-{-# LANGUAGE DeriveAnyClass        #-}
-{-# LANGUAGE DeriveGeneric         #-}
 module Reflection where
-
-import           JsonPersistence (Id, Entity, getId, persist, retrieve)
-import           Data.Aeson   (FromJSON, ToJSON)
-import           GHC.Generics (Generic)
+import           SimplePersistence (Id, Entity, getId, persist, retrieve)
 
 data User = User {
       userId :: Id
     , name   :: String
     , email  :: String
-} deriving (Show, Generic, ToJSON, FromJSON)
+} deriving (Show, Read)
 
 instance Entity User where
     getId = userId
@@ -19,7 +14,7 @@ data Post = Post {
       postId  :: Id
     , userRef :: Id
     , text    :: String
-} deriving (Show, Generic, ToJSON, FromJSON)
+} deriving (Show, Read)
 
 instance Entity Post where
     getId = postId
