@@ -17,7 +17,7 @@ instance Entity User where
 
 data Post = Post {
       postId  :: Id
-    , userRef :: String
+    , userRef :: Id
     , text    :: String
 } deriving (Show, Generic, ToJSON, FromJSON)
 

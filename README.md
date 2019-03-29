@@ -3278,11 +3278,78 @@ tbd.
 >
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Reflection_(computer_programming))
 
-Reflection is one of those programming language features that were introduced first in Lisp but became popular in many mainstream programming languages as it proved to be very useful in writing generic frameworks for persistence, serialization etc.
+Reflection is one of those programming language features that were introduced first in Lisp based environments but became popular in many mainstream programming languages as it proved to be very useful in writing generic frameworks for persistence, serialization etc.
 
-I'll demonstrate this with simple persistence library.
+I'll demonstrate this with simple persistence library. This library is kept as simple as possible. We just define a new type class `Entity a` with two actions `persist` and `retrieve` with bot have a generic default implementation used for writing an entity to a file or reading it back from a file.
+The type class also features a function `getId` which returns a unique identifier for a given entity, which must be implemented by all concrete types deriving `Entity`.
 
+```haskell
+-- import json marshalling libra
+import Data.Aeson (FromJSON, ToJSON, eitherDecodeFileStrict, encodeFile, toJSON)
 
+-- | Identifier for an Entity
+type Id = String
+
+-- | The Entity type class provides generic persistence to JSON files
+class (ToJSON a, FromJSON a) => Entity a where
+
+    -- | return the unique Id of the entity. This function must be implemented by type class instances.
+    getId :: a -> Id
+
+    -- | persist an entity of type a and identified by an Id to a json file
+    persist :: a -> IO ()
+    persist entity = do
+        -- compute file path based on entity id
+        let jsonFileName = getPath (getId entity)
+        -- serialize entity as JSON and write to file
+        encodeFile jsonFileName entity
+
+    -- | load persistent entity of type a and identified by an Id
+    retrieve :: Id -> IO a
+    retrieve id = do
+        -- compute file path based on entity id
+        let jsonFileName = getPath id
+        -- parse entity from JSON file
+        eitherEntity <- eitherDecodeFileStrict jsonFileName
+        case eitherEntity of
+            Left msg -> fail msg
+            Right e  -> return e
+
+-- | compute path of data file
+getPath :: String -> String
+getPath id = ".stack-work/" ++  "." ++ id ++ ".json"
+```
+
+A typical usage of this library would look like follows:
+
+```haskell
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+
+import           JsonPersistence (Id, Entity, getId, persist, retrieve)
+import           Data.Aeson   (FromJSON, ToJSON)
+import           GHC.Generics (Generic)
+
+data User = User {
+      userId :: Id
+    , name   :: String
+    , email  :: String
+} deriving (Show, Generic, ToJSON, FromJSON)
+
+instance Entity User where
+    getId = userId
+
+reflectionDemo = do
+    let user = User "1" "Heinz Meier" "hm@meier.com"
+    persist user
+    user' <- retrieve "1" :: IO User
+    print user'
+```
+
+So all a user of our library has to to is to.
+
+1. let the data type derive the `ToJSON` and `FromJSON` type classes (which is done complete declaratively here by means of the `Generic` type class).
+2. let the data type derive from `Entity` by providing an implementation for `getId`.
 
 to be continued
 
