@@ -1,5 +1,5 @@
 module Reflection where
-import           SimplePersistence (Id, Entity, getId, persist, retrieve)
+import SimplePersistence (Id, Entity, getId, persist, retrieve)
 
 data User = User {
       userId :: Id
