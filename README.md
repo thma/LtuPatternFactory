@@ -3291,18 +3291,17 @@ module SimplePersistence
     , persist
     , retrieve
     ) where
-import           Text.Read
 
 -- | Identifier for an Entity
 type Id = String
 
--- | The Entity type class provides generic persistence to JSON files
+-- | The Entity type class provides generic persistence to text files
 class (Show a, Read a) => Entity a where
 
     -- | return the unique Id of the entity. This function must be implemented by type class instances.
     getId :: a -> Id
 
-    -- | persist an entity of type a and identified by an Id to a json file
+    -- | persist an entity of type a and identified by an Id to a text file
     persist :: a -> IO ()
     persist entity = do
         -- compute file path based on entity id
@@ -3318,13 +3317,10 @@ class (Show a, Read a) => Entity a where
         -- read file content into string
         contentString <- readFile fileName
         -- parse entity from string
-        let eitherEntity = readEither contentString
-        case eitherEntity of
-            Left msg -> fail msg
-            Right e  -> return e
+        return (read contentString)
 
 -- | compute path of data file
-getPath :: String -> String
+getPath :: String -> FilePath
 getPath id = ".stack-work/" ++ id ++ ".txt"
 ```
 
@@ -3355,7 +3351,58 @@ So all a user has to do in order to use our library is:
 2. let the data type derive from `Entity` by providing an implementation for `getId`.
 3. use `persist` and `retrieve` to write and read entities to/from file.
 
-to be continued
+As we can see from the function signatures for `persist` and `retrieve` both functions have no information about the concrete type they are being used on:
+
+```haskell
+persist  :: Entity a => a  -> IO ()
+retrieve :: Entity a => Id -> IO a
+```
+
+As a consequence the generic implementation of both function in the Entity type class also have no direct access to the concrete type of the processed entities. (They simply delegate to other generic functions like `read` and `show`.)
+
+So how can we access the concrete type of a processed entity? Imagine we'd like to store our entities into files that bear the type name as part of the file name, e.g. `User.7411.txt`
+
+The answer is of course: reflection. Here is what we have to add to our library to extend `persist` according to our new requirements:
+
+```haskell
+{-# LANGUAGE ScopedTypeVariables   #-}
+import           Data.Typeable
+
+class (Show a, Read a, Typeable a) => Entity a where
+
+    -- | persist an entity of type a and identified by an Id to a file
+    persist :: a -> IO ()
+    persist entity = do
+        -- compute file path based on entity type and id
+        let fileName = getPath (typeOf entity) (getId entity)
+        -- serialize entity as JSON and write to file
+        writeFile fileName (show entity)
+
+-- | compute path of data file, this time with the type name as part of the file name
+getPath :: TypeRep -> String -> FilePath
+getPath tr id = ".stack-work/" ++ show tr ++ "." ++ id ++ ".txt"
+```
+
+We have to add a new constrained `Typeable a` to our definition of `Entity`. This allows to use reflective code on our entity types. In our case we simply compute a type representation `TypeRep` by calling `typeOf entity` which we then use in `getPath` to add the type name to the file path.  
+
+The definition of `retrieve` is a bit more tricky as we don't yet have an entity available yet when computing the file path. So we have to apply a small trick to compute the correct type representation:
+
+```haskell
+    retrieve :: Id -> IO a
+    retrieve id = do
+        -- compute file path based on entity type and id
+        let fileName = getPath (typeOf (undefined :: a)) id
+        -- read file content into string
+        contentString <- readFile fileName
+        -- parse entity from string
+        return (read contentString)
+```
+
+The compiler will be able to deduce the correct type of `a` in the expression `(undefined :: a)` as the concrete return type of `retrieve` must be specified at the call site, as in example `user' <- retrieve "1" :: IO User`
+
+Of course this was only a teaser of what is possible with generic reflective programming. The fearless reader is invited to study the [source code of the aeson library](https://github.com/bos/aeson) for a deep dive.
+
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Reflection.hs)
 
 ## Conclusions
 

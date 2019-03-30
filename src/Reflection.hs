@@ -1,11 +1,16 @@
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
 module Reflection where
+import           Data.Aeson   (FromJSON, ToJSON)
+import           GHC.Generics
+--import JsonPersistence -- use this to use JSON serialization/deserialization
 import SimplePersistence (Id, Entity, getId, persist, retrieve)
 
 data User = User {
       userId :: Id
     , name   :: String
     , email  :: String
-} deriving (Show, Read)
+} deriving (Show, Read, Generic, ToJSON, FromJSON)
 
 instance Entity User where
     getId = userId
@@ -14,7 +19,7 @@ data Post = Post {
       postId  :: Id
     , userRef :: Id
     , text    :: String
-} deriving (Show, Read)
+} deriving (Show, Read, Generic, ToJSON, FromJSON)
 
 instance Entity Post where
     getId = postId
