@@ -1840,7 +1840,22 @@ instance Category (->) where
 
 #### Monadic Composition
 
-In the section on the [Maybe Monad](#avoiding-partial-functions-by-using-maybe) we have seen that monadic operations can be chained with the Kleisli operator `>=>`.
+In the section on the [Maybe Monad](#avoiding-partial-functions-by-using-maybe) we have seen that monadic operations can be chained with the Kleisli operator `>=>`:
+
+```haskell
+safeRoot           :: Double -> Maybe Double
+safeRoot x
+    | x >= 0    = Just (sqrt x)
+    | otherwise = Nothing
+
+safeReciprocal     :: Double -> Maybe Double
+safeReciprocal x
+    | x /= 0    = Just (1/x)
+    | otherwise = Nothing
+
+safeRootReciprocal :: Double -> Maybe Double
+safeRootReciprocal = safeReciprocal >=> safeRoot
+```
 
 The operator `<=<` just flips the arguments of `>=>` and thus provides right-to-left composition.
 When we compare the signature of `<=<` with the signature of `.` we notice the similarity of both concepts:
@@ -1849,6 +1864,19 @@ When we compare the signature of `<=<` with the signature of `.` we notice the s
 (.)   ::            (b ->   c) -> (a ->   b) -> a ->   c
 (<=<) :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
 ```
+
+The essential diffenerce is that `<=<` maintains a monadic structure when producing its result.
+
+Next we compare signatures of `id` and its monadic counterpart `return`:
+
+```haskell
+id     ::              (a ->   a)
+return :: (Monad m) => (a -> m a)
+```
+
+here again `return` always produces a monadic structure.
+
+So the category for Monads can simply defined as:
 
 ```haskell
 -- | Kleisli arrows of a monad.
