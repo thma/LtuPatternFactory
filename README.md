@@ -1776,11 +1776,13 @@ In most of the patterns and type classes discussed so far we have seen a common 
 
 #### Function Composition
 
-We have seen several examples of function compositions in the course of this study. Functions can be composed by using the binary `(.)` operator:
+Function composition is a powerful and elegant tool to compose complex functionality out of simpler building blocks. We have seen several examples of it in the course of this study.
+Functions can be composed by using the binary `(.)` operator:
 
 ```haskell
 ghci> :type (.)
 (.) :: (b -> c) -> (a -> b) -> a -> c
+(f . g) x = f (g x)
 ghci> (length . words) "hello world"
 2
 ```
@@ -1794,7 +1796,7 @@ ghci> ((^2) . (length . words)) "hello world"
 4
 ```
 
-And composition has neutral element `id` so that `f . id = id . f`:
+And composition has a neutral (or identity) element `id` so that `f . id = id . f`:
 
 ```haskell
 ghci> (length . id) [1,2,3]
@@ -1803,6 +1805,38 @@ ghci> (id . length) [1,2,3]
 3
 ```
 
+The definitions of `(.)` and `id` plus the laws of associativity and identity match exactly the definition of a category:
+
+> In mathematics, a category [...] is a collection of "objects" that are linked by "arrows". A category has two basic properties: the ability to compose the arrows associatively and the existence of an identity arrow for each object.
+>
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Category_(mathematics))
+
+In Haskell a category is defined as as a type class:
+
+```haskell
+class Category cat where
+    -- | the identity morphism
+    id :: cat a a
+
+    -- | morphism composition
+    (.) :: cat b c -> cat a b -> cat a c
+```
+
+Instances of this type class must satisfy the category laws:
+
+```haskell
+f  . id      =  f            -- (right identity)
+id . f       =  f            -- (left identity)
+f . (g . h)  =  (f . g) . h  -- (associativity)
+```
+
+As function composition fulfills the category laws it can be formally defined as an instance of the category type class:
+
+```haskell
+instance Category (->) where
+    id  = GHC.Base.id
+    (.) = (GHC.Base..)
+```
 
 #### Monadic Composition
 
