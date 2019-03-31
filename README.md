@@ -1822,7 +1822,7 @@ class Category cat where
     (.) :: cat b c -> cat a b -> cat a c
 ```
 
-Instances of this type class must satisfy the category laws:
+Instances of this type class should satisfy that `(.)` and `id` form a Monoid, that is `id` should be the identity of `(.)` and `(.)` should be associative:
 
 ```haskell
 f  . id      =  f            -- (right identity)
@@ -1839,6 +1839,25 @@ instance Category (->) where
 ```
 
 #### Monadic Composition
+
+In the section on the [Maybe Monad](#avoiding-partial-functions-by-using-maybe) we have seen that monadic operations can be chained with the Kleisli operator `>=>`.
+
+The operator `<=<` just flips the arguments of `>=>` and thus provides right-to-left composition.
+When we compare the signature of `<=<` with the signature of `.` we notice the similarity of both concepts:
+
+```haskell
+(.)   ::            (b ->   c) -> (a ->   b) -> a ->   c
+(<=<) :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
+```
+
+```haskell
+-- | Kleisli arrows of a monad.
+newtype Kleisli m a b = Kleisli { runKleisli :: a -> m b }
+
+instance Monad m => Category (Kleisli m) where
+    id = Kleisli return
+    (Kleisli f) . (Kleisli g) = Kleisli (f <=< g)
+```
 
 #### Functor Composition
 
