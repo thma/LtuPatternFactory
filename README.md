@@ -1822,7 +1822,9 @@ class Category cat where
     (.) :: cat b c -> cat a b -> cat a c
 ```
 
-Instances of this type class should satisfy that `(.)` and `id` form a Monoid, that is `id` should be the identity of `(.)` and `(.)` should be associative:
+> Please note: The name `Category` may be a bit misleading, since this type class cannot represent arbitrary categories, but only categories whose objects are objects of [`Hask`, the category of Haskell types](https://wiki.haskell.org/Hask).
+
+Instances of `Category` should satisfy that `(.)` and `id` form a Monoid &ndash; that is `id` should be the identity of `(.)` and `(.)` should be associative:
 
 ```haskell
 f  . id      =  f            -- (right identity)
@@ -1830,7 +1832,7 @@ id . f       =  f            -- (left identity)
 f . (g . h)  =  (f . g) . h  -- (associativity)
 ```
 
-As function composition fulfills the category laws it can be formally defined as an instance of the category type class:
+As function composition fulfills these category laws the function type constructor `(->)` can be defined as an instance of the category type class:
 
 ```haskell
 instance Category (->) where
