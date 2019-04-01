@@ -1776,15 +1776,25 @@ In most of the patterns and type classes discussed so far we have seen a common 
 
 #### Function Composition
 
-Function composition is a powerful and elegant tool to compose complex functionality out of simpler building blocks. We have seen several examples of it in the course of this study.
+Function composition is a powerful and elegant tool to compose complex functionality out of simpler building blocks. We already have seen several examples of it in the course of this study.
 Functions can be composed by using the binary `(.)` operator:
 
 ```haskell
 ghci> :type (.)
 (.) :: (b -> c) -> (a -> b) -> a -> c
+```
+
+It is defined as:
+
+```haskell
 (f . g) x = f (g x)
-ghci> (length . words) "hello world"
-2
+```
+
+This operator can be used to combine simple functions to awesome one-liners (and of course much more useful stuff):
+
+```haskell
+ghci> product . filter odd . map length . words . reverse $ "function composition is awesome"
+77
 ```
 
 Function composition is associative `(f . g) . h = f . (g . h)`:
