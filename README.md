@@ -300,9 +300,14 @@ As we can see, The two functors `[]` and `Context` can be composed and this comp
 
 #### conclusion
 
-Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy pattern &ndash; namely the injecting of a function into a computational context and its execution in this context &ndash; the usage of higher order functions is of course not limited to `Functors` &ndash; we could use just any higher order function fitting our purpose.
+Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy 
+pattern &ndash; namely the injecting of a function into a computational context and its execution in this context &ndash; 
+the usage of higher order functions is of course not limited to `Functors` &ndash; we could use just any [higher order function](#higher-order-functions) 
+fitting our purpose.
 
-Other type classes like `Foldable` or `Traversable` (which is a `Foldable Functor`) can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context.
+
+
+Other type classes like [`Foldable`](#visitor--foldable) or [`Traversable`](#iterator--traversable) (which is a `Foldable Functor`) can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context.
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
 
@@ -1772,7 +1777,9 @@ tbd.
 >Category theory codifies this compositional style into a design pattern, the category.
 > [Quoted from HaskellForAll](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
 
-In most of the patterns and type classes discussed so far we have seen a common pattern: providing means to compose behaviour and structure is one of the most important tools to design complex software as a composition of simpler components.
+In most of the patterns and type classes discussed so far we have seen a common theme: providing means to 
+compose behaviour and structure is one of the most important tools to design complex software by combining 
+simpler components.
 
 #### Function Composition
 
