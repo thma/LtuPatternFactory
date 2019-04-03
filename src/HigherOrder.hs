@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 module HigherOrder where
 
-import Prelude hiding (sum, product, map, filter, foldr)
+import Prelude hiding (sum, product, map, filter)
 import Data.List (unfoldr)
 
 type Lookup key value = key -> Maybe value
@@ -76,7 +76,7 @@ foldTree f z (Node a left right) = foldTree f z' left where
 sumTree' = foldTree (+) 0
 productTree' = foldTree (*) 1
 
-fact = foldr (*) 1 . unfoldr (\n -> if n ==0 then Nothing else Just (n, n-1))
+fact = Prelude.foldr (*) 1 . unfoldr (\n -> if n ==0 then Nothing else Just (n, n-1))
 
 
 higherOrderDemo :: IO ()
@@ -102,9 +102,10 @@ higherOrderDemo = do
 
     print $ productTree tree
     print $ productTree' tree
-    print $ foldr (*) 1 tree
+    print $ Prelude.foldr (*) 1 tree
 
     print $ unfoldr (\n -> if n==0 then Nothing else Just (n, n-1)) 10
+    print $ fact 10
 
 
 
