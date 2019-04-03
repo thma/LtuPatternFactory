@@ -104,6 +104,7 @@ higherOrderDemo = do
     print $ productTree' tree
     print $ Prelude.foldr (*) 1 tree
 
+
     print $ unfoldr (\n -> if n==0 then Nothing else Just (n, n-1)) 10
     print $ fact 10
 
