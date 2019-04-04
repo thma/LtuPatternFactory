@@ -2949,6 +2949,37 @@ Apart from several `fold` operations the `Foldable` type class also provides use
 
 In this section we have seen how higher order functions that take functions as parameters can be very useful tools to provide generic algorithmic templates that can be applied in a wide range of situations.
 
+##### Origami programming style
+
+Mathematicians love symmetry. So it comes with littly surprise that the Haskell standard library `Data.List` comes with a dual to `foldr`: the higher order function `unfoldr`.
+`foldr` allows to project a list of values to a single value. `unfoldr` allows to create a list of values starting from an initial value:
+
+```haskell
+unfoldr :: (b -> Maybe (a, b)) -> b -> [a]
+unfoldr f u = case f u of
+    Nothing     -> []
+    Just (x, v) -> x:(unfoldr f v)
+```
+
+This mechanism can be used to generate finite and infinite lists:
+
+```haskell
+ghci> print $ unfoldr (\n -> if n==0 then Nothing else Just (n, n-1)) 10
+[10,9,8,7,6,5,4,3,2,1]
+
+ghci> fibs = unfoldr (\(a, b) -> Just (a, (b, a+b))) (0, 1)
+ghci> print $ take 20 fibs
+[0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181]
+```
+
+`foldr` and `unfoldr` can be combined in quite interesting ways. To warm up we define the factorial function with our new favourite tools:
+
+```haskell
+factorial = foldr (*) 1 . unfoldr (\n -> if n ==0 then Nothing else Just (n, n-1))
+```
+
+to be continued.
+
 #### Higher Order Functions returning functions
 
 Functions returning new functions are ubiqituous in functional programming as well.

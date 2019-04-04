@@ -2,7 +2,7 @@
 module HigherOrder where
 
 import Prelude hiding (sum, product, map, filter)
-import Data.List (unfoldr)
+--import Data.List (unfoldr)
 
 type Lookup key value = key -> Maybe value
 
@@ -76,7 +76,26 @@ foldTree f z (Node a left right) = foldTree f z' left where
 sumTree' = foldTree (+) 0
 productTree' = foldTree (*) 1
 
+
+unfoldr :: (b -> Maybe (a, b)) -> b -> [a]
+unfoldr f u = case f u of
+    Nothing     -> []
+    Just (x, v) -> x:(unfoldr f v)
+
+
 fact = Prelude.foldr (*) 1 . unfoldr (\n -> if n ==0 then Nothing else Just (n, n-1))
+
+fibs = unfoldr (\(a, b) -> Just (a, (b, a + b))) (0, 1)
+
+bubble :: Ord a => [a] -> Maybe (a, [a])
+bubble = Prelude.foldr step Nothing where
+    step x Nothing = Just (x, [])
+    step x (Just (y, ys))
+        | x < y     = Just (x, y:ys)
+        | otherwise = Just (y, x:ys)
+
+bubbleSort :: Ord a => [a] -> [a]
+bubbleSort = unfoldr bubble
 
 
 higherOrderDemo :: IO ()
@@ -107,6 +126,8 @@ higherOrderDemo = do
 
     print $ unfoldr (\n -> if n==0 then Nothing else Just (n, n-1)) 10
     print $ fact 10
+    print $ take 20 fibs
+    print $ bubbleSort [34,13,0,144,1,4181,2,2584,1,377,55,233,3,987,89,610,1597,21,5,8]
 
 
 
