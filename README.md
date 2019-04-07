@@ -2952,7 +2952,7 @@ In this section we have seen how higher order functions that take functions as p
 ##### Origami programming style
 
 Mathematicians love symmetry. So it comes with littly surprise that the Haskell standard library `Data.List` provides a dual to `foldr`: the higher order function `unfoldr`.
-`foldr` allows to project a list of values to a single value. `unfoldr` allows to create a list of values starting from an initial value:
+The function `foldr` allows to project a list of values on a single value. `unfoldr` allows to create a list of values starting from an initial value:
 
 ```haskell
 unfoldr :: (b -> Maybe (a, b)) -> b -> [a]
@@ -3004,7 +3004,7 @@ One interesting properties of hylomorphisms is that they may be fused &ndash; th
 
 Compressing data and uncompressing it later may be understood as a sequence of first folding and then unfolding. Algorithms that apply this pattern have been coined [*metamorphism*](https://patternsinfp.wordpress.com/2017/10/04/metamorphisms/).
 
-The programming style that uses combinations of higher order functions like fold and unfold operations on algebraic data structure has been dubbed [*Origami Programming*](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/origami.pdf)after the Japanese art form based on paper folds.
+The programming style that uses combinations of higher order functions like fold and unfold operations on algebraic data structure has been dubbed [*Origami Programming*](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/origami.pdf) after the Japanese art form based on paper folds.
 
 #### Higher Order Functions returning functions
 
