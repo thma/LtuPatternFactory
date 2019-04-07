@@ -1884,6 +1884,13 @@ When we compare the signature of `<=<` with the signature of `.` we notice the s
 (<=<) :: Monad m => (b -> m c) -> (a -> m b) -> a -> m c
 ```
 
+Even the implementation of `<=<` is quite similar to the definition of `.`
+
+```haskell
+(f  .  g) x = f     (g x)
+(f <=< g) x = f =<< (g x)
+```
+
 The essential diffenerce is that `<=<` maintains a monadic structure when producing its result.
 
 Next we compare signatures of `id` and its monadic counterpart `return`:
@@ -1893,9 +1900,9 @@ id     ::              (a ->   a)
 return :: (Monad m) => (a -> m a)
 ```
 
-here again `return` always produces a monadic structure.
+Here again `return` always produces a monadic structure.
 
-So the category for Monads can simply defined as:
+So the category for Monads can simply be defined as:
 
 ```haskell
 -- | Kleisli arrows of a monad.
@@ -1906,7 +1913,27 @@ instance Monad m => Category (Kleisli m) where
     (Kleisli f) . (Kleisli g) = Kleisli (f <=< g)
 ```
 
-#### Functor Composition
+So if monadic actions form a category we expect that the law of identity and associativity hold:
+
+```haskell
+return <=< f    = f                -- left  identity
+
+f <=< return    = f                -- right identity
+
+(f <=< g) <=< h = f <=< (g <=< h)  -- associativity
+```
+
+Let's try to prove it by applying some equational reasoning.
+First we take the definition of `<=<`: `(f <=< g) x = f =<< (g x)`
+to expand the above equations:
+
+```haskell
+return =<< (f x)            = (f x)
+
+f =<< (return x)            = f x
+
+(\y -> f =<< (g y)) =<< h x = f =<< (g =<< (h x))
+```
 
 to be continued
 
