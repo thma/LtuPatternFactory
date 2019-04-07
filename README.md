@@ -2951,7 +2951,7 @@ In this section we have seen how higher order functions that take functions as p
 
 ##### Origami programming style
 
-Mathematicians love symmetry. So it comes with littly surprise that the Haskell standard library `Data.List` comes with a dual to `foldr`: the higher order function `unfoldr`.
+Mathematicians love symmetry. So it comes with littly surprise that the Haskell standard library `Data.List` provides a dual to `foldr`: the higher order function `unfoldr`.
 `foldr` allows to project a list of values to a single value. `unfoldr` allows to create a list of values starting from an initial value:
 
 ```haskell
@@ -2964,21 +2964,47 @@ unfoldr f u = case f u of
 This mechanism can be used to generate finite and infinite lists:
 
 ```haskell
+-- a list [10..0]
 ghci> print $ unfoldr (\n -> if n==0 then Nothing else Just (n, n-1)) 10
 [10,9,8,7,6,5,4,3,2,1]
 
+-- the list of all fibonacci numbers
 ghci> fibs = unfoldr (\(a, b) -> Just (a, (b, a+b))) (0, 1)
 ghci> print $ take 20 fibs
 [0,1,1,2,3,5,8,13,21,34,55,89,144,233,377,610,987,1597,2584,4181]
 ```
 
-`foldr` and `unfoldr` can be combined in quite interesting ways. To warm up we define the factorial function with our new favourite tools:
+`unfoldr` can also be used to formulate algorithms like bubble sort in quite a dense form:
+
+```haskell
+-- bubble out the minimum element of a list:
+bubble :: Ord a => [a] -> Maybe (a, [a])
+bubble = foldr step Nothing where
+    step x Nothing = Just (x, [])
+    step x (Just (y, ys))
+        | x < y     = Just (x, y:ys)
+        | otherwise = Just (y, x:ys)
+
+-- compute minimum, cons it with the minimum of the remaining list and so forth
+bubbleSort :: Ord a => [a] -> [a]
+bubbleSort = unfoldr bubble
+```
+
+Unfolds produce data structures, and folds consume them. It is thus quite natural to compose these two operations.  The pattern of an unfold followed by a fold (called [*hylomorphism*](https://en.wikipedia.org/wiki/Hylomorphism_(computer_science)) is fairly common. As a simple example we define the factorial function with our new tools:
 
 ```haskell
 factorial = foldr (*) 1 . unfoldr (\n -> if n ==0 then Nothing else Just (n, n-1))
 ```
 
-to be continued.
+The `unfold` part generates a list of integers `[1..n]` and the `foldr` part reduces this list by computing the product `[1..n]`.
+
+But hylomorphisms are not limited to ivory tower examples: a typical compiler that takes some source code as input to generate an abstract syntax tree (unfolding) from which it then generates the object code of the target platform (folding) is quite a practical example of the same concept.
+
+One interesting properties of hylomorphisms is that they may be fused &ndash; the intermediate data structure needs not actually be constructed. This technique is called *deforestation* and can be done automatically by a compiler.
+
+Compressing data and uncompressing it later may be understood as a sequence of first folding and then unfolding. Algorithms that apply this pattern have been coined [*metamorphism*](https://patternsinfp.wordpress.com/2017/10/04/metamorphisms/).
+
+The programming style that uses combinations of higher order functions like fold and unfold operations on algebraic data structure has been dubbed [*Origami Programming*](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/origami.pdf)after the Japanese art form based on paper folds.
 
 #### Higher Order Functions returning functions
 
