@@ -1916,7 +1916,7 @@ instance Monad m => Category (Kleisli m) where
 So if monadic actions form a category we expect that the law of identity and associativity hold:
 
 ```haskell
-return <=< f    = f                -- left  identity
+return <=< f    = f                -- left identity
 
 f <=< return    = f                -- right identity
 
@@ -1928,11 +1928,29 @@ First we take the definition of `<=<`: `(f <=< g) x = f =<< (g x)`
 to expand the above equations:
 
 ```haskell
-return =<< (f x)            = (f x)
+-- 1. left identity
+return <=< f     = f    -- left identity (to be proven)
+(return <=< f) x = f x  -- eta expand
+return =<< (f x) = f x  -- expand <=< by above definition
+return =<< f     = f    -- eta reduce
+f >>= return     = f    -- replace =<< with >>= and flip arguments
 
-f =<< (return x)            = f x
 
-(\y -> f =<< (g y)) =<< h x = f =<< (g =<< (h x))
+-- 2 right identity
+f <=< return     = f    -- right identity (to be proven)
+(f <=< return) x = f x  -- eta expand
+f =<< (return x) = f x  -- expand <=< by above definition
+return x >>= f   = f x  -- replace =<< with >>= and flip arguments
+
+-- 3. associativity
+(f <=< g) <=< h = f <=< (g <=< h)  -- associativity (to be proven)
+((f <=< g) <=< h) x = (f <=< (g <=< h)) x -- eta expand
+(f <=< g) =<< (h x) = f =<< ((g <=< h) x) -- expand outer <=< on both sides
+(\y -> (f <=< g) y) =<< h x = f =<< ((g <=< h) x) -- eta expand on left hand side
+(\y -> f =<< (g y)) =<< h x = f =<< ((g <=< h) x) -- expand inner <=< on the lhs
+(\y -> f =<< (g y)) =<< h x = f =<< (g =<< (h x)) -- expand inner <=< on the rhs
+
+h x >>= (\y -> f =<< (g y)) = (g =<< (h x)) >>= f
 ```
 
 to be continued
@@ -2293,7 +2311,7 @@ data Light = Light {
     , turnOff :: IO String
 }
 
--- our defalt instance of a Light
+-- our default instance of a Light
 simpleLamp = Light { 
       turnOn  = putStrLn "The Light is on"  >> return "on"
     , turnOff = putStrLn "The Light is off" >> return "off"
