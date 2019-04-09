@@ -1943,15 +1943,48 @@ f =<< (return x) = f x  -- expand <=< by above definition
 return x >>= f   = f x  -- replace =<< with >>= and flip arguments
 
 -- 3. associativity
-(f <=< g) <=< h = f <=< (g <=< h)  -- associativity (to be proven)
-((f <=< g) <=< h) x = (f <=< (g <=< h)) x -- eta expand
-(f <=< g) =<< (h x) = f =<< ((g <=< h) x) -- expand outer <=< on both sides
+(f <=< g) <=< h             = f <=< (g <=< h)  -- associativity (to be proven)
+((f <=< g) <=< h) x         = (f <=< (g <=< h)) x -- eta expand
+(f <=< g) =<< (h x)         = f =<< ((g <=< h) x) -- expand outer <=< on both sides
 (\y -> (f <=< g) y) =<< h x = f =<< ((g <=< h) x) -- eta expand on left hand side
 (\y -> f =<< (g y)) =<< h x = f =<< ((g <=< h) x) -- expand inner <=< on the lhs
 (\y -> f =<< (g y)) =<< h x = f =<< (g =<< (h x)) -- expand inner <=< on the rhs
-
-h x >>= (\y -> f =<< (g y)) = (g =<< (h x)) >>= f
+h x >>= (\y -> f =<< (g y)) = f =<< (g =<< (h x)) -- replace outer =<< with >>= and flip arguments on lhs
+h x >>= (\y -> g y >>= f)   = f =<< (g =<< (h x)) -- replace inner =<< with >>= and flip arguments on lhs
+h x >>= (\y -> g y >>= f)   = (g =<< (h x)) >>= f -- replace outer =<< with >>= and flip arguments on rhs
+h x >>= (\y -> g y >>= f)   = ((h x) >>= g) >>= f -- replace inner =<< with >>= and flip arguments on rhs
+h >>= (\y -> g y >>= f)     = (h >>= g) >>= f     -- eta reduce
 ```
+
+So we have transformed our three formulas to the following form:
+
+```haskell
+-- 1. left identity
+f >>= return = f
+
+-- 2. right identity
+return x >>= f = f x
+
+-- 3. associativity
+h >>= (\y -> g y >>= f) = (h >>= g) >>= f
+```
+
+This is equivalent to the [Monad Laws](https://wiki.haskell.org/Monad_laws), which all Monad instances are required to satisfy:
+
+```haskell
+return a >>= k  =  k a
+
+m >>= return    =  m
+
+m >>= (\x -> k x >>= h)  =  (m >>= k) >>= h
+```
+
+So any Monad that fulfils the Monad laws also forms a Category.
+
+> If you have ever wondered where those monad laws came from, now you know! They are just the category laws in disguise.
+> Consequently, every new Monad we define gives us a category for free!
+> 
+> [The Category Design Pattern](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
 
 to be continued
 
