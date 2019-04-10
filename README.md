@@ -1777,8 +1777,8 @@ tbd.
 >Category theory codifies this compositional style into a design pattern, the category.
 > [Quoted from HaskellForAll](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
 
-In most of the patterns and type classes discussed so far we have seen a common theme: providing means to 
-compose behaviour and structure is one of the most important tools to design complex software by combining 
+In most of the patterns and type classes discussed so far we have seen a common theme: providing means to
+compose behaviour and structure is one of the most important tools to design complex software by combining
 simpler components.
 
 #### Function Composition
@@ -1959,34 +1959,40 @@ h >>= (\y -> g y >>= f)     = (h >>= g) >>= f     -- eta reduce
 So we have transformed our three formulas to the following form:
 
 ```haskell
--- 1. left identity
-f >>= return = f
+f >>= return   = f
 
--- 2. right identity
 return x >>= f = f x
 
--- 3. associativity
-h >>= (\y -> g y >>= f) = (h >>= g) >>= f
+h >>= (\y -> g y >>= f)  =  (h >>= g) >>= f
 ```
 
-This is equivalent to the [Monad Laws](https://wiki.haskell.org/Monad_laws), which all Monad instances are required to satisfy:
+These three equations are equivalent to the [Monad Laws](https://wiki.haskell.org/Monad_laws), which all Monad instances are required to satisfy:
 
 ```haskell
-return a >>= k  =  k a
-
 m >>= return    =  m
+
+return a >>= k  =  k a
 
 m >>= (\x -> k x >>= h)  =  (m >>= k) >>= h
 ```
 
-So any Monad that fulfils the Monad laws also forms a Category.
+So by virtue of this equivalence any Monad that satisfies the Monad laws automatically satisfies the Category laws.
 
 > If you have ever wondered where those monad laws came from, now you know! They are just the category laws in disguise.
 > Consequently, every new Monad we define gives us a category for free!
-> 
-> [The Category Design Pattern](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
+>  
+> Quoted from [The Category Design Pattern](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
 
-to be continued
+#### Conclusion
+
+> Category theory codifies [the] compositional style into a design pattern, the category. Moreover, category theory gives us a precise
+> prescription for how to create our own abstractions that follow this design pattern: the category laws. These laws differentiate category
+> theory from other design patterns by providing rigorous criteria for what does and does not qualify as compositional.
+>
+> One could easily dismiss this compositional ideal as just that: an ideal, something unsuitable for "real-world" scenarios. However, the
+> theory behind category theory provides the meat that shows that this compositional ideal appears everywhere and can rise to the challenge of > messy problems and complex business logic.
+>
+> Quoted from [The Category Design Pattern](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
 
 ### ? → Arrow
 
