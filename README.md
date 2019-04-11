@@ -2004,7 +2004,13 @@ tbd.
 
 ### Fluent Api → Comonad
 
-tbd.
+> In software engineering, a fluent interface [...] is a method for designing object oriented APIs based extensively on method chaining with the goal of making the readability of the source code close to that of ordinary written prose, essentially creating a domain-specific language within the interface.
+>
+> [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Fluent_interface)
+
+
+
+to be continued
 
 ## Beyond type class patterns
 
