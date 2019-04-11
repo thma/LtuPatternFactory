@@ -15,12 +15,6 @@ I think this kind of exposition could be helpful if you are either:
 
 >This project is work in progress, so please feel free to contact me with any corrections, adjustments, comments, suggestions and additional ideas you might have.
 > Please use the [Issue Tracker](https://github.com/thma/LtuPatternFactory/issues) to enter your requests.
->
->Directions I'd like to cover in more depths are for instance:
->
-> * complete coverage of the GOF set of patterns
-> * coverage of category theory based patterns (any ideas are welcome!)
-> * coverage of patterns stemming from FP like MapReduce, Lazy Evaluation, Continuation Passing, Functional Reactive Programming, etc.
 
 ## Table of contents
 
@@ -31,17 +25,17 @@ I think this kind of exposition could be helpful if you are either:
   * [Pipeline → Monad](#pipeline--monad)
   * [NullObject → Maybe Monad](#nullobject--maybe-monad)
   * [Interpreter → Reader Monad](#interpreter--reader-monad)
-  * [? → MonadFail](#--monadfail)
+  <!--  * [? → MonadFail](#--monadfail)-->
   * [Aspect Weaving → Monad Transformers](#aspect-weaving--monad-transformers)
-  * [? → MonadFix](#--monadfix)
+  <!--* [? → MonadFix](#--monadfix) -->
   * [Composite → SemiGroup → Monoid](#composite--semigroup--monoid)
-  * [? → Alternative, MonadPlus, ArrowPlus](--alternative-monadplus-arrowplus)
+  <!--* [? → Alternative, MonadPlus, ArrowPlus](--alternative-monadplus-arrowplus) -->
   * [Visitor → Foldable](#visitor--foldable)
   * [Iterator → Traversable](#iterator--traversable)
-  * [? → Bifunctor](#--bifunctor)
+  <!-- * [? → Bifunctor](#--bifunctor) -->
   * [The Pattern behind the Patterns → Category](#the-pattern-behind-the-patterns--category)
-  * [? → Arrow](#--arrow)
-  * [? → Comonad](#--comonad)
+  <!--* [? → Arrow](#--arrow) -->
+  * [Fluent Api → Comonad](#fluent-api--comonad)
 * [Beyond type class patterns](#beyond-type-class-patterns)
   * [Dependency Injection → Parameter Binding](#dependency-injection--parameter-binding-partial-application)
   * [Command → Functions as First Class Citizens](#command--functions-as-first-class-citizens)
@@ -927,9 +921,11 @@ This section was inspired by ideas presented in [Quick Interpreters with the Rea
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Interpreter.hs)
 
+<!-- 
 ### ? → MonadFail
 
 tbd.
+-->
 
 ### Aspect Weaving → Monad Transformers
 
@@ -1293,9 +1289,11 @@ So executing the program with an empty list of advices yields the same result as
 
 We have utilized Monad Transformers to extend our original interpreter in a minamally invasive way, to provide a formal and executable semantics for a simple aspect-oriented language in the style of AspectJ.
 
+<!-- 
 ### ? → MonadFix
 
 tbd.
+-->
 
 ### Composite → SemiGroup → Monoid
 
@@ -1502,7 +1500,9 @@ For more details on Composite as a Monoid please refer to the following blog:
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Composite.hs)
 
+<!-- 
 ### ? → Alternative, MonadPlus, ArrowPlus
+-->
 
 ### Visitor → Foldable
 
@@ -1766,9 +1766,11 @@ This example has been implemented according to ideas presented in the paper
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
 
+<!-- 
 ### ? → Bifunctor
 
 tbd.
+-->
 
 ### The Pattern behind the Patterns → Category
 
@@ -1994,11 +1996,15 @@ So by virtue of this equivalence any Monad that satisfies the Monad laws automat
 >
 > Quoted from [The Category Design Pattern](http://www.haskellforall.com/2012/08/the-category-design-pattern.html)
 
+<!-- 
 ### ? → Arrow
 
 tbd.
+-->
 
-### ? → Comonad
+### Fluent Api → Comonad
+
+tbd.
 
 ## Beyond type class patterns
 
