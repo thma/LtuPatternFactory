@@ -2008,9 +2008,54 @@ tbd.
 >
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Fluent_interface)
 
+The [Builder Pattern](#builder--record-syntax-smart-constructor) is a typical example for a fluent API. The following short Java snippet show the essential elements:
 
+* creating a builder instance
+* invoking a sequence of mutators on the builder instance
+* finally calling `build()` to let the Builder create an object
 
-to be continued
+```java
+ConfigBuilder builder = new ConfigBuilder();
+Config config = builder
+        .withProfiling()        // Add profiling
+        .withOptimization()     // Add optimization
+        .build();
+}
+```
+
+The interesting point is that all the `with...` methods are not implemented as `void` method but instead all return the Builder instance, which thus allows to fluently chain the next `with...` call.
+
+Let's try to recreate this fluent chaining of calls in a builder in Haskell.
+We start with a configuration type `Config` that represents a set of option strings:
+
+```haskell
+type Options = [String]
+
+newtype Config = Conf Options deriving (Show)
+```
+
+Next we define a function `configBuilder` which takes a set of options as input and returns a `Config` instance:
+
+```haskell
+configBuilder :: Options -> Config
+configBuilder options = Conf options
+
+-- and then in GHCi:
+> configBuilder ["-O2", "-prof"]
+Conf ["-O2","-prof"]
+```
+
+This function is just a synonym for the `Conf` constructor. So we can use it to create a `Config` instance from a list of options. But it does not provide any means to fluently chain option setters like:
+
+```haskell
+withProfiling :: (Options -> Config) -> Config
+withProfiling builder = builder ["-prof", "-auto-all"]
+
+withOptimization :: (Options -> Config) -> Config
+withOptimization builder = builder ["-O2"]
+```
+
+This section is based on examples from [You could have invented Comonads](http://www.haskellforall.com/2013/02/you-could-have-invented-comonads.html)
 
 ## Beyond type class patterns
 

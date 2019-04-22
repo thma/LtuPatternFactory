@@ -1,4 +1,4 @@
-module Main where
+  module Main where
 
 import           AbstractFactory
 import           Adapter
@@ -21,6 +21,7 @@ import           MapReduce
 import           MiniPascal
 import           AspectPascal
 import           Reflection
+import           FluentApi
 
 main :: IO ()
 main = do
@@ -44,3 +45,4 @@ main = do
   miniPascalDemo
   aspectPascalDemo
   higherOrderDemo
+  fluentApiDemo
