@@ -41,6 +41,23 @@ withOptimization builder = builder ["-O2"]
 withLogging :: ConfigBuilder -> Config
 withLogging builder = builder ["-logall"]
 
+-- ConfigBuilder -> ConfigBuilder versions
+withWarnings' :: ConfigBuilder -> ConfigBuilder
+withWarnings' builder opts = builder (opts ++ ["-Wall"])
+
+withProfiling' :: ConfigBuilder -> ConfigBuilder
+withProfiling' builder opts = builder (opts ++ ["-prof", "-auto-all"])
+
+withOptimization' :: ConfigBuilder -> ConfigBuilder
+withOptimization' builder opts = builder (opts ++ ["-O2"])
+
+withLogging' :: ConfigBuilder -> ConfigBuilder
+withLogging' builder opts = builder (opts ++ ["-logall"])
+
+build :: ConfigBuilder -> Config
+build builder = builder []
+
+
 (#) :: a -> (a -> b) -> b
 x # f = f x
 infixl 0 #
@@ -69,15 +86,20 @@ setMail mail user = user {email = mail}
 fluentApiDemo :: IO ()
 fluentApiDemo = do 
     putStrLn "FluentApi -> Comonad"
-    print . extract . extend withOptimization . extend withLogging . extend withWarnings $ configBuilder
-
-    -- extend withWarnings $ configBuilder >>> extend withLogging >>> extend withOptimization >>> extract >>> print
 
     configBuilder
         #> withProfiling
         #> withOptimization
         #> withLogging
         # extract 
+        # print
+    
+    configBuilder    
+        # withProfiling'
+        # withOptimization'
+        # withLogging'
+        # withWarnings'
+        # build
         # print
 
     emptyUser
