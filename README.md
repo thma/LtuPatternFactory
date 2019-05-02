@@ -2011,7 +2011,7 @@ tbd.
 The [Builder Pattern](#builder--record-syntax-smart-constructor) is a typical example for a fluent API. The following short Java snippet show the essential elements:
 
 * creating a builder instance
-* invoking a sequence of mutators on the builder instance
+* invoking a sequence of mutators `with...` on the builder instance
 * finally calling `build()` to let the Builder create an object
 
 ```java
@@ -2025,8 +2025,8 @@ Config config = builder
 
 The interesting point is that all the `with...` methods are not implemented as `void` method but instead all return the Builder instance, which thus allows to fluently chain the next `with...` call.
 
-Let's try to recreate this fluent chaining of calls in a builder in Haskell.
-We start with a configuration type `Config` that represents a set of option strings:
+Let's try to recreate this fluent chaining of calls in Haskell.
+We start with a configuration type `Config` that represents a set of option strings (`Options`):
 
 ```haskell
 type Options = [String]
@@ -2034,26 +2034,36 @@ type Options = [String]
 newtype Config = Conf Options deriving (Show)
 ```
 
-Next we define a function `configBuilder` which takes a set of options as input and returns a `Config` instance:
+Next we define a function `configBuilder` which takes `Options` as input and returns a `Config` instance:
 
 ```haskell
 configBuilder :: Options -> Config
 configBuilder options = Conf options
 
--- and then in GHCi:
-> configBuilder ["-O2", "-prof"]
+-- we can use this to construct a Config instance from a list of Option strings:
+ghci> configBuilder ["-O2", "-prof"]
 Conf ["-O2","-prof"]
 ```
 
-This function is just a synonym for the `Conf` constructor. So we can use it to create a `Config` instance from a list of options. But it does not provide any means to fluently chain option setters like:
+In order to allow chaining of the `with...` functions they always must return a new `Options -> Config` function. So for example `withProfiling` would have the following signature:
 
 ```haskell
-withProfiling :: (Options -> Config) -> Config
-withProfiling builder = builder ["-prof", "-auto-all"]
-
-withOptimization :: (Options -> Config) -> Config
-withOptimization builder = builder ["-O2"]
+withProfiling :: (Options -> Config) -> (Options -> Config)
 ```
+
+This signature is straightforward but the implementation needs some thinking: we take a function `builder` of type `Options -> Config` as input and must return a new function of the same type that will use the same builder but will add profiling options to the `Options` parameter `opts`:
+
+```haskell
+withProfiling builder = \opts -> builder (opts ++ ["-prof", "-auto-all"])
+```
+
+HLint tells us that this can be written more terse as:
+
+```haskell
+withProfiling builder opts = builder (opts ++ ["-prof", "-auto-all"])
+```
+
+to be continued.
 
 This section is based on examples from [You could have invented Comonads](http://www.haskellforall.com/2013/02/you-could-have-invented-comonads.html)
 

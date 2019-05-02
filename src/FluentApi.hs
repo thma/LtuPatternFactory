@@ -29,30 +29,30 @@ type ConfigBuilder = Options -> Config
 configBuilder :: Options -> Config
 configBuilder = Conf
 
-withWarnings :: ConfigBuilder -> Config
-withWarnings builder = builder ["-Wall"]
+withWarnings' :: ConfigBuilder -> Config
+withWarnings' builder = builder ["-Wall"]
 
-withProfiling :: ConfigBuilder -> Config
-withProfiling builder = builder ["-prof", "-auto-all"]
+withProfiling' :: ConfigBuilder -> Config
+withProfiling' builder = builder ["-prof", "-auto-all"]
 
-withOptimization :: ConfigBuilder -> Config
-withOptimization builder = builder ["-O2"]
+withOptimization' :: ConfigBuilder -> Config
+withOptimization' builder = builder ["-O2"]
 
-withLogging :: ConfigBuilder -> Config
-withLogging builder = builder ["-logall"]
+withLogging' :: ConfigBuilder -> Config
+withLogging' builder = builder ["-logall"]
 
 -- ConfigBuilder -> ConfigBuilder versions
-withWarnings' :: ConfigBuilder -> ConfigBuilder
-withWarnings' builder opts = builder (opts ++ ["-Wall"])
+withWarnings :: ConfigBuilder -> (Options -> Config)
+withWarnings builder opts = builder (opts ++ ["-Wall"])
 
-withProfiling' :: ConfigBuilder -> ConfigBuilder
-withProfiling' builder opts = builder (opts ++ ["-prof", "-auto-all"])
+withProfiling :: ConfigBuilder -> ConfigBuilder
+withProfiling builder opts = builder (opts ++ ["-prof", "-auto-all"])
 
-withOptimization' :: ConfigBuilder -> ConfigBuilder
-withOptimization' builder opts = builder (opts ++ ["-O2"])
+withOptimization :: ConfigBuilder -> ConfigBuilder
+withOptimization builder opts = builder (opts ++ ["-O2"])
 
-withLogging' :: ConfigBuilder -> ConfigBuilder
-withLogging' builder opts = builder (opts ++ ["-logall"])
+withLogging :: ConfigBuilder -> ConfigBuilder
+withLogging builder opts = builder (opts ++ ["-logall"])
 
 build :: ConfigBuilder -> Config
 build builder = builder []
@@ -88,17 +88,17 @@ fluentApiDemo = do
     putStrLn "FluentApi -> Comonad"
 
     configBuilder
-        #> withProfiling
-        #> withOptimization
-        #> withLogging
+        #> withProfiling'
+        #> withOptimization'
+        #> withLogging'
         # extract 
         # print
     
     configBuilder    
-        # withProfiling'
-        # withOptimization'
-        # withLogging'
-        # withWarnings'
+        # withProfiling
+        # withOptimization
+        # withLogging
+        # withWarnings
         # build
         # print
 
