@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances, InstanceSigs #-}
 module FluentApi where
 import Control.Comonad
 import Control.Arrow
@@ -12,12 +13,12 @@ class Functor w => Comonad w where
     extend f = fmap f . duplicate
 --}
 
-{--
+{--}
 instance {-# OVERLAPPING #-} Comonad ((->) Options) where
     extract :: (Options -> a) -> a
     extract builder = builder mempty
     extend :: ((Options -> a) -> b ) ->  (Options -> a) -> (Options -> b)
-    extend setter builder opt2 = setter (\opt1 -> builder (opt1 ++ opt2))
+    extend mutator builder opt2 = mutator (\opt1 -> builder (opt1 ++ opt2))
 --}
 
 type Options = [String]
@@ -86,6 +87,8 @@ setMail mail user = user {email = mail}
 fluentApiDemo :: IO ()
 fluentApiDemo = do 
     putStrLn "FluentApi -> Comonad"
+
+    print $ build $ withOptimization $ withProfiling configBuilder
 
     configBuilder
         #> withProfiling'

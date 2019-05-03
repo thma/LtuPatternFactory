@@ -2063,6 +2063,56 @@ HLint tells us that this can be written more terse as:
 withProfiling builder opts = builder (opts ++ ["-prof", "-auto-all"])
 ```
 
+In order to keep notation dense we introduce a type alias for the function type `Options -> Config`:
+
+```haskell
+type ConfigBuilder = Options -> Config
+```
+
+With this shortcut we can implement the other `with...` functions as:
+
+```haskell
+withWarnings :: ConfigBuilder -> (Options -> Config)
+withWarnings builder opts = builder (opts ++ ["-Wall"])
+
+withOptimization :: ConfigBuilder -> ConfigBuilder
+withOptimization builder opts = builder (opts ++ ["-O2"])
+
+withLogging :: ConfigBuilder -> ConfigBuilder
+withLogging builder opts = builder (opts ++ ["-logall"])
+```
+
+The `build()` function is also quite straightforward. It constructs the actual `Config` instance by invoking a given `ConfigBuilder` on an empty list:
+
+```haskell
+build :: ConfigBuilder -> Config
+build builder = builder []
+
+-- now we can use it in ghci:
+ghci> print (build (withOptimization (withProfiling configBuilder)))
+Conf ["-O2","-prof","-auto-all"]
+```
+
+This does not yet look quite object oriented but with a tiny tweak we'll get quite close. We introduce a special operator `#` that allows to write functional expression in an object-oriented style:
+
+```haskell
+(#) :: a -> (a -> b) -> b
+x # f = f x
+infixl 0 #
+```
+
+With this operator we can write the above example as:
+
+```haskell
+config = configBuilder
+    # withProfiling    -- add profiling
+    # withOptimization -- add optimizations
+    # build
+```
+
+So far so good. But what does this have to do with Comonads?
+In the following I'll demonstrate how the chaining of functions as shown in our `ConfigBuilder` example follows a pattern that is covered by the `Comonad` type class.
+
 to be continued.
 
 This section is based on examples from [You could have invented Comonads](http://www.haskellforall.com/2013/02/you-could-have-invented-comonads.html)
