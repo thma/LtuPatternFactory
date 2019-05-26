@@ -38,7 +38,7 @@ I think this kind of exposition could be helpful if you are either:
   <!--* [? → Arrow](#--arrow) -->
   * [Fluent Api → Comonad](#fluent-api--comonad)
 * [Beyond type class patterns](#beyond-type-class-patterns)
-  * [Dependency Injection → Parameter Binding](#dependency-injection--parameter-binding-partial-application)
+  * [Dependency Injection → Parameter Binding, Partial Application](#dependency-injection--parameter-binding-partial-application)
   * [Command → Functions as First Class Citizens](#command--functions-as-first-class-citizens)
   * [Adapter → Function Composition](#adapter--function-composition)
   * [Template Method → type class default functions](#template-method--type-class-default-functions)
@@ -59,7 +59,7 @@ I think this kind of exposition could be helpful if you are either:
 
 The [Typeclassopedia](https://wiki.haskell.org/wikiupload/8/85/TMR-Issue13.pdf) is a now classic paper that introduces the Haskell type classes by clarifying their algebraic and category-theoretic background. In particular it explains the relationships among those type classes.
 
-In this section I'm taking a tour through the Typeclassopedia from a design pattern perspective.
+In this chapter I'm taking a tour through the Typeclassopedia from a design pattern perspective.
 For each of the Typeclassopedia type classes I try to explain how it corresponds to structures applied in software design patterns.
 
 As a reference map I have included the following chart that depicts the Relationships between type classes covered in the Typeclassopedia:
@@ -2120,6 +2120,8 @@ This section is based on examples from [You could have invented Comonads](http:/
 
 ## Beyond type class patterns
 
+The patterns presented in this chapter don't have a direct correspondence to specific type classes. They rather map to more general concepts of functional programming.
+
 ### Dependency Injection → Parameter Binding, Partial Application
 
 > [...] Dependency injection is a technique whereby one object (or static method) supplies the dependencies of another object. A dependency is an object that can be used (a service). An injection is the passing of a dependency to a dependent object (a client) that would use it. The service is made part of the client's state. Passing the service to the client, rather than allowing a client to build or find the service, is the fundamental requirement of the pattern.
@@ -3003,8 +3005,8 @@ BankAccount {accountNo = 5678, name = "Marjin Mejer", branch = "Reikjavik", bala
 
 ## Functional Programming Patterns
 
-The patterns presented in this section all stem from functional languages.
-That is, they have been first developed in functional languages like Scheme or Haskell and have later been adopted in other languages.
+The patterns presented in this chapter all stem from functional languages.
+That is, they have been first developed in functional languages like Lisp, Scheme or Haskell and have later been adopted in other languages.
 
 ### Higher Order Functions
 
