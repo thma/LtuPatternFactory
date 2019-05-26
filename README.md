@@ -12,6 +12,7 @@ I think this kind of exposition could be helpful if you are either:
 
 * a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
 * a functional programmer who wants to get a deeper intuition for type classes.
+* studying the [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia) and are looking for an accompanying reading providing example use cases and working code.
 
 >This project is work in progress, so please feel free to contact me with any corrections, adjustments, comments, suggestions and additional ideas you might have.
 > Please use the [Issue Tracker](https://github.com/thma/LtuPatternFactory/issues) to enter your requests.
@@ -47,9 +48,9 @@ I think this kind of exposition could be helpful if you are either:
 * [Functional Programming Patterns](#functional-programming-patterns)
   * [Higher Order Functions](#higher-order-functions)
   * [Map Reduce](#map-reduce)
-  * [Continuation Passing](#continuation-passing)
+  <!-- * [Continuation Passing](#continuation-passing) -->
   * [Lazy Evaluation](#lazy-evaluation)
-  * [Functional Reactive Programming](#functional-reactive-programming)
+  <!-- * [Functional Reactive Programming](#functional-reactive-programming) -->
   * [Reflection](#reflection)
 * [Conclusions](#conclusions)
 * [Some related links](#some-interesting-links)
@@ -3421,9 +3422,11 @@ For more details see [Real World Haskell](http://book.realworldhaskell.org/read/
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/MapReduce.hs)
 
+<!--
 ### Continuation Passing
 
 tbd.
+-->
 
 ### Lazy Evaluation
 
@@ -3434,7 +3437,7 @@ tbd.
 > * The ability to define control flow (structures) as abstractions instead of primitives.
 > * The ability to define potentially infinite data structures. This allows for more straightforward implementation of some algorithms.
 >* Performance increases by avoiding needless calculations, and avoiding error conditions when evaluating compound expressions.
-> 
+>
 > [Quoted from Wikipedia](https://en.wikipedia.org/wiki/Lazy_evaluation)
 
 Let's start with a short snippet from a Java program:
@@ -3626,9 +3629,11 @@ This example has been taken from The classic paper [Why Functional Programming M
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Infinity.hs)
 
+<!--
 ### Functional Reactive Programming
 
 tbd.
+-->
 
 ### Reflection
 
