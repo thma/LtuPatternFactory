@@ -8,7 +8,7 @@ Recently, while re-reading through the [Typeclassopedia](https://wiki.haskell.or
 
 By searching the web I found some blog entries studying specific patterns, but I did not come across any comprehensive study. As it seemed that nobody did this kind of work yet I found it worthy to spend some time on it and write down all my findings on the subject.
 
-I think this kind of exposition could be helpful if you are either:
+I think this kind of exposition could be helpful if you are:
 
 * a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
 * a functional programmer who wants to get a deeper intuition for type classes.
@@ -2113,6 +2113,32 @@ config = configBuilder
 
 So far so good. But what does this have to do with Comonads?
 In the following I'll demonstrate how the chaining of functions as shown in our `ConfigBuilder` example follows a pattern that is covered by the `Comonad` type class.
+
+Let's have a second look at the `with*` functions:
+
+```haskell
+withWarnings :: ConfigBuilder -> (Options -> Config)
+withWarnings builder opts = builder (opts ++ ["-Wall"])
+
+withProfiling :: ConfigBuilder -> ConfigBuilder
+withProfiling builder opts = builder (opts ++ ["-prof", "-auto-all"])
+```
+
+These functions all are containing code for explicitely concatenating the `opts` argument with additional `Options`.
+In order to reduce repetitive coding we are looking for a way to factor out the concrete concatenation of `Options`.
+Going this route the `with*` funtion could be written as follows:
+
+```haskell
+withWarnings' :: ConfigBuilder -> Config
+withWarnings' builder = builder ["-Wall"]
+
+withProfiling' :: ConfigBuilder -> Config
+withProfiling' builder = builder ["-prof", "-auto-all"]
+```
+
+We have eliminated the explicit handling of chaining of `Options` by removing the `opts` parameter. Thus now the function don't return a `(Options -> Config)` (i.e `ConfigBuilder`) but directly a `Config` instance.
+
+In order to form fluent sequences of such function calls we need a mechanism that transparently handles the chaining of `Option` arguments by keeping open &ndash; or *extending* &ndash; the `ConfigBuilder`.
 
 to be continued.
 
