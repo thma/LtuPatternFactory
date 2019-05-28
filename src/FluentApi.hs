@@ -55,6 +55,20 @@ withOptimization builder opts = builder (opts ++ ["-O2"])
 withLogging :: ConfigBuilder -> ConfigBuilder
 withLogging builder opts = builder (opts ++ ["-logall"])
 
+-- factoring out the option concatenation
+withLogging'' :: ConfigBuilder -> ConfigBuilder
+withLogging'' builder = extend' builder ["-logall"]
+
+extend' :: ConfigBuilder -> Options -> ConfigBuilder
+--extend' builder opts2 = \opts1 -> builder (opts1 ++ opts2)
+extend' builder opts2 opts1 = builder (opts1 ++ opts2)
+
+extend'' :: (ConfigBuilder -> Config) -> ConfigBuilder -> ConfigBuilder
+extend'' mutator builder opt2 = mutator (\opt1 -> builder (opt1 ++ opt2))
+
+-- extend :: ((Options -> a) -> b ) ->  (Options -> a) -> (Options -> b)
+-- extend mutator builder opt2 = mutator (\opt1 -> builder (opt1 ++ opt2))
+
 build :: ConfigBuilder -> Config
 build builder = builder []
 

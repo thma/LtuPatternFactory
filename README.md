@@ -2126,7 +2126,26 @@ withProfiling builder opts = builder (opts ++ ["-prof", "-auto-all"])
 
 These functions all are containing code for explicitely concatenating the `opts` argument with additional `Options`.
 In order to reduce repetitive coding we are looking for a way to factor out the concrete concatenation of `Options`.
-Going this route the `with*` funtion could be written as follows:
+Going this route the `with*` function could be rewritten as follows:
+
+```haskell
+withWarnings'' :: ConfigBuilder -> ConfigBuilder
+withWarnings'' builder = extend' builder ["-Wall"]
+
+withProfiling'' :: ConfigBuilder -> ConfigBuilder
+withProfiling'' builder = extend' builder ["-prof", "-auto-all"]
+```
+
+Here `extend'` is a higher order function that takes a `ConfigBuilder` and an `Options` argument (`opts2`) and returns a new function that returns a new `ConfigBuilder` that concatenates its input `opts1` with the original `opts2` arguments:
+
+```haskell
+extend' :: ConfigBuilder -> Options -> ConfigBuilder
+extend' builder opts2 = \opts1 -> builder (opts1 ++ opts2)
+-- or even denser without explicit lambda:
+extend' builder opts2 opts1 = builder (opts1 ++ opts2)
+```
+
+We could carry this idea of refactoring repetitive code even further by eliminating the `extend'` from the `with*` functions. Of course this will change the signature of the functions:
 
 ```haskell
 withWarnings' :: ConfigBuilder -> Config
@@ -2136,9 +2155,15 @@ withProfiling' :: ConfigBuilder -> Config
 withProfiling' builder = builder ["-prof", "-auto-all"]
 ```
 
-We have eliminated the explicit handling of chaining of `Options` by removing the `opts` parameter. Thus now the function don't return a `(Options -> Config)` (i.e `ConfigBuilder`) but directly a `Config` instance.
+In order to form fluent sequences of such function calls we need an improved version of the `extend` function  which transparently handles the concatenation of `Option` arguments and also keeps the chain of `with*` functions open for the next `with*` function being applied:
 
-In order to form fluent sequences of such function calls we need a mechanism that transparently handles the chaining of `Option` arguments by keeping open &ndash; or *extending* &ndash; the `ConfigBuilder`.
+```haskell
+extend'' :: (ConfigBuilder -> Config) -> ConfigBuilder -> ConfigBuilder
+extend'' withFun builder opt2 = withFun (\opt1 -> builder (opt1 ++ opt2))
+
+```
+
+
 
 to be continued.
 
