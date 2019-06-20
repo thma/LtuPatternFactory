@@ -69,6 +69,8 @@ extend'' mutator builder opt2 = mutator (\opt1 -> builder (opt1 ++ opt2))
 -- extend :: ((Options -> a) -> b ) ->  (Options -> a) -> (Options -> b)
 -- extend mutator builder opt2 = mutator (\opt1 -> builder (opt1 ++ opt2))
 
+
+
 build :: ConfigBuilder -> Config
 build builder = builder []
 
@@ -80,6 +82,10 @@ infixl 0 #
 (#>) :: Comonad w => w a -> (w a -> b) -> w b
 x #> f = extend f x
 infixl 0 #>
+
+(#>>) :: ConfigBuilder -> (ConfigBuilder -> Config) -> ConfigBuilder
+x #>> f = extend'' f x
+infixl 0 #>>
 
 data User = User {
       userId :: String
@@ -103,6 +109,13 @@ fluentApiDemo = do
     putStrLn "FluentApi -> Comonad"
 
     print $ build $ withOptimization $ withProfiling configBuilder
+
+    configBuilder
+        #>> withProfiling'
+        #>> withOptimization'
+        #>> withLogging'
+        # build
+        # print
 
     configBuilder
         #> withProfiling'

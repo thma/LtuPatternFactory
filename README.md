@@ -2160,10 +2160,26 @@ In order to form fluent sequences of such function calls we need an improved ver
 ```haskell
 extend'' :: (ConfigBuilder -> Config) -> ConfigBuilder -> ConfigBuilder
 extend'' withFun builder opt2 = withFun (\opt1 -> builder (opt1 ++ opt2))
-
 ```
 
+In order to use `extend''` efficiently in user code we have to modify our `#` operator slightly to transparently handle the extending of `ConfigBuilder` instances when chaining functions of type `ConfigBuilder -> Config`:
 
+```haskell
+(#>>) :: ConfigBuilder -> (ConfigBuilder -> Config) -> ConfigBuilder
+x #>> f = extend'' f x
+infixl 0 #>>
+```
+
+User code would then look like follows:
+
+```haskell
+configBuilder
+    #>> withProfiling'
+    #>> withOptimization'
+    #>> withLogging'
+    # build
+    # print
+```
 
 to be continued.
 
