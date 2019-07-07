@@ -3861,14 +3861,14 @@ So it comes with little surprise that we can map many of those patterns to commo
 
 * Some patterns are absorbed by language features:
   * Template method and strategy pattern are no brainers in any functional language with functions as first class citizens and higher order functions.
-  * Dependency Injection and Configuration is solved by by partial application of curried functions.
+  * Dependency Injection and Configuration is solved by partial application of curried functions.
   * Adapter layers are replaced by function composition
   * Visitor pattern and Interpreters are self-evident with algebraic data types.
 * Other patterns are covered by libraries like the Haskell type classes:
   * Composite is reduced to a Monoid
   * Singleton, Pipeline, NullObject can be rooted in Functor, Applicative Functor and Monad
   * Visitor and Iterator are covered by Foldable and Traversable.
-* Yet another category of patterns is covered by specific language features like the Laziness, Parallelism. These features may be specific to certain languages.
+* Yet another category of patterns is covered by specific language features like Lazy Evaluation, Parallelism. These features may be specific to certain languages.
   * Laziness allows to work with non-terminating compuations and data structures of infinite size.
   * Parallelism allows to scale the execution of a program transparently across CPU cores.
 
@@ -3882,9 +3882,11 @@ Identifying the [composite pattern](#composite--semigroup--monoid) as an applica
 
 *Design patterns reflect abstract algebraic structures.*
 
-Rooting design patterns in abstract algebra brings another level of confidence to software design as we can move from 'hand waving' &ndash; painting UML diagrams, writing prose, building prototypes, etc. &ndash; to mathematical reasoning.
+As another example take the [Map-Reduce](#map-reduce) pattern: we demonstrated that the question whether a problem can be solved by a map-reduce approach boils down to the algebraic question whether the data structure used to hold the intermediary results of the `map` operation forms a *commutative monoid* under the `reduce` operation.
 
-Mark Seemann has written an instructive series of articles on the coincidence of design patterns to abstract algebra: [From Design Patterns to Category Theory](http://blog.ploeh.dk/2017/10/04/from-design-patterns-to-category-theory/).
+Rooting design patterns in abstract algebra brings a higher level of confidence to software design as we can move from 'hand waving' &ndash; painting UML diagrams, writing prose, building prototypes, etc. &ndash; to mathematical reasoning.
+
+Mark Seemann has written an instructive series of articles on the coincidence of design patterns with abstract algebra: [From Design Patterns to Category Theory](http://blog.ploeh.dk/2017/10/04/from-design-patterns-to-category-theory/).
 
 Jeremy Gibbons has also written several excellent papers on this subject:
 
