@@ -2228,7 +2228,7 @@ x #> f = extend f x
 infixl 0 #>
 ```
 
-based on this definition we can finally rewrite the user code as follows
+Based on this definition we can finally rewrite the user code as follows
 
 ```haskell
     configBuilder
