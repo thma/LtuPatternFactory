@@ -4,21 +4,11 @@ import Control.Comonad
 import Control.Arrow
 
 {--
-class Functor w => Comonad w where
-    extract :: w a -> a
-    duplicate :: w a -> w (w a)
-    duplicate = extend id
-  
-    extend :: (w a -> b) -> w a -> w b
-    extend f = fmap f . duplicate
---}
-
-{--}
 instance {-# OVERLAPPING #-} Comonad ((->) Options) where
-    extract :: (Options -> a) -> a
+    extract :: (Options -> config) -> config
     extract builder = builder mempty
-    extend :: ((Options -> a) -> b ) ->  (Options -> a) -> (Options -> b)
-    extend mutator builder opt2 = mutator (\opt1 -> builder (opt1 ++ opt2))
+    extend :: ((Options -> config) -> config') ->  (Options -> config) -> (Options -> config')
+    extend withFun builder opt2 = withFun (\opt1 -> builder (opt1 ++ opt2))
 --}
 
 type Options = [String]
@@ -64,15 +54,11 @@ extend' :: ConfigBuilder -> Options -> ConfigBuilder
 extend' builder opts2 opts1 = builder (opts1 ++ opts2)
 
 extend'' :: (ConfigBuilder -> Config) -> ConfigBuilder -> ConfigBuilder
-extend'' mutator builder opt2 = mutator (\opt1 -> builder (opt1 ++ opt2))
-
--- extend :: ((Options -> a) -> b ) ->  (Options -> a) -> (Options -> b)
--- extend mutator builder opt2 = mutator (\opt1 -> builder (opt1 ++ opt2))
-
+extend'' withFun builder opt2 = withFun (\opt1 -> builder (opt1 ++ opt2))
 
 
 build :: ConfigBuilder -> Config
-build builder = builder []
+build builder = builder mempty
 
 
 (#) :: a -> (a -> b) -> b

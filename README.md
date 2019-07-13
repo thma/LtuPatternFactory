@@ -2087,7 +2087,7 @@ The `build()` function is also quite straightforward. It constructs the actual `
 
 ```haskell
 build :: ConfigBuilder -> Config
-build builder = builder []
+build builder = builder mempty
 
 -- now we can use it in ghci:
 ghci> print (build (withOptimization (withProfiling configBuilder)))
@@ -2181,7 +2181,63 @@ configBuilder
     # print
 ```
 
-to be continued.
+Now let's have a look at the definition of the `Comonad` type class. Being the dual of `Monad` it defines two functions `extract` and `extend` which are the duals of `return` and `(>>=)`:
+
+```haskell
+class Functor w => Comonad w where
+    extract :: w a -> a
+    extend  :: (w a -> b) -> w a -> w b
+```
+
+With the knowledge that `((->) a)` is an instance of `Functor` we can define a `Comonad` instance for `((->) Options)`:
+
+```haskell
+instance {-# OVERLAPPING #-} Comonad ((->) Options) where
+    extract :: (Options -> config) -> config
+    extract builder = builder mempty
+    extend :: ((Options -> config) -> config') ->  (Options -> config) -> (Options -> config')
+    extend withFun builder opt2 = withFun (\opt1 -> builder (opt1 ++ opt2))
+```
+
+Now let's again look at the functions `build` and `extend''`:
+
+```haskell
+build :: (Options -> Config) -> Config
+build builder = builder mempty
+
+extend'' :: ((Options -> Config) -> Config) -> (Options -> Config) -> (Options -> Config)
+extend'' withFun builder opt2 = withFun (\opt1 -> builder (opt1 ++ opt2))
+```
+
+It's obvious that `build` and `extract` are equivalent as well as `extend''` and `extend`. So we have been inventing a `Comonad` without knowing about it.
+
+But we are even more lucky! Our `Options` type (being just a synonym for `[String]`) together with the concatenation operator `(++)` forms a `Monoid`.
+And for any `Monoid m` `((->) m)` is a Comonad:
+
+```haskell
+instance Monoid m => Comonad ((->) m)  -- as defined in Control.Comonad
+```
+
+So we don't have to define our own instance of Comonad but can rely on the predefined and more generic `((->) m)`.
+
+Equipped with this knowledge we define a more generic version of our `#>>` chaining operator:
+
+```haskell
+(#>) :: Comonad w => w a -> (w a -> b) -> w b
+x #> f = extend f x
+infixl 0 #>
+```
+
+based on this definition we can finally rewrite the user code as follows
+
+```haskell
+    configBuilder
+        #> withProfiling'
+        #> withOptimization'
+        #> withLogging'
+        # extract  -- # build would be fine as well
+        # print
+```
 
 This section is based on examples from [You could have invented Comonads](http://www.haskellforall.com/2013/02/you-could-have-invented-comonads.html)
 
