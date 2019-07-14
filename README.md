@@ -2239,7 +2239,7 @@ Based on this definition we can finally rewrite the user code as follows
         # print
 ```
 
-This section is based on examples from [You could have invented Comonads](http://www.haskellforall.com/2013/02/you-could-have-invented-comonads.html)
+This section is based on examples from [You could have invented Comonads](http://www.haskellforall.com/2013/02/you-could-have-invented-comonads.html). Please also check this [blogpost](http://gelisam.blogspot.com/2013/07/comonads-are-neighbourhoods-not-objects.html) which comments on the notion of *comonads as objects* in Gabriel Gonzales original posting.
 
 ## Beyond type class patterns
 
