@@ -2241,6 +2241,8 @@ Based on this definition we can finally rewrite the user code as follows
 
 This section is based on examples from [You could have invented Comonads](http://www.haskellforall.com/2013/02/you-could-have-invented-comonads.html). Please also check this [blogpost](http://gelisam.blogspot.com/2013/07/comonads-are-neighbourhoods-not-objects.html) which comments on the notion of *comonads as objects* in Gabriel Gonzales original posting.
 
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/FluentApi.hs).
+
 ## Beyond type class patterns
 
 The patterns presented in this chapter don't have a direct correspondence to specific type classes. They rather map to more general concepts of functional programming.
