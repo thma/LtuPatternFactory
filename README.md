@@ -336,7 +336,7 @@ data Exp e = Var String
            | Add (Exp e) (Exp e)
            | Mul (Exp e) (Exp e)
 
--- the environment is a list of tupels mapping variable names to values of type e
+-- the environment is a list of tuples mapping variable names to values of type e
 type Env e = [(String, e)]
 
 -- a simple evaluator reducing expression to numbers
