@@ -2073,7 +2073,7 @@ type ConfigBuilder = Options -> Config
 With this shortcut we can implement the other `with...` functions as:
 
 ```haskell
-withWarnings :: ConfigBuilder -> (Options -> Config)
+withWarnings :: ConfigBuilder -> ConfigBuilder
 withWarnings builder opts = builder (opts ++ ["-Wall"])
 
 withOptimization :: ConfigBuilder -> ConfigBuilder
@@ -2117,7 +2117,7 @@ In the following I'll demonstrate how the chaining of functions as shown in our 
 Let's have a second look at the `with*` functions:
 
 ```haskell
-withWarnings :: ConfigBuilder -> (Options -> Config)
+withWarnings :: ConfigBuilder -> ConfigBuilder
 withWarnings builder opts = builder (opts ++ ["-Wall"])
 
 withProfiling :: ConfigBuilder -> ConfigBuilder
