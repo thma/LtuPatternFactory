@@ -61,20 +61,51 @@ wciBody c =  coerce (updateState c) where
     isSpace :: Char -> Bool
     isSpace c = c == ' ' || c == '\n' || c == '\t'
 
+wciBody' :: Char -> Const (Maybe SepCount) Integer
+wciBody' = Const . Just . mkSepCount isSpace where
+    isSpace :: Char -> Bool
+    isSpace c = c == ' ' || c == '\n' || c == '\t'
+
+wci' :: String -> Const (Maybe SepCount) [Integer]
+wci' = traverse wciBody' 
+
+getSepCount :: Const (Maybe SepCount) a -> Const Integer a
+getSepCount (Const (Just (SC _ _ count))) = Const count
+   
+isSpace :: Char -> Bool
+isSpace c = c == ' ' || c == '\n' || c == '\t'
+
+
 wci :: String -> Compose (WrappedMonad (State Bool)) Count [a]
 wci = traverse wciBody
 
 clwci :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
 clwci = traverse (cciBody <#> lciBody <#> wciBody)
 
+clwci' :: String -> (Product (Product Count Count) (Const (Maybe SepCount))) [Integer]
+clwci' = traverse (cciBody <#> lciBody <#> wciBody')
+
+data SepCount = SC Bool Bool Integer
+  deriving Show
+
+mkSepCount :: (a -> Bool) -> a -> SepCount
+mkSepCount pred x = SC p p (if p then 0 else 1)
+  where
+    p = pred x
+
+instance Semigroup SepCount where
+  (SC l0 r0 n) <> (SC l1 r1 m) = SC l0 r1 x where
+    x | not r0 && not l1 = n + m - 1
+      | otherwise = n + m
+
 -- | the actual wordcount implementation.
 --   for any String a triple of linecount, wordcount, charactercount is returned
 wc :: String -> (Integer, Integer, Integer)
 wc str =
-    let raw = clwci str
+    let raw = clwci' str
         cc  = coerce $ pfst (pfst raw)
         lc  = coerce $ psnd (pfst raw)
-        wc  = coerce $ evalState (unwrapMonad (getCompose (psnd raw))) False
+        wc  = coerce $ getSepCount (psnd raw)
     in (lc,wc,cc)
 
 str :: String
