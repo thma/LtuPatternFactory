@@ -217,7 +217,7 @@ Context "196"
 Now imagine we would be asked to implement this way to apply functions within a context for yet another data type.
 Wouldn't it be great to have a generic tool that would solve this problem for any context, thus avoiding to reinvent the wheel each time?
 
-In Functional Prigramming languages the application of a function in a computational context is generalized with the type class `Functor`:
+In Functional Programming languages, the application of a function in a computational context is generalized with the type class `Functor`:
 
 ```haskell
 class  Functor f  where
