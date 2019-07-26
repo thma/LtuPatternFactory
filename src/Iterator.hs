@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Iterator where
 import           Singleton                (Exp (..))
 import           Visitor
@@ -22,6 +23,8 @@ instance Traversable Exp where
     traverse g (Val x)   = Val <$> g x
     traverse g (Add x y) = Add <$> traverse g x <*> traverse g y
     traverse g (Mul x y) = Mul <$> traverse g x <*> traverse g y
+
+-- getConst . traverse (Const . f) = foldMap f
 
 -- Functor Product
 (<#>) :: (Functor m, Functor n) => (a -> m b) -> (a -> n b) -> (a -> Product m n b)
@@ -64,9 +67,6 @@ wci = traverse wciBody
 
 clwci :: String -> (Product (Product Count Count) (Const (Maybe SepCount))) [Integer]
 clwci = traverse (cciBody <#> lciBody <#> wciBody)  
-
-getSepCount :: Const (Maybe SepCount) a -> Integer
-getSepCount (Const (Just (SC _ _ count))) = count
    
 -- original solution from 'The Essence of the Iterator Patern' paper
 wciBody' :: Char -> Compose (WrappedMonad (State Bool)) Count a
@@ -94,6 +94,9 @@ instance Semigroup SepCount where
   (SC l0 r0 n) <> (SC l1 r1 m) = SC l0 r1 x where
     x | not r0 && not l1 = n + m - 1
       | otherwise = n + m
+
+getSepCount :: Const (Maybe SepCount) a -> Integer
+getSepCount (Const (Just (SC _ _ count))) = count      
 
 -- | the actual wordcount implementation.
 --   for any String a triple of linecount, wordcount, charactercount is returned
