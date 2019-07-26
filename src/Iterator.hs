@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, GeneralizedNewtypeDeriving #-}
 module Iterator where
 import           Singleton                (Exp (..))
 import           Visitor
@@ -110,6 +110,21 @@ wc str =
 
 str :: String
 str = "hello \n world"
+
+f = (cciBody <#> lciBody <#> wciBody)  
+
+f' = AM (cciBody <#> lciBody <#> wciBody)  
+
+ 
+newtype AM f m = AM { unAM :: f m }
+    deriving (Functor, Applicative, Show)
+ 
+instance (Applicative f, Monoid m) => Monoid (AM f m) where
+    mempty        = pure mempty
+    mappend f1 f2 = mappend <$> f1 <*> f2
+
+instance (Applicative f, Monoid m) => Semigroup (AM f m) where
+    (<>) = mappend
 
 pfst :: Product f g a -> f a
 pfst (Pair fst _) = fst
