@@ -69,8 +69,8 @@ wciBody' = Const . Just . mkSepCount isSpace where
 wci' :: String -> Const (Maybe SepCount) [Integer]
 wci' = traverse wciBody' 
 
-getSepCount :: Const (Maybe SepCount) a -> Const Integer a
-getSepCount (Const (Just (SC _ _ count))) = Const count
+getSepCount :: Const (Maybe SepCount) a -> Integer
+getSepCount (Const (Just (SC _ _ count))) = count
    
 isSpace :: Char -> Bool
 isSpace c = c == ' ' || c == '\n' || c == '\t'
@@ -105,7 +105,7 @@ wc str =
     let raw = clwci' str
         cc  = coerce $ pfst (pfst raw)
         lc  = coerce $ psnd (pfst raw)
-        wc  = coerce $ getSepCount (psnd raw)
+        wc  = getSepCount (psnd raw)
     in (lc,wc,cc)
 
 str :: String
