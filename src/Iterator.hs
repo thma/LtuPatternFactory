@@ -54,35 +54,32 @@ lci = traverse lciBody
 clci :: String -> Product Count Count [a]
 clci = traverse (cciBody <#> lciBody)
 
-wciBody :: Char -> Compose (WrappedMonad (State Bool)) Count a
-wciBody c =  coerce (updateState c) where
+wciBody :: Char -> Const (Maybe SepCount) Integer
+wciBody = Const . Just . mkSepCount isSpace where
+    isSpace :: Char -> Bool
+    isSpace c = c == ' ' || c == '\n' || c == '\t'
+
+wci :: String -> Const (Maybe SepCount) [Integer]
+wci = traverse wciBody 
+
+clwci :: String -> (Product (Product Count Count) (Const (Maybe SepCount))) [Integer]
+clwci = traverse (cciBody <#> lciBody <#> wciBody)  
+
+getSepCount :: Const (Maybe SepCount) a -> Integer
+getSepCount (Const (Just (SC _ _ count))) = count
+   
+-- original solution from 'The Essence of the Iterator Patern' paper
+wciBody' :: Char -> Compose (WrappedMonad (State Bool)) Count a
+wciBody' c =  coerce (updateState c) where
     updateState :: Char -> Bool -> (Sum Integer, Bool)
     updateState c w = let s = not(isSpace c) in (test (not w && s), s)
     isSpace :: Char -> Bool
     isSpace c = c == ' ' || c == '\n' || c == '\t'
 
-wciBody' :: Char -> Const (Maybe SepCount) Integer
-wciBody' = Const . Just . mkSepCount isSpace where
-    isSpace :: Char -> Bool
-    isSpace c = c == ' ' || c == '\n' || c == '\t'
+wci' :: String -> Compose (WrappedMonad (State Bool)) Count [a]
+wci' = traverse wciBody'
 
-wci' :: String -> Const (Maybe SepCount) [Integer]
-wci' = traverse wciBody' 
-
-getSepCount :: Const (Maybe SepCount) a -> Integer
-getSepCount (Const (Just (SC _ _ count))) = count
-   
-isSpace :: Char -> Bool
-isSpace c = c == ' ' || c == '\n' || c == '\t'
-
-
-wci :: String -> Compose (WrappedMonad (State Bool)) Count [a]
-wci = traverse wciBody
-
-clwci :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
-clwci = traverse (cciBody <#> lciBody <#> wciBody)
-
-clwci' :: String -> (Product (Product Count Count) (Const (Maybe SepCount))) [Integer]
+clwci' :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
 clwci' = traverse (cciBody <#> lciBody <#> wciBody')
 
 data SepCount = SC Bool Bool Integer
@@ -102,7 +99,7 @@ instance Semigroup SepCount where
 --   for any String a triple of linecount, wordcount, charactercount is returned
 wc :: String -> (Integer, Integer, Integer)
 wc str =
-    let raw = clwci' str
+    let raw = clwci str
         cc  = coerce $ pfst (pfst raw)
         lc  = coerce $ psnd (pfst raw)
         wc  = getSepCount (psnd raw)
