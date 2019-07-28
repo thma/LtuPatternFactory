@@ -1586,7 +1586,7 @@ In this example we are touching all (nested) `Val` elements and multiply all odd
 
 #### Combining traversal operations
 
-Compared with `Foldable` or `Functor` the declaration of a `Traversable` instance looks a bit intimidating. In particular the type declaration for `traverse`:
+Compared with `Foldable` or `Functor` the declaration of a `Traversable` instance looks a bit intimidating. In particular the type signature of `traverse`:
 
 ```haskell
 traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
@@ -1716,54 +1716,91 @@ Pair (Const (Sum {getSum = 13})) (Const (Sum {getSum = 1}))
 
 So we have achieved our aim of separating line counting and character counting in separate functions while still being able to apply them in only one traversal.
 
-The only piece missing is the word counting. This is a bit tricky as it involves dealing with a state monad and wrapping it as an Applicative Functor:
+The only piece missing is the word counting. This is a bit tricky as we can not just increase a counter by looking at each single character but we have to take into account the status of the previously read character as well: 
+- If the previous character was non-whitespace and the current is also non-whitespace we are still reading the same word and don't increment the word count.
+- If the previous character was non-whitespace and the current is a whitespace character the last word was ended but we don't increment the word count.
+- If the previous character was whitespace and the current is also whitespace we are still reading whitespace between words and don't increment the word count.
+- If the previous character was whitespace and the current is a non-whitespace character the next word has started and we increment the word count.
+
+Keeping track of the state of the last character could be achieved by using a state monad and wrapping it as an Applicative Functor. The actual code for this solution is kept in the sourcecode for this section (functions `wciBody'` and `wci` in particular). But as this approach is a bit clumsy I'm presenting a simpler solution suggested by [Noughtmare](https://www.reddit.com/r/haskell/comments/cfjnyu/type_classes_and_software_design_patterns/eub06p5?utm_source=share&utm_medium=web2x).
+
+In his approach we'll define a data structure that will keep track of the changes between whitespace and non-whitespace:
 
 ```haskell
-import Data.Functor.Compose             -- Composition of Functors
-import Data.Functor.Const               -- Const Functor
-import Data.Functor.Identity            -- Identity Functor (needed for coercion)
-import Data.Monoid (Sum (..), getSum)   -- Sum Monoid for Integers
-import Control.Monad.State.Lazy         -- State Monad
-import Control.Applicative              -- WrappedMonad (wrapping a Monad as Applicative Functor)
-import Data.Coerce (coerce)             -- Coercion (forcing types to match, when
-                                        -- their underlying representations are equal)
+data SepCount = SC Bool Bool Integer
+  deriving Show
 
--- we use a (State Bool) monad to carry the 'readingWord' state through all invocations
--- WrappedMonad is used to use the monad as an Applicative Functor
--- This Applicative is then Composed with the actual Count a
-wciBody :: Char -> Compose (WrappedMonad (State Bool)) Count a
-wciBody c =  coerce (updateState c) where
-    updateState :: Char -> Bool -> (Sum Integer, Bool)
-    updateState c w = let s = not(isSpace c) in (test (not w && s), s)
+mkSepCount :: (a -> Bool) -> a -> SepCount
+mkSepCount pred x = SC p p (if p then 0 else 1)
+  where
+    p = pred x
+
+getSepCount :: SepCount -> Integer
+getSepCount (SC _ _ n) = n    
+```
+
+We then define the semantics for `(<>)` which implements the actual bookkeeping needed when `mappend`ing two `SepCount` items:
+
+```
+instance Semigroup SepCount where
+  (SC l0 r0 n) <> (SC l1 r1 m) = SC l0 r1 x where
+    x | not r0 && not l1 = n + m - 1
+      | otherwise = n + m
+```
+
+Based on these definitions we can then implement the wordcounting as follows:
+
+```
+wciBody :: Char -> Const (Maybe SepCount) Integer
+wciBody = Const . Just . mkSepCount isSpace where
     isSpace :: Char -> Bool
     isSpace c = c == ' ' || c == '\n' || c == '\t'
 
 -- using traverse to count words in a String
-wci :: String -> Compose (WrappedMonad (State Bool)) Count [a]
-wci = traverse wciBody
+wci :: String -> Const (Maybe SepCount) [Integer]
+wci = traverse wciBody 
 
 -- Forming the Product of character counting, line counting and word counting
 -- and performing a one go traversal using this Functor product
-clwci :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
-clwci = traverse (cciBody <#> lciBody <#> wciBody)
+clwci :: String -> (Product (Product Count Count) (Const (Maybe SepCount))) [Integer]
+clwci = traverse (cciBody <#> lciBody <#> wciBody)  
+
+-- extracting the actual Integer value from a `Const (Maybe SepCount) a` expression 
+extractCount :: Const (Maybe SepCount) a -> Integer
+extractCount (Const (Just sepCount)) =  getSepCount sepCount  
 
 -- the actual wordcount implementation.
--- for any String a triple of line count, word count, character count is returned
+-- for any String a triple of linecount, wordcount, charactercount is returned
 wc :: String -> (Integer, Integer, Integer)
 wc str =
     let raw = clwci str
         cc  = coerce $ pfst (pfst raw)
         lc  = coerce $ psnd (pfst raw)
-        wc  = coerce $ evalState (unwrapMonad (getCompose (psnd raw))) False
+        wc  = extractCount  (psnd raw)
     in (lc,wc,cc)
-
--- and then in ghci:
-> wc "hello \n world"
-(1,2,13)
 ```
 
 This example has been implemented according to ideas presented in the paper
 [The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
+
+This sections was meant to motivate the usage of the `Traversable` type. Of course the word count example could be solved in much simpler ways. Here is one solution suggested by [NoughtMare](https://www.reddit.com/r/haskell/comments/cfjnyu/type_classes_and_software_design_patterns/ev4m6u6?utm_source=share&utm_medium=web2x).
+
+We simply use `foldMap` to perform a map / reduce based on our already defined `cciBody`, `lciBody` and `wciBody` function. As this function returns a simple tuple instead of the more clumsy `Product` type also the final wordcound function `wc''` now looks way simpler:
+
+```haskell 
+clwci'' :: Foldable t => t Char -> (Count [a], Count [a], Const (Maybe SepCount) Integer)
+clwci'' = foldMap (\x -> (cciBody x,  lciBody x, wciBody x))
+
+wc'' :: String -> (Integer, Integer, Integer)
+wc'' str =
+    let (rawCC, rawLC, rawWC) = clwci'' str
+        cc  = coerce rawCC
+        lc  = coerce rawLC
+        wc  = extractCount rawWC
+    in (lc,wc,cc)    
+```
+
+As map / reduce with `foldMap` is such a powerful tool I've written a [dedicated section on this topic](#map-reduce) further down in this study.
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Iterator.hs)
 

@@ -57,16 +57,25 @@ lci = traverse lciBody
 clci :: String -> Product Count Count [a]
 clci = traverse (cciBody <#> lciBody)
 
+-- wciBody and wci based on suggestion by NoughtMare
 wciBody :: Char -> Const (Maybe SepCount) Integer
 wciBody = Const . Just . mkSepCount isSpace where
     isSpace :: Char -> Bool
     isSpace c = c == ' ' || c == '\n' || c == '\t'
 
+-- using traverse to count words in a String
 wci :: String -> Const (Maybe SepCount) [Integer]
 wci = traverse wciBody 
 
+-- Forming the Product of character counting, line counting and word counting
+-- and performing a one go traversal using this Functor product
 clwci :: String -> (Product (Product Count Count) (Const (Maybe SepCount))) [Integer]
 clwci = traverse (cciBody <#> lciBody <#> wciBody)  
+
+-- or much simpler, just use a foldMap 
+clwci'' :: Foldable t => t Char -> (Count [a], Count [a], Const (Maybe SepCount) Integer)
+clwci'' = foldMap (\x -> (cciBody x,  lciBody x, wciBody x))
+
    
 -- original solution from 'The Essence of the Iterator Patern' paper
 wciBody' :: Char -> Compose (WrappedMonad (State Bool)) Count a
@@ -90,13 +99,16 @@ mkSepCount pred x = SC p p (if p then 0 else 1)
   where
     p = pred x
 
+getSepCount :: SepCount -> Integer
+getSepCount (SC _ _ n) = n    
+
 instance Semigroup SepCount where
   (SC l0 r0 n) <> (SC l1 r1 m) = SC l0 r1 x where
     x | not r0 && not l1 = n + m - 1
       | otherwise = n + m
 
-getSepCount :: Const (Maybe SepCount) a -> Integer
-getSepCount (Const (Just (SC _ _ count))) = count      
+extractCount :: Const (Maybe SepCount) a -> Integer
+extractCount (Const (Just sepCount)) =  getSepCount sepCount   
 
 -- | the actual wordcount implementation.
 --   for any String a triple of linecount, wordcount, charactercount is returned
@@ -105,26 +117,19 @@ wc str =
     let raw = clwci str
         cc  = coerce $ pfst (pfst raw)
         lc  = coerce $ psnd (pfst raw)
-        wc  = getSepCount (psnd raw)
+        wc  = extractCount (psnd raw)
     in (lc,wc,cc)
+
+wc'' :: String -> (Integer, Integer, Integer)
+wc'' str =
+    let (rawCC, rawLC, rawWC) = clwci'' str
+        cc  = coerce rawCC
+        lc  = coerce rawLC
+        wc  = extractCount rawWC
+    in (lc,wc,cc)    
 
 str :: String
 str = "hello \n world"
-
-f = (cciBody <#> lciBody <#> wciBody)  
-
-f' = AM (cciBody <#> lciBody <#> wciBody)  
-
- 
-newtype AM f m = AM { unAM :: f m }
-    deriving (Functor, Applicative, Show)
- 
-instance (Applicative f, Monoid m) => Monoid (AM f m) where
-    mempty        = pure mempty
-    mappend f1 f2 = mappend <$> f1 <*> f2
-
-instance (Applicative f, Monoid m) => Semigroup (AM f m) where
-    (<>) = mappend
 
 pfst :: Product f g a -> f a
 pfst (Pair fst _) = fst
@@ -138,6 +143,6 @@ iteratorDemo = do
         env = [("pi", pi)]
     print $ traverse (\x c -> if even x then [x] else [2*x]) exp 0
 
-    print $ wc str
+    print $ wc "hello \n world"
 
 
