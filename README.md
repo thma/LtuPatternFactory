@@ -1586,9 +1586,6 @@ In this example we are touching all (nested) `Val` elements and multiply all odd
 
 #### Combining traversal operations
 
-The example presented here was taken from the paper
-[The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
-
 Compared with `Foldable` or `Functor` the declaration of a `Traversable` instance looks a bit intimidating. In particular the type signature of `traverse`:
 
 ```haskell
@@ -1597,7 +1594,8 @@ traverse :: (Traversable t, Applicative f) => (a -> f b) -> t a -> f (t b)
 
 looks like quite a bit of over-engineering for simple traversals as in the above example.
 
-In oder to explain the real power of the `Traversable` type class we will look at a more sophisticated example in this section.
+In oder to explain the real power of the `Traversable` type class we will look at a more sophisticated example in this section. This example was taken from the paper
+[The Essence of the Iterator Pattern](https://www.cs.ox.ac.uk/jeremy.gibbons/publications/iterator.pdf).
 
 The Unix utility `wc` is a good example for a traversal operation that performs several different tasks while traversing its input:
 
