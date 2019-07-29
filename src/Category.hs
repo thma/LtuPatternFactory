@@ -21,9 +21,3 @@ newtype Kleisli m a b = Kleisli { runKleisli :: a -> m b }
 instance Monad m => Category (Kleisli m) where
     id = Kleisli return
     (Kleisli f) . (Kleisli g) = Kleisli (g >=> f)  
-    
-newtype NatFunctor f a b =  NatFunctor { get :: f a}
-
-instance Functor f => Category (NatFunctor f) where
-    id = NatFunctor Prelude.id
-    
