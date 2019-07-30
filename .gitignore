@@ -26,4 +26,3 @@ cabal.config
 out/
 stack.yaml
 LtuPatternFactory.cabal
-LtuPatternFactory.cabal.bak
