@@ -8,7 +8,7 @@ jobs:
       - restore_cache:
           name: Restore Cached Dependencies
           keys:
-            - cci-demo-haskell-v1-{{ checksum "LtuPatternFactory.cabal" }}
+            - cci-demo-haskell-v1-{{ checksum "package.yaml" }}
       - run:
           name: Init Stack.yaml
           command: stack init
@@ -23,7 +23,7 @@ jobs:
           command: stack install
       - save_cache:
           name: Cache Dependencies
-          key: cci-demo-haskell-v1-{{ checksum "LtuPatternFactory.cabal" }}
+          key: cci-demo-haskell-v1-{{ checksum "package.yaml" }}
           paths:
             - ".stack-work"
       - store_artifacts: # upload build artifact for display in CircleCI
