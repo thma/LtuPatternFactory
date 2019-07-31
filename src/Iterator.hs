@@ -36,47 +36,41 @@ f <.> g = Compose . fmap f . g
 
 type Count = Const (Sum Integer)
 
-count :: a -> Count b
-count _ = Const 1
-
-cciBody :: Char -> Count a
-cciBody = count
+cciBody :: Char -> Sum Integer
+cciBody _ = 1
 
 cci :: String -> Count [a]
-cci = traverse cciBody
+cci = traverse (Const . cciBody)
 
-test :: Bool -> Sum Integer
-test b = Sum $ if b then 1 else 0
-
-lciBody :: Char -> Count a
-lciBody c = Const $ test (c == '\n')
+lciBody :: Char -> Sum Integer
+lciBody c = if (c == '\n') then 1 else 0
 
 lci :: String -> Count [a]
-lci = traverse lciBody
+lci = traverse (Const . lciBody)
 
 clci :: String -> Product Count Count [a]
-clci = traverse (cciBody <#> lciBody)
+clci = traverse ((Const . cciBody) <#> (Const . lciBody))
 
 -- wciBody and wci based on suggestion by NoughtMare
-wciBody :: Char -> Const (Maybe SepCount) Integer
-wciBody = Const . Just . mkSepCount isSpace where
+wciBody :: Char -> Maybe SepCount
+wciBody = Just . mkSepCount isSpace where
     isSpace :: Char -> Bool
     isSpace c = c == ' ' || c == '\n' || c == '\t'
 
 -- using traverse to count words in a String
 wci :: String -> Const (Maybe SepCount) [Integer]
-wci = traverse wciBody 
+wci = traverse (Const . wciBody) 
 
 -- Forming the Product of character counting, line counting and word counting
 -- and performing a one go traversal using this Functor product
 clwci :: String -> (Product (Product Count Count) (Const (Maybe SepCount))) [Integer]
-clwci = traverse (cciBody <#> lciBody <#> wciBody)  
+clwci = traverse ((Const . cciBody) <#> (Const . lciBody) <#> (Const . wciBody))  
 
 -- or much simpler, just use a foldMap 
-clwci'' :: Foldable t => t Char -> (Count [a], Count [a], Const (Maybe SepCount) Integer)
-clwci'' = foldMap (\x -> (cciBody x,  lciBody x, wciBody x))
+clwci'' :: Foldable t => t Char -> (Sum Integer, Sum Integer, Maybe SepCount)
+clwci'' = foldMap (\x -> (cciBody x, lciBody x, wciBody x))
 
-   
+
 -- original solution from 'The Essence of the Iterator Patern' paper
 wciBody' :: Char -> Compose (WrappedMonad (State Bool)) Count a
 wciBody' c =  coerce (updateState c) where
@@ -84,12 +78,14 @@ wciBody' c =  coerce (updateState c) where
     updateState c w = let s = not(isSpace c) in (test (not w && s), s)
     isSpace :: Char -> Bool
     isSpace c = c == ' ' || c == '\n' || c == '\t'
+    test :: Bool -> Sum Integer
+    test b = Sum $ if b then 1 else 0
 
 wci' :: String -> Compose (WrappedMonad (State Bool)) Count [a]
 wci' = traverse wciBody'
 
 clwci' :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
-clwci' = traverse (cciBody <#> lciBody <#> wciBody')
+clwci' = traverse ((Const . cciBody) <#> (Const . lciBody) <#> wciBody')
 
 data SepCount = SC Bool Bool Integer
   deriving Show
@@ -125,7 +121,7 @@ wc'' str =
     let (rawCC, rawLC, rawWC) = clwci'' str
         cc  = coerce rawCC
         lc  = coerce rawLC
-        wc  = extractCount rawWC
+        wc  = extractCount $ Const rawWC
     in (lc,wc,cc)    
 
 str :: String
