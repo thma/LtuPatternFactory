@@ -34,21 +34,19 @@ instance Traversable Exp where
 (<.>) :: (Functor m, Functor n) => (b -> n c) -> (a -> m b) -> (a -> (Compose m n) c)
 f <.> g = Compose . fmap f . g
 
-type Count = Const (Sum Integer)
-
 cciBody :: Char -> Sum Integer
 cciBody _ = 1
 
-cci :: String -> Count [a]
+cci :: String -> (Const (Sum Integer)) [a]
 cci = traverse (Const . cciBody)
 
 lciBody :: Char -> Sum Integer
 lciBody c = if (c == '\n') then 1 else 0
 
-lci :: String -> Count [a]
+lci :: String -> (Const (Sum Integer)) [a]
 lci = traverse (Const . lciBody)
 
-clci :: String -> Product Count Count [a]
+clci :: String -> Product (Const (Sum Integer)) (Const (Sum Integer)) [a]
 clci = traverse ((Const . cciBody) <#> (Const . lciBody))
 
 -- wciBody and wci based on suggestion by NoughtMare
@@ -63,7 +61,7 @@ wci = traverse (Const . wciBody)
 
 -- Forming the Product of character counting, line counting and word counting
 -- and performing a one go traversal using this Functor product
-clwci :: String -> (Product (Product Count Count) (Const (Maybe SepCount))) [Integer]
+clwci :: String -> (Product (Product (Const (Sum Integer)) (Const (Sum Integer))) (Const (Maybe SepCount))) [Integer]
 clwci = traverse ((Const . cciBody) <#> (Const . lciBody) <#> (Const . wciBody))  
 
 -- or much simpler, just use a foldMap 
@@ -72,7 +70,7 @@ clwci'' = foldMap (\x -> (cciBody x, lciBody x, wciBody x))
 
 
 -- original solution from 'The Essence of the Iterator Patern' paper
-wciBody' :: Char -> Compose (WrappedMonad (State Bool)) Count a
+wciBody' :: Char -> Compose (WrappedMonad (State Bool)) (Const (Sum Integer)) a
 wciBody' c =  coerce (updateState c) where
     updateState :: Char -> Bool -> (Sum Integer, Bool)
     updateState c w = let s = not(isSpace c) in (test (not w && s), s)
@@ -81,10 +79,10 @@ wciBody' c =  coerce (updateState c) where
     test :: Bool -> Sum Integer
     test b = Sum $ if b then 1 else 0
 
-wci' :: String -> Compose (WrappedMonad (State Bool)) Count [a]
+wci' :: String -> Compose (WrappedMonad (State Bool)) (Const (Sum Integer)) [a]
 wci' = traverse wciBody'
 
-clwci' :: String -> (Product (Product Count Count) (Compose (WrappedMonad (State Bool)) Count)) [a]
+clwci' :: String -> (Product (Product (Const (Sum Integer)) (Const (Sum Integer))) (Compose (WrappedMonad (State Bool)) (Const (Sum Integer)))) [a]
 clwci' = traverse ((Const . cciBody) <#> (Const . lciBody) <#> wciBody')
 
 data SepCount = SC Bool Bool Integer
