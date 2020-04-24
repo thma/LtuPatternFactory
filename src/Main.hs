@@ -14,7 +14,7 @@ import           JsonPersistence
 import           NullObject
 import           Pipeline
 import           Singleton
-import           Strategy
+import           DataTransferObject
 import           TemplateMethod
 import           Visitor
 import           MapReduce
@@ -26,7 +26,7 @@ import           FluentApi
 main :: IO ()
 main = do
   putStrLn "have fun with Lambda the ultimate Pattern Factory\n"
-  strategyDemo
+  dTODemo
   singletonDemo
   pipelineDemo
   compositeDemo

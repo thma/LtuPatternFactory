@@ -47,8 +47,9 @@ albums =
 album1 = albums !! 0
 album2 = albums !! 1        
 
-dTOExample :: IO ()
-dTOExample = do
+dTODemo :: IO ()
+dTODemo = do
+  print "DataTransferObject -> Functor"
   print albums
 
   let albumDTOs = fmap toAlbumDTO albums
