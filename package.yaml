@@ -40,6 +40,8 @@ executables:
     - blaze-html
     - parallel
     - comonad
+    - time
+    - zlib
 
 tests:
   LtuPatternFactory-test:

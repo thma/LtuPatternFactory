@@ -21,7 +21,7 @@ I think this kind of exposition could be helpful if you are:
 
 * [Lambda the ultimate pattern factory](#lambda-the-ultimate-pattern-factory)
 * [The Patternopedia](#the-patternopedia)
-  * [Strategy → Functor](#strategy--functor)
+  * [Data Transfer Object → Functor](#data-transfer-object--functor)
   * [Singleton → Applicative](#singleton--applicative)
   * [Pipeline → Monad](#pipeline--monad)
   * [NullObject → Maybe Monad](#nullobject--maybe-monad)
@@ -71,240 +71,216 @@ As a reference map I have included the following chart that depicts the Relation
 * Monad and ArrowApply are equivalent.
 * Apply and Comonad are greyed out since they are not actually (yet?) in the standard Haskell libraries ∗.
 
-### Strategy → Functor
+### Data Transfer Object → Functor
 
-> "The strategy pattern [...] is a behavioral software design pattern that enables selecting an algorithm at runtime. Instead of implementing a single algorithm directly, code receives run-time instructions as to which in a family of algorithms to use"
+> In the field of programming a data transfer object (DTO) is an object that carries data between processes. 
+> The motivation for its use is that communication between processes is usually done resorting to remote interfaces 
+> (e.g., web services), where each call is an expensive operation.
+> Because the majority of the cost of each call is related to the round-trip time between the client and the server, 
+> one way of reducing the number of calls is to use an object (the DTO) that aggregates the data that would have been 
+> transferred by the several calls, but that is served by one call only.
+> (quoted from [Wikipedia](https://en.wikipedia.org/wiki/Data_transfer_object)
 
-![strategy pattern](https://upload.wikimedia.org/wikipedia/commons/4/45/W3sDesign_Strategy_Design_Pattern_UML.jpg)
+Data Transfer Object is a pattern from Martin Fowler's [Patterns of Enterprise Application Architecture](https://martinfowler.com/eaaCatalog/dataTransferObject.html).
+It is typically used in multi-layered applications where data is transferred between backends and frontends.
 
-> "In the above UML class diagram, the `Context` class doesn't implement an algorithm directly. Instead, `Context` refers to the  `Strategy` interface for performing an algorithm (`strategy.algorithm()`), which makes `Context` independent of how an algorithm is implemented. The `Strategy1` and `Strategy2` classes implement the `Strategy` interface, that is, implement (encapsulate) an algorithm."
->(quoted from [Wikipedia](https://en.wikipedia.org/wiki/Strategy_pattern)
+The aggregation of data usually also involves a denormalization of data structures. As an example, please refer to the following
+diagram where two entities from the backend (`Album` and `Artist`) are assembled to a compound denormalized DTO `AlbumDTO`:
 
-* in C a strategy would be modelled as a function pointer that can be used to dispatch calls to different functions.
-* In an OO language like Java a strategy would be modelled as a single strategy-method interface that would be implemented by different strategy classes that provide implementations of the strategy method.
-* in functional programming a strategy is just a function that is passed as a parameter to a [higher order function](https://en.wikipedia.org/wiki/Higher-order_function).
+![DTO](https://martinfowler.com/eaaCatalog/dtoSketch.gif)
 
-We are starting with a simplified example working on Numbers. I'm defining Java interfaces for three simple strategies:
+Of course, there is also an inverse mapping from `AlbumDTO` to `Album` which is not shown in this diagram.
 
-```java
-    public interface StrategySquare {
-        public double algorithm(double input);
-    }
-
-    public interface StrategyDouble {
-        public double algorithm(double input);
-    }
-
-    public interface StrategyToString {
-        public String algorithm(double input);
-    }
-```
-
-These interface can then be implemented by concrete classes. I'm using anonymous classes to implement the strategies:
-
-```java
-static StrategySquare strategySquare = new StrategySquare() {
-    @Override
-    public double algorithm(double input) {
-        return input * input;
-    }
-};
-```
-
-Once I've written this code my Java IDE tells me that this anonymous class could be replaced by a lambda expression. So I can simply implement the strategies as follows:
-
-```java
-static StrategySquare strategySquare = input -> input * input;
-
-static StrategyDouble strategyDouble = input -> 2 * input;
-
-static StrategyToString strategyToString = input -> String.valueOf(input);
-
-// now we can use the strategies as follows:
-public static void main(String[] args) {
-    System.out.println(strategySquare.algorithm(4.0));
-    System.out.println(strategyDouble.algorithm(4.0));
-    System.out.println(strategyToString.algorithm(strategySquare.algorithm(5)));
-}
-```
-
-The interesting point here is that in Java single method interfaces like `StrategySquare` can be implemented by lambda expressions, that is anonymous functions.
-
-So the conclusion is: a single method interface of a strategy is just the type signature of a function.
-
-That's why in functional programming strategies are implemented as functions passed as arguments to *higher order* functions. In Haskell our three strategies would be implemented as follows:
+In Haskell `Album`, `Artist` and `AlbumDTO` can be represented as data types with record notation:
 
 ```haskell
--- first we define simple strategies operating on numbers:
-strategyDouble :: Num a => a -> a
-strategyDouble n = 2*n
+data Album = Album {
+    title       :: String
+  , publishDate :: Int
+  , labelName   :: String
+  , artist      :: Artist
+} deriving (Show)
 
-strategySquare :: Num a => a -> a
-strategySquare n = n*n
+data Artist = Artist {
+    publicName :: String
+  , realName   :: Maybe String
+} deriving (Show)
 
-strategyToString :: Show a => a -> String
-strategyToString = show
+data AlbumDTO = AlbumDTO {
+    albumTitle  :: String
+  , published   :: Int
+  , label       :: String
+  , artistName  :: String
+} deriving (Show, Read)
 ```
 
-These *strategies* &ndash; or rather functions &ndash; can then be used to perform operations on numbers, as shown in the following GHCi (The Glasgow Haskell Compiler REPL) session:
+The transfer from an `Album` to an `AlbumDTO` and vice versa can be achieved by two simple functions, that perfom the
+intended field wise mappings:
 
 ```haskell
-ghci> strategySquare 15
-225
-ghci> strategyDouble 8.0
-16.0
-ghci> strategyToString 4
-"4"
+toAlbumDTO :: Album -> AlbumDTO
+toAlbumDTO Album {title = t, publishDate = d, labelName = l, artist = a} =
+  AlbumDTO {albumTitle = t, published = d, label = l, artistName = (publicName a)}
+
+toAlbum :: AlbumDTO -> Album
+toAlbum AlbumDTO {albumTitle = t, published = d, label = l, artistName = n} =
+  Album {title = t, publishDate = d, labelName = l, artist = Artist {publicName = n, realName = Nothing}}
 ```
 
-We are using the functions by applying them to some numeric values.
+In this few lines we have covered the basic idea of the DTO pattern.
 
-One nice feature of functions is that they can be composed using the `(.)` operator:
+Now, let's consider the typical situation that you don't have to transfer only a *single* `Album` instance but a whole 
+list of `Album` instances, e.g.:
 
 ```haskell
-ghci> :type (.)
-(.) :: (b -> c) -> (a -> b) -> a -> c
-
-ghci> (strategyToString . strategySquare ) 15
-"225"
+albums :: [Album]
+albums =
+    [
+      Album {title = "Microgravity",
+             publishDate = 1991,
+             labelName = "Origo Sound",
+             artist = Artist {publicName = "Biosphere", realName = Just "Geir Jenssen"}}
+    , Album {title = "Apollo - Atmospheres & Soundtracks",
+             publishDate = 1983,
+             labelName = "Editions EG",
+             artist = Artist {publicName = "Brian Eno", realName = Just "Brian Peter George St. John le Baptiste de la Salle Eno"}}
+    ]
 ```
 
-So far we have been using functions directly and not as a parameter to some *higher order* function, that is we are using them without a computational context referring to them.
-
-In the next step we will set up such a computational context.
-
-Let's assume we want to be able to apply our strategies defined above not only to single values but to lists of values. We don't want to rewrite our code, but rather reuse the existing functions and use them in a list context.
+In this case we have to apply the `toAlbumDTO` function to all elements of the list. 
+In Haskell this *higher order* operation is called `map`:
 
 ```haskell
--- | applyInListContext applies a function of type Num a => a -> b to a list of a's:
-applyInListContext :: Num a => (a -> b) -> [a] -> [b]
--- applying f to an empty list returns the empty list
-applyInListContext f [] = []
--- applying f to a list with head x returns (f x) 'consed' to a list
--- resulting from applying applyInListContext f to the tail of the list
-applyInListContext f (x:xs) = (f x) : applyInListContext f xs
-
--- HLint, the Haskell linter advices us to use the predefined map function instead of our definition above:
-applyInListContext = map
-
+map :: (a -> b) -> [a] -> [b]
+map _f []    = []
+map f (x:xs) = f x : map f xs
 ```
 
-Now we can use the `applyInListContext` function to apply strategies to lists of numbers:
+`map` takes a function `f :: (a -> b)` (a function from type `a` to type `b`) and an `[a]` list and returns a `[b]` list.
+The `b` elements are produced by applying the function `f` to each element of the input list.
+Applying `toAlbumDTO` to a list of albums can thus be done in the Haskell REPL GHCi as follows:
 
 ```haskell
-ghci> applyInListContext strategyDouble [1..10]
-[2,4,6,8,10,12,14,16,18,20]
-ghci> applyInListContext strategySquare [1..10]
-[1,4,9,16,25,36,49,64,81,100]
+λ> map toAlbumDTO albums
+[AlbumDTO {albumTitle = "Microgravity", published = 1991, label = "Origo Sound", artistName = "Biosphere"},
+ AlbumDTO {albumTitle = "Apollo - Atmospheres & Soundtracks", published = 1983, label = "Editions EG", artistName = "Brian Eno"}]
 ```
 
-Using this approach is not limited to lists but we can apply it to any other parametric datatype.
-As an example we construct a `Context a` type with the corresponding higher order function `applyInContext`.
-This function accepts a function of type `Num a => (a -> b)` and a `Context a` and returns a `Context b`.
-The return value of type `Context b` is constructed by applying the function `f` of type `(a -> b)` to the value `x` which has been extracted from the input value `Context x` by pattern matching:
+This mapping of functions over lists is a basic technique known in many functional languages.
+In Haskell further generalises this technique with the concept of the `Functor` type class. 
 
-```haskell
-newtype Context a = Context a deriving (Show, Read)
+> The `Functor` class is the most basic and ubiquitous type class in the Haskell libraries. 
+> A simple intuition is that a `Functor` represents a “container” of some sort, along with the ability to apply a 
+> function uniformly to every element in the container. For example, a list is a container of elements, 
+> and we can apply a function to every element of a list, using `map`. 
+> As another example, a binary tree is also a container of elements, and it’s not hard to come up with a way to 
+> recursively apply a function to every element in a tree.
+>
+> Another intuition is that a Functor represents some sort of “computational context”. 
+> This intuition is generally more useful, but is more difficult to explain, precisely because it is so general. 
+>
+> Quoted from [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia#Functor)
 
-applyInContext :: Num a => (a -> b) -> Context a -> Context b
-applyInContext f (Context x) = Context (f x)
-
--- using this in ghci:
-ghci> applyInContext (strategyToString . strategySquare) (Context 14)
-Context "196"
-```
-
-Now imagine we would be asked to implement this way to apply functions within a context for yet another data type.
-Wouldn't it be great to have a generic tool that would solve this problem for any context, thus avoiding to reinvent the wheel each time?
-
-In Functional Programming languages, the application of a function in a computational context is generalized with the type class `Functor`:
+Basically, all instances of the `Functor` type class must provide a function `fmap`:
 
 ```haskell
 class  Functor f  where
     fmap :: (a -> b) -> f a -> f b
 ```
 
-By comparing the signature of `fmap` with our higher order functions `applyInListContext` and `applyIncontext`
-we notice that they bear the same structure:
-
-```haskell
-    fmap               ::          (a -> b) -> f a       -> f b
-
-    applyInContext     :: Num a => (a -> b) -> Context a -> Context b
-
-    applyInListContext :: Num a => (a -> b) -> [a]       -> [b]
-```
-
-Actually the function `map` (which had been suggested as a replacement for applyInContext by the Haskell Linter) is the `fmap` implementation for the List Functor instance:
-
+For Lists the implementation is simply the `map` function that we already have seen above:
 ```haskell
 instance Functor [] where
     fmap = map
 ```
 
-In the same way the Functor definition for the Context type defines `fmap` exactly as the `applyInIncontext` function:
+Functors have interesting properties, they fulfill the two so called *functor laws*, 
+which are part of the definition of a mathematical functor:
 
 ```haskell
-instance Functor Context where
-    fmap f (Context a) = Context (f a)
+fmap id = id                        -- (1)
+fmap (g . h) = (fmap g) . (fmap h)  -- (2)
 ```
 
-As deriving of Functor instances can be done mechanically for any algebraic data type there is no need to define Functor instances explicitely.
-Instead of the the above `instance Functor` declaration we let the compiler do the work for us by using the `DeriveFunctor` pragma:
+The first law `(1)` states that mapping the identity function over every item in a container has no effect. 
+
+The second `(2)` says that mapping a composition of two functions over every item in a container is the same as first 
+mapping one function, and then mapping the other.
+
+These laws are very useful when we consider composing complex mappings from simpler operations.
+
+Say we want to extend our DTO mapping functionality by also providing some kind of marshalling. For a single album instance, 
+we can use function composition `(f . g) x == f (g x)`, which is defined in Haskell as:
 
 ```haskell
-{-# LANGUAGE DeriveFunctor #-}
-
-newtype Context a = Context a deriving (Functor, Show, Read)
+(.) :: (b -> c) -> (a -> b) -> a -> c
+(.) f g x = f (g x)
 ```
 
-#### composition of functors
-
-In the beginning of this section we have seen that composition of functions using the `(.)` operator is a very useful tool to construct complex functionality by chaining more simple functions.
-
-As stated in the [Functor laws](https://wiki.haskell.org/Typeclassopedia#Laws) any Functor instance must ensure that:
+In the following GHCi session we are using `(.)` to first convert an `Album` to its `AlbumDTO` representation and then 
+turn that into a `String` by using the `show` function:
 
 ```haskell
-fmap (g . h) = (fmap g) . (fmap h)
+λ> album1 = albums !! 0
+λ> print album1
+Album {title = "Microgravity", publishDate = 1991, labelName = "Origo Sound", artist = Artist {publicName = "Biosphere", realName = Just "Geir Jenssen"}}
+λ> marshalled = (show . toAlbumDTO) album1
+λ> :t marshalled
+marshalled :: String
+λ> print marshalled
+"AlbumDTO {albumTitle = \"Microgravity\", published = 1991, label = \"Origo Sound\", artistName = \"Biosphere\"}"
 ```
 
-Let's try to verify this with our two example Functors `Context` and `[]`:
+As we can rely on the functor law `fmap (g . h) = (fmap g) . (fmap h)` we can use fmap to use the same composed
+function on any functor, for example our list of albums:
 
 ```haskell
-ghci> (fmap strategyToString . fmap strategySquare) (Context 7)
-Context "49"
--- this version is more efficient as we have to pattern match and reconstruct the Context only once:
-ghci> fmap (strategyToString . strategySquare) (Context 7)
-Context "49"
--- now with a list context:
-ghci> (fmap strategyToString . fmap strategySquare) [1..10]
-["1","4","9","16","25","36","49","64","81","100"]
--- this version is more efficient as we iterate the list only once:
-ghci> fmap (strategyToString . strategySquare) [1..10]
-["1","4","9","16","25","36","49","64","81","100"]
+λ> fmap (show . toAlbumDTO) albums
+["AlbumDTO {albumTitle = \"Microgravity\", published = 1991, label = \"Origo Sound\", artistName = \"Biosphere\"}",
+ "AlbumDTO {albumTitle = \"Apollo - Atmospheres & Soundtracks\", published = 1983, label = \"Editions EG\", artistName = \"Brian Eno\"}"]
 ```
 
-But composition doesn't stop here:
+We can build more complex mappings by chaining multiple functions, to produce for example a gzipped byte string output:
 
 ```haskell
-ghci> (fmap . fmap) (strategyToString . strategySquare) (Context [6,7])
-Context ["36","49"]
+λ> gzipped = (compress . pack . show . toAlbumDTO) album1
 ```
 
-As we can see, The two functors `[]` and `Context` can be composed and this composition is a new Functor `Context []`. The composition `(fmap . fmap)` can be used to apply our strategy functions on the wrapped integers 6 and 7.
+As the sequence of operation must be read from right to left for the `(.)` operator this becomes quite unintuitive for longer sequences.
+Thus, Haskellers often use the flipped version of `(.)`, `(>>>)` which is defined as:
 
-#### conclusion
+```haskell
+f >>> g = g . f
+```
 
-Although it would be fair to say that the type class `Functor` captures the essential idea of the strategy 
-pattern &ndash; namely the injecting of a function into a computational context and its execution in this context &ndash; 
-the usage of higher order functions is of course not limited to `Functors` &ndash; we could use just any [higher order function](#higher-order-functions) 
-fitting our purpose.
+Using `(>>>)` the intent of our composition chain becomes much clearer (at least when you are trained to read from left to right):
 
+```haskell
+λ> gzipped = (toAlbumDTO >>> show >>> pack >>> compress) album1
+```
 
+Unmarshalling can be defined using the inverse operations:
 
-Other type classes like [`Foldable`](#visitor--foldable) or [`Traversable`](#iterator--traversable) (which is a `Foldable Functor`) can serve as helpful abstractions when dealing with typical use cases of applying variable strategies within a computational context.
+```haskell
+λ> unzipped = (decompress >>> unpack >>> read >>> toAlbum) gzipped
+λ> :t unzipped
+unzipped :: Album
+λ> print unzipped
+Album {title = "Microgravity", publishDate = 1991, labelName = "Origo Sound", artist = Artist {publicName = "Biosphere", realName = Nothing}}
+```
 
-[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/Strategy.hs)
+Of course, we can use `fmap` to apply such composed mapping function to any container type instantiating the `Functor` 
+type class:
+
+```haskell
+λ> marshalled   = fmap (toAlbumDTO >>> show >>> pack >>> compress) albums
+λ> unmarshalled = fmap (decompress >>> unpack >>> read >>> toAlbum) marshalled
+λ> print unmarshalled
+[Album {title = "Microgravity", publishDate = 1991, labelName = "Origo Sound", artist = Artist {publicName = "Biosphere", realName = Nothing}},
+ Album {title = "Apollo - Atmospheres & Soundtracks", publishDate = 1983, labelName = "Editions EG", artist = Artist {publicName = "Brian Eno", realName = Nothing}}]
+```
+
+[Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/DataTransferObject.hs)
 
 ### Singleton → Applicative
 
@@ -312,7 +288,7 @@ Other type classes like [`Foldable`](#visitor--foldable) or [`Traversable`](#ite
 > (quoted from [Wikipedia](https://en.wikipedia.org/wiki/Singleton_pattern)
 
 The singleton pattern ensures that multiple requests to a given object always return one and the same singleton instance.
-In functional programming this semantics can be achieved by ```let```.
+In functional programming this semantics can be achieved by `let`:
 
 ```haskell
 let singleton = someExpensiveComputation
