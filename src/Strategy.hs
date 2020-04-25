@@ -1,48 +1,35 @@
-{-#LANGUAGE DeriveFunctor #-}
 module Strategy where
 
--- first we define two simple strategies that work on numbers:
-strategyDouble :: Num a => a -> a
-strategyDouble n = 2*n
+data CustomerType = EndCustomer | Retailer | NGO
 
-strategySquare :: Num a => a -> a
-strategySquare n = n*n
+type Price = Double
+type Quantity = Double
 
-strategyToString :: Show a => a -> String
-strategyToString = show
+consumerPrice :: Quantity -> Price -> Price
+consumerPrice quantity price =
+  if quantity <= 3
+    then price
+    else price * 0.9
 
-newtype Context a = Context a deriving (Functor, Show, Read)
+retailPrice :: Quantity -> Price -> Price
+retailPrice quantity price
+  | quantity * price < 100 = price * 0.8
+  | quantity * price < 250 = price * 0.7
+  | otherwise              = price * 0.5
 
-applyInContext :: Num a => (a -> b) -> Context a -> Context b
-applyInContext f (Context a) = Context (f a)
-
---instance Functor Context where
---    fmap f (Context a) = Context (f a)
-
--- | applyInListContext applies a function of type Num a => a -> a to a list of a's:
-applyInListContext :: Num a => (a -> b) -> [a] -> [b]
--- applying f to an empty list returns the empty list
--- applyInListContext f [] = []
--- applying f to a list with head x returns (f x) 'consed' to a list
--- resulting from applying applyInListContext f to the tail of the list
--- applyInListContext f (x:xs) = (f x) : applyInListContext f xs
-
--- HLint, the Haskell linter advices us to use the predefined map function instead of this definition:
-applyInListContext = map
-
+discountPrice :: CustomerType -> (Quantity -> Price -> Price)
+discountPrice EndCustomer = consumerPrice
+discountPrice Retailer    = retailPrice
+discountPrice NGO         = retailPrice
 
 strategyDemo = do
-    putStrLn "Strategy Pattern -> Functor (and Higher Order Functions in general)"
+    putStrLn "Strategy Pattern -> Higher Order Functions"
 
-    print $ strategySquare 16
-    print $ (strategyToString . strategySquare . strategyDouble) 4
+    print $ discountPrice EndCustomer 2 10
+    print $ discountPrice EndCustomer 9 10
 
-    print $ applyInContext (strategySquare . strategyDouble) (Context 7)
+    print $ discountPrice Retailer 9 10
+    print $ discountPrice Retailer 20 10
+    print $ discountPrice Retailer 60 10
 
-    print $ applyInListContext strategyDouble [1..10]
-    print $ applyInListContext strategySquare [1..10]
-    print $ applyInListContext (strategyToString . strategySquare . strategyDouble) [1..10]
-
-    print $ fmap strategyDouble (Context 7)
-    print $ fmap strategyDouble [7]
     putStrLn ""
