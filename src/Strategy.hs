@@ -22,6 +22,23 @@ discountPrice EndCustomer = consumerPrice
 discountPrice Retailer    = retailPrice
 discountPrice NGO         = retailPrice
 
+class CustomerClass a where
+  discount :: a -> (Quantity -> Price -> Price)
+  
+data EndCustomerType = EcType
+data RetailerType    = RtType
+data NgoType         = NgType
+
+instance CustomerClass EndCustomerType where
+  discount _ = consumerPrice
+
+instance CustomerClass RetailerType where
+  discount _ = retailPrice  
+  
+instance CustomerClass NgoType where
+  discount _ = retailPrice    
+    
+
 strategyDemo = do
     putStrLn "Strategy Pattern -> Higher Order Functions"
 
@@ -31,5 +48,10 @@ strategyDemo = do
     print $ discountPrice Retailer 9 10
     print $ discountPrice Retailer 20 10
     print $ discountPrice Retailer 60 10
+    
+    print $ discount EcType 2 10
+    print $ discount EcType 9 10
+    print $ discount RtType 20 10
+    print $ discount NgType 60 10
 
     putStrLn ""
