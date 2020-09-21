@@ -3533,12 +3533,14 @@ From what I have shown so far it's easy to see that the `map` and `reduce` phase
 * The generation of word frequency maps for the text chunks can be done in parallel. There are no shared data or other dependencies between those executions.
 * The reduction of the maps can start in parallel (that is we don't have to wait to start reduction until all individual maps are computed) and the reduction itself can also be parallelized.
 
-The calculation of word frequencies is a candidate for a parallel MapReduce because the addition operation used to accumulate the word frequencies is *associatve* and *commutative*:
+The calculation of word frequencies is a candidate for a parallel MapReduce because the addition operation used to accumulate the word frequencies is *associatve*:
 *The order of execution doesn't affect the final result*.
 
-So actually our data type `WordCountMap` is not only a `Monoid` (which requires an *associative* binary operation) but even a [*commutative Monoid*](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid).
+(Actually our data type `WordCountMap` is not only a `Monoid` (which requires an *associative* binary operation) 
+but even a [*commutative Monoid*](https://en.wikipedia.org/wiki/Monoid#Commutative_monoid).)
 
-So our conclusion: if the intermediary key/value map for the data analytics task at hand forms a *commutative monoid* then it is a candidate for parallel MapReduce. See also [An Algebra for Distributed Big Data Analytics](https://pdfs.semanticscholar.org/0498/3a1c0d6343e21129aaffca2a1b3eec419523.pdf).
+So our conclusion: if the intermediary key/value map for the data analytics task at hand forms a *monoid* under the reduce operation
+then it is a candidate for parallel MapReduce. See also [An Algebra for Distributed Big Data Analytics](https://pdfs.semanticscholar.org/0498/3a1c0d6343e21129aaffca2a1b3eec419523.pdf).
 
 Haskell provides a package `parallel` for defining parallel executions in a rather declarative way.
 Here is what a parallelized MapReduce looks like when using this package:
@@ -3951,7 +3953,9 @@ Identifying the [composite pattern](#composite--semigroup--monoid) as an applica
 
 *Design patterns reflect abstract algebraic structures.*
 
-As another example take the [Map-Reduce](#map-reduce) pattern: we demonstrated that the question whether a problem can be solved by a map-reduce approach boils down to the algebraic question whether the data structure used to hold the intermediary results of the `map` operation forms a *commutative monoid* under the `reduce` operation.
+As another example take the [Map-Reduce](#map-reduce) pattern: we demonstrated that the question whether a problem can be 
+solved by a map-reduce approach boils down to the algebraic question whether the data structure used to hold the intermediary 
+results of the `map` operation forms a *monoid* under the `reduce` operation.
 
 Rooting design patterns in abstract algebra brings a higher level of confidence to software design as we can move from 'hand waving' &ndash; painting UML diagrams, writing prose, building prototypes, etc. &ndash; to mathematical reasoning.
 
