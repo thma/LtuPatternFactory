@@ -10,7 +10,7 @@ By searching the web I found some blog entries studying specific patterns, but I
 
 I think this kind of exposition could be helpful if you are:
 
-* a programmer with an OO background who wants to get a better grip on how to implement complexer designs in functional programming
+* a programmer with an OO background who wants to get a better grip on how to implement more complex designs in functional programming
 * a functional programmer who wants to get a deeper intuition for type classes.
 * studying the [Typeclassopedia](https://wiki.haskell.org/Typeclassopedia) and are looking for an accompanying reading providing example use cases and working code.
 
