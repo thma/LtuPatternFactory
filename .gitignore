@@ -24,5 +24,4 @@ cabal.project.local~
 *.iml
 cabal.config
 out/
-stack.yaml
-LtuPatternFactory.cabal
+*.lock

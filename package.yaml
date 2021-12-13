@@ -2,17 +2,19 @@ name:                LtuPatternFactory
 version:             0.1.0.0
 synopsis:            Comparing OO Design Patterns with Functional Programming concepts
 homepage:            https://github.com/thma/LtuPatternFactory#readme
-github:              "https://github.com/thma/LtuPatternFactory"
+github:              "thma/LtuPatternFactory"
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Thomas Mahler
 maintainer:          thma@apache.org
-copyright:           2018, 2019 Thomas Mahler
+copyright:           2018 - 2021 Thomas Mahler
 category:            Programming
 #build-type:          Simple
 #cabal-version:       >=1.10
 extra-source-files:  README.md
 description:         Please see the README on GitHub at <https://github.com/thma/LtuPatternFactory#readme>
+
+
 
 dependencies:
 - base >= 4.7 && < 5
