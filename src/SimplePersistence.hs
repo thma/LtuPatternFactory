@@ -38,4 +38,4 @@ class (Show a, Read a, Typeable a) => Entity a where
 
 -- | compute path of data file
 getPath :: TypeRep -> String -> FilePath
-getPath tr id = ".stack-work/" ++ show tr ++ "." ++ id ++ ".txt"
+getPath tr id = show tr ++ "." ++ id ++ ".txt"

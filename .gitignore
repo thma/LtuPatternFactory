@@ -25,3 +25,5 @@ cabal.project.local~
 cabal.config
 out/
 *.lock
+*.txt
+*.json

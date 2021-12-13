@@ -39,4 +39,4 @@ class (ToJSON a, FromJSON a, Typeable a) => Entity a where
 
 -- | compute path of data file
 getPath :: TypeRep -> String -> String
-getPath tr id = ".stack-work/" ++ show tr ++ "." ++ id ++ ".json"
+getPath tr id = show tr ++ "." ++ id ++ ".json"
