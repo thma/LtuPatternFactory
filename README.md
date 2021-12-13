@@ -2499,7 +2499,20 @@ By inlining this output into the present Markdown document we can see that Markd
 
 [Sourcecode for this section](https://github.com/thma/LtuPatternFactory/blob/master/src/DependencyInjection.hs)
 
-### Command → Functions as First Class Citizens
+#### Alternative approaches to dependency injection
+
+Since the carefree handling of dependencies is an important issue in almost every real-world application, it is not surprising that many different solution patterns have been developed for this over time.
+
+Specifically in the Haskell environment, interesting approaches have been developed, such as 
+
+* the use of the Reader Monad
+* the use of implicit parameters
+
+I will not go into these approaches further here, as there is already a very detailed description available: [Who still uses ReaderT](https://hugopeters.me/posts/10/).
+
+There is a controversial discussion about implicit parameters, so I would like to refer to [this blog post](https://chrisdone.com/posts/whats-wrong-with-implicitparams/), which discusses some of those issues.
+
+### ComCmand → Functions as First Class Citizens
 
 > In object-oriented programming, the command pattern is a behavioral design pattern in which an object is used to encapsulate all information needed to perform an action or trigger an event at a later time. This information includes the method name, the object that owns the method and values for the method parameters.
 >
