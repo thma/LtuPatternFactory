@@ -1,6 +1,6 @@
 # Lambda the Ultimate Pattern Factory
 
-[![CircleCI](https://circleci.com/gh/thma/LtuPatternFactory.svg?style=svg)](https://circleci.com/gh/thma/LtuPatternFactory)
+[![Actions Status](https://github.com/thma/LtuPatternFactory/workflows/Haskell%20CI/badge.svg)](https://github.com/thma/LtuPatternFactory/actions)
 
 My first programming languages were Lisp, Scheme, and ML. When I later started to work in OO languages like C++ and Java I noticed that idioms that are standard vocabulary in functional programming (fp) were not so easy to achieve and required sophisticated structures. Books like [Design Patterns: Elements of Reusable Object-Oriented Software](https://en.wikipedia.org/wiki/Design_Patterns) were a great starting point to reason about those structures. One of my earliest findings was that several of the GoF-Patterns had a stark resemblance of structures that are built into in functional languages: for instance the strategy pattern corresponds to higher order functions in fp (more details see [below](#strategy)).
 
